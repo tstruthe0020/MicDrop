@@ -1,0 +1,33 @@
+{
+  "params": {
+    "Bypass": 0.0,
+    "Band_1_Frequency": 80.0,
+    "Band_1_Gain": 0.0,
+    "Band_1_Q": 0.7,
+    "Band_1_Type": 6.0,
+    "Band_1_Enable": 1.0,
+    
+    "Band_2_Frequency": 300.0,
+    "Band_2_Gain": -2.5,
+    "Band_2_Q": 2.0,
+    "Band_2_Type": 0.0,
+    "Band_2_Enable": 1.0,
+    
+    "Band_4_Frequency": 3000.0,
+    "Band_4_Gain": 2.0,
+    "Band_4_Q": 1.2,
+    "Band_4_Type": 0.0,
+    "Band_4_Enable": 1.0,
+    
+    "Band_5_Frequency": 8000.0,
+    "Band_5_Gain": 1.5,
+    "Band_5_Q": 0.8,
+    "Band_5_Type": 1.0,
+    "Band_5_Enable": 1.0,
+    
+    "High_Pass_Frequency": 80.0,
+    "High_Pass_Enable": 1.0,
+    "Output_Gain": 0.0,
+    "Mix": 1.0
+  }
+}
