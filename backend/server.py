@@ -135,6 +135,25 @@ async def recommend_chain(request: RecommendationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chain generation failed: {str(e)}")
 
+def recommend_vocal_chain(vibe: str, genre: Optional[str] = None, audio_type: Optional[str] = None) -> Dict[str, Any]:
+    """Generate vocal chain recommendations based on vibe and optional genre/audio_type"""
+    try:
+        # Create mock features for chain generation - this should be improved
+        # to use actual audio analysis or stored templates
+        mock_features = {
+            "bpm": 120.0,
+            "lufs": -14.0,
+            "crest": 12.0,
+            "spectral": {"centroid": 2000.0, "rolloff": 8000.0}
+        }
+        
+        # Generate chain using existing chain generator
+        chain = chain_generator.generate_chain(mock_features, vibe)
+        return {"chain": chain.plugins if hasattr(chain, 'plugins') else chain}
+    except Exception as e:
+        logger.error(f"Error in recommend_vocal_chain: {str(e)}")
+        return {"chain": []}
+
 @api_router.post("/export/logic")
 async def export_logic_presets(request: ExportRequest):
     """Export Logic Pro presets as ZIP file"""
