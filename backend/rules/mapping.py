@@ -231,7 +231,7 @@ class ChainGenerator:
     
     def _generate_multipressor(self, features: Dict[str, Any], vibe: str) -> Dict[str, Any]:
         """Generate Multipressor (multiband compressor) settings"""
-        spectral = features['spectral']
+        spectral = features.spectral
         
         # Band activity detection
         lowmid_active = spectral.get('lowmid', 0) > 100
