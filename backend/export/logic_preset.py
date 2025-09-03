@@ -23,6 +23,7 @@ class LogicPresetExporter:
     def __init__(self):
         self.aupreset_writer = AUPresetWriter()
         self.pst_writer = LogicPSTWriter()
+        self.simple_pst_writer = SimplePSTWriter()
         self.cst_writer = LogicCSTWriter()
         
         # Initialize default files
