@@ -8,21 +8,105 @@ import json
 import tempfile
 import os
 import logging
+import platform
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 class AUPresetGenerator:
-    def __init__(self, aupresetgen_path: str = "/app/swift_cli_integration/aupresetgen"):
+    def __init__(self, aupresetgen_path: Optional[str] = None, seeds_dir: Optional[str] = None):
         """
-        Initialize AU Preset Generator
+        Initialize AU Preset Generator with environment-aware configuration
         
         Args:
-            aupresetgen_path: Path to the aupresetgen Swift CLI executable
+            aupresetgen_path: Path to the aupresetgen Swift CLI executable (auto-detected if None)
+            seeds_dir: Path to seed files directory (auto-detected if None)
         """
-        self.aupresetgen_path = aupresetgen_path
-        self.seeds_dir = Path("/app/aupreset/seeds")
+        self.is_macos = platform.system() == 'Darwin'
+        self.is_container = os.path.exists('/.dockerenv') or os.environ.get('CONTAINER') == 'true'
+        
+        # Configure paths based on environment
+        if aupresetgen_path:
+            self.aupresetgen_path = aupresetgen_path
+        else:
+            self.aupresetgen_path = self._detect_swift_cli_path()
+            
+        if seeds_dir:
+            self.seeds_dir = Path(seeds_dir)
+        else:
+            self.seeds_dir = self._detect_seeds_dir()
+            
+        # Configure Logic Pro preset directories
+        self.logic_preset_dirs = self._get_logic_preset_dirs()
+        
+        logger.info(f"AU Preset Generator initialized:")
+        logger.info(f"  Platform: {'macOS' if self.is_macos else 'Linux'}")
+        logger.info(f"  Container: {self.is_container}")
+        logger.info(f"  Swift CLI: {self.aupresetgen_path}")
+        logger.info(f"  Seeds dir: {self.seeds_dir}")
+        logger.info(f"  Logic dirs: {self.logic_preset_dirs}")
+        
+    def _detect_swift_cli_path(self) -> str:
+        """Auto-detect Swift CLI path based on environment"""
+        possible_paths = [
+            # Environment variable override
+            os.environ.get('SWIFT_CLI_PATH'),
+            # User's Mac development path (from current_work context)
+            '/Users/theostruthers/MicDrop/aupresetgen/.build/release/aupresetgen',
+            # Generic Mac paths
+            '/usr/local/bin/aupresetgen',
+            os.path.expanduser('~/aupresetgen/.build/release/aupresetgen'),
+            # Container fallback path
+            '/app/swift_cli_integration/aupresetgen',
+            # Local build path
+            '/app/aupresetgen/.build/release/aupresetgen'
+        ]
+        
+        for path in possible_paths:
+            if path and os.path.isfile(path) and os.access(path, os.X_OK):
+                return path
+                
+        # Return container placeholder as fallback
+        return '/app/swift_cli_integration/aupresetgen'
+    
+    def _detect_seeds_dir(self) -> Path:
+        """Auto-detect seed files directory based on environment"""
+        possible_paths = [
+            # Environment variable override
+            os.environ.get('SEEDS_DIR'),
+            # User's Mac path (from current_work context)
+            '/Users/theostruthers/Desktop/Plugin Seeds',
+            # Generic Mac paths
+            os.path.expanduser('~/Desktop/Plugin Seeds'),
+            os.path.expanduser('~/Documents/Plugin Seeds'),
+            # Container path
+            '/app/aupreset/seeds'
+        ]
+        
+        for path in possible_paths:
+            if path and os.path.isdir(path):
+                return Path(path)
+                
+        # Return container path as fallback
+        return Path('/app/aupreset/seeds')
+    
+    def _get_logic_preset_dirs(self) -> Dict[str, str]:
+        """Get Logic Pro preset directories based on environment"""
+        if self.is_macos:
+            # Standard Logic Pro preset locations on macOS
+            return {
+                'user': os.path.expanduser('~/Music/Audio Music Apps/Plug-In Settings'),
+                'system': '/Library/Audio/Presets',
+                'custom': os.environ.get('LOGIC_PRESETS_DIR', os.path.expanduser('~/Music/Audio Music Apps/Plug-In Settings'))
+            }
+        else:
+            # For container, use temporary directories
+            return {
+                'user': '/tmp/logic_presets/user',
+                'system': '/tmp/logic_presets/system', 
+                'custom': os.environ.get('LOGIC_PRESETS_DIR', '/tmp/logic_presets/custom')
+            }
         
     def generate_preset(
         self, 
