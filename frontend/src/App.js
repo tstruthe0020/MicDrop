@@ -527,9 +527,51 @@ function App() {
                   <Alert>
                     <Download className="h-4 w-4" />
                     <AlertDescription>
-                      <strong>Installation:</strong> Extract the ZIP file and copy the contents to your Logic Pro User Library:
-                      <br />• Plug-In Settings → ~/Library/Audio/Presets/
-                      <br />• Channel Strip Settings → ~/Library/Application Support/Logic/Channel Strip Settings/
+                      <div className="space-y-3">
+                        <div>
+                          <strong>Installation Instructions:</strong>
+                        </div>
+                        
+                        <div>
+                          <strong>Step 1: Extract the ZIP file</strong>
+                          <br />
+                          Double-click the downloaded ZIP to extract it.
+                        </div>
+                        
+                        <div>
+                          <strong>Step 2: Copy Individual Plugin Presets</strong>
+                          <br />
+                          Copy .aupreset files to: <code>~/Library/Audio/Presets/Apple/[Plugin Name]/</code>
+                          <br />
+                          <em>Example:</em> Copy Channel EQ presets to <code>~/Library/Audio/Presets/Apple/Channel EQ/</code>
+                        </div>
+                        
+                        <div>
+                          <strong>Step 3: Copy Channel Strip Template</strong>
+                          <br />
+                          Copy .cst file to: <code>~/Library/Application Support/Logic/Channel Strip Settings/Audio/</code>
+                        </div>
+                        
+                        <div>
+                          <strong>Terminal Commands (Easiest Method):</strong>
+                          <br />
+                          <code className="text-xs block mt-1 p-2 bg-slate-100 rounded">
+                            cd ~/Downloads/[extracted-folder]/<br />
+                            cp "Plug-In Settings"/*/*.aupreset ~/Library/Audio/Presets/Apple/*/  <br />
+                            cp "Channel Strip Settings/Audio"/*.cst ~/Library/Application\ Support/Logic/Channel\ Strip\ Settings/Audio/
+                          </code>
+                        </div>
+                        
+                        <div>
+                          <strong>Step 4: Restart Logic Pro</strong>
+                          <br />
+                          The presets will appear in Logic's preset menus and channel strip library.
+                        </div>
+                        
+                        <div className="text-amber-600">
+                          <strong>Note:</strong> If folders don't exist, create them first or Logic Pro will create them when you save your first preset manually.
+                        </div>
+                      </div>
                     </AlertDescription>
                   </Alert>
                 </CardContent>
