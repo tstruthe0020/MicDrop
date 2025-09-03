@@ -13,7 +13,7 @@ def test_multi_plugin_zip():
     print("🔍 MULTI-PLUGIN ZIP VERIFICATION")
     print("=" * 40)
     
-    api_url = "https://aupreset-maker.preview.emergentagent.com/api"
+    api_url = "https://au-preset-builder.preview.emergentagent.com/api"
     
     # Test different vibes to see plugin counts
     test_cases = [
@@ -57,7 +57,7 @@ def test_multi_plugin_zip():
                         download_info = data.get("download", {})
                         if download_info:
                             download_url = download_info["url"]
-                            base_url = "https://aupreset-maker.preview.emergentagent.com"
+                            base_url = "https://au-preset-builder.preview.emergentagent.com"
                             
                             zip_response = requests.get(f"{base_url}{download_url}", timeout=30)
                             
@@ -127,7 +127,7 @@ def test_chain_generation_directly():
     print(f"\n🔍 DIRECT CHAIN GENERATION TEST")
     print("=" * 35)
     
-    api_url = "https://aupreset-maker.preview.emergentagent.com/api"
+    api_url = "https://au-preset-builder.preview.emergentagent.com/api"
     
     # Test the recommendation endpoint directly
     test_features = {

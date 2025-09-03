@@ -13,7 +13,7 @@ import sys
 from typing import Dict, Any
 
 class TDRNovaParameterTester:
-    def __init__(self, base_url="https://aupreset-maker.preview.emergentagent.com"):
+    def __init__(self, base_url="https://au-preset-builder.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
