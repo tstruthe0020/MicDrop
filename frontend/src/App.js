@@ -32,6 +32,7 @@ function App() {
   const [installationResult, setInstallationResult] = useState(null);
   const [systemInfo, setSystemInfo] = useState(null);
   const [configLoading, setConfigLoading] = useState(false);
+  const [pluginPaths, setPluginPaths] = useState(null);
   
   const beatInputRef = useRef(null);
   const vocalInputRef = useRef(null);
