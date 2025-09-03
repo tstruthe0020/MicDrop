@@ -1829,6 +1829,10 @@ class VocalChainAPITester:
         print(f"📡 Testing endpoint: {self.api_url}")
         print("=" * 60)
         
+        # PRIORITY 1: Test the critical shutil.copy2() fix first
+        print("\n🎯 PRIORITY TEST: Verifying critical shutil.copy2() fix...")
+        self.test_critical_shutil_copy2_fix()
+        
         # Test 1: Health check
         health_ok = self.test_health_endpoint()
         
