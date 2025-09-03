@@ -345,6 +345,7 @@ def _update_juce_xml_params(preset: Dict[str, Any], new_params: Dict[str, Any]) 
 def _update_binary_params(preset: Dict[str, Any], new_params: Dict[str, Any]) -> Dict[str, Any]:
     """Update binary parameter data (limited support)"""
     new_preset = preset.copy()
+    updated = False
     
     try:
         data = preset['data']
@@ -362,7 +363,6 @@ def _update_binary_params(preset: Dict[str, Any], new_params: Dict[str, Any]) ->
                     floats = list(struct.unpack(f'<{num_floats}f', data))
                     
                     # Try to update known parameter positions
-                    updated = False
                     for param_id, value in new_params.items():
                         # If param_id looks like "param_N", try to update position N
                         if param_id.startswith('param_'):
