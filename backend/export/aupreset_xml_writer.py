@@ -119,11 +119,12 @@ class AUPresetXMLWriter:
         """Write an .aupreset XML file"""
         
         try:
-            if plugin_name not in self.plugin_au_info:
+            # Check both Logic and free plugin AU info
+            au_info = self.all_plugin_au_info.get(plugin_name)
+            if not au_info:
                 logger.error(f"Unknown plugin for .aupreset: {plugin_name}")
+                logger.info(f"Available plugins: {list(self.all_plugin_au_info.keys())}")
                 return False
-            
-            au_info = self.plugin_au_info[plugin_name]
             
             # Convert parameters to AU format
             au_parameters = self._convert_parameters_to_au_format(plugin_name, params)
