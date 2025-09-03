@@ -224,34 +224,110 @@ async def generate_individual_aupreset(plugin_config: Dict[str, Any], preset_nam
         map_file = f"{plugin_name.replace(' ', '')}.map.json"
         map_path = aupreset_dir / "maps" / map_file
         
-        # Create temporary values file from plugin params
+        # Create values mapping from web interface parameters to CLI parameter names
         values_data = {}
-        for param_name, param_value in plugin_config.get("params", {}).items():
-            # Convert parameter names to match our mapping format
-            if param_name == "bypass":
-                values_data["Bypass"] = param_value
-            elif "gain" in param_name.lower() and "1" in param_name:
-                values_data["Gain_1"] = param_value
-            elif "freq" in param_name.lower() and "1" in param_name:
-                values_data["Frequency_1"] = param_value
-            elif "threshold" in param_name.lower():
-                values_data["Threshold"] = param_value
-            elif "ratio" in param_name.lower():
-                values_data["Ratio"] = param_value
-            elif "attack" in param_name.lower():
-                values_data["Attack"] = param_value
-            elif "release" in param_name.lower():
-                values_data["Release"] = param_value
-            # Add more parameter mappings as needed
-            else:
-                # Use a generic mapping
+        web_params = plugin_config.get("params", {})
+        
+        # Plugin-specific parameter mapping
+        if plugin_name == "MEqualizer":
+            param_mapping = {
+                "bypass": "Bypass",
+                "high_pass_enabled": "High_Pass_Enable", 
+                "high_pass_freq": "High_Pass_Frequency",
+                "high_pass_q": "High_Pass_Q",
+                "band_1_enabled": "Band_1_Enable",
+                "band_1_freq": "Band_1_Frequency",
+                "band_1_gain": "Band_1_Gain",
+                "band_1_q": "Band_1_Q",
+                "band_1_type": "Band_1_Type",
+                "band_2_enabled": "Band_2_Enable",
+                "band_2_freq": "Band_2_Frequency", 
+                "band_2_gain": "Band_2_Gain",
+                "band_2_q": "Band_2_Q",
+                "band_2_type": "Band_2_Type",
+                "band_3_enabled": "Band_3_Enable",
+                "band_3_freq": "Band_3_Frequency",
+                "band_3_gain": "Band_3_Gain",
+                "band_3_q": "Band_3_Q",
+                "band_3_type": "Band_3_Type"
+            }
+            
+            # Convert filter type strings to numbers
+            filter_type_mapping = {
+                "bell": 0,
+                "high_shelf": 1, 
+                "low_shelf": 2,
+                "high_pass": 6,
+                "low_pass": 7
+            }
+            
+        elif plugin_name == "TDR Nova":
+            param_mapping = {
+                "bypass": "Bypass",
+                "band_1_selected": "Band_1_Selected",
+                "band_1_active": "Band_1_Active", 
+                "gain_1": "Gain_1",
+                "q_factor_1": "Q_Factor_1",
+                "frequency_1": "Frequency_1",
+                "filter_type_1": "Filter_Type_1"
+            }
+            filter_type_mapping = {}
+            
+        elif plugin_name == "MCompressor":
+            param_mapping = {
+                "bypass": "Bypass",
+                "threshold": "Threshold",
+                "ratio": "Ratio", 
+                "attack": "Attack",
+                "release": "Release",
+                "knee": "Knee",
+                "makeup_gain": "Makeup_Gain",
+                "mix": "Mix"
+            }
+            filter_type_mapping = {}
+            
+        elif plugin_name == "1176 Compressor":
+            param_mapping = {
+                "bypass": "Bypass",
+                "input_gain": "Input_Gain",
+                "output_gain": "Output_Gain",
+                "attack": "Attack",
+                "release": "Release",
+                "ratio_4to1": "Ratio_4to1",
+                "vintage_mode": "Vintage_Mode",
+                "mix": "Mix"
+            }
+            filter_type_mapping = {}
+            
+        else:
+            # Generic mapping for other plugins
+            param_mapping = {}
+            filter_type_mapping = {}
+            for param_name in web_params.keys():
                 formatted_name = param_name.replace("_", " ").title().replace(" ", "_")
-                values_data[formatted_name] = param_value
+                param_mapping[param_name] = formatted_name
+        
+        # Apply parameter mapping
+        for web_param, value in web_params.items():
+            if web_param in param_mapping:
+                cli_param = param_mapping[web_param]
+                
+                # Handle special value conversions
+                if isinstance(value, str) and value in filter_type_mapping:
+                    values_data[cli_param] = filter_type_mapping[value]
+                else:
+                    values_data[cli_param] = value
+            else:
+                # Fallback generic mapping
+                formatted_name = web_param.replace("_", " ").title().replace(" ", "_")
+                values_data[formatted_name] = value
         
         # Create temporary values file
         temp_values_path = aupreset_dir / f"temp_values_{plugin_name.replace(' ', '_')}.json"
         with open(temp_values_path, 'w') as f:
             json.dump(values_data, f, indent=2)
+        
+        logger.info(f"Created temp values for {plugin_name}: {values_data}")
         
         try:
             # Run the CLI tool
@@ -272,9 +348,12 @@ async def generate_individual_aupreset(plugin_config: Dict[str, Any], preset_nam
                 if generated_files:
                     import shutil
                     shutil.move(str(generated_files[0]), output_path)
+                    logger.info(f"Successfully generated individual preset for {plugin_name}")
                     return True
+                else:
+                    logger.error(f"No .aupreset files found after CLI generation for {plugin_name}")
             else:
-                logger.error(f"CLI tool failed: {result.stderr}")
+                logger.error(f"CLI tool failed for {plugin_name}: {result.stderr}")
                 
         finally:
             # Cleanup temp values file
@@ -284,7 +363,7 @@ async def generate_individual_aupreset(plugin_config: Dict[str, Any], preset_nam
         return False
         
     except Exception as e:
-        logger.error(f"Failed to generate individual preset: {str(e)}")
+        logger.error(f"Failed to generate individual preset for {plugin_name}: {str(e)}")
         return False
 
 @api_router.post("/all-in-one")
