@@ -652,9 +652,9 @@ function App() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-center gap-4">
-                    <Button onClick={downloadPreset} size="lg" className="bg-green-600 hover:bg-green-700">
+                    <Button onClick={installToLogic} size="lg" className="bg-green-600 hover:bg-green-700">
                       <Download className="w-4 h-4 mr-2" />
-                      Download Presets
+                      Install to Logic Pro
                     </Button>
                     <Button onClick={resetForm} variant="outline" size="lg">
                       Process Another
