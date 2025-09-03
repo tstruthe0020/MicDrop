@@ -452,17 +452,49 @@ function App() {
                 <CardContent>
                   <div className="space-y-2">
                     {chain.plugins.map((plugin, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                        <Badge variant="outline">{index + 1}</Badge>
-                        <div className="flex-1">
-                          <div className="font-medium">{plugin.plugin}</div>
-                          {plugin.variant && (
-                            <div className="text-sm text-slate-600">{plugin.variant}</div>
-                          )}
+                      <div key={index} className="p-4 bg-slate-50 rounded-lg border">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Badge variant="outline">{index + 1}</Badge>
+                          <div className="flex-1">
+                            <div className="font-medium">{plugin.plugin}</div>
+                            {plugin.variant && (
+                              <div className="text-sm text-slate-600">{plugin.variant}</div>
+                            )}
+                            {plugin.model && (
+                              <div className="text-sm text-blue-600">Model: {plugin.model}</div>
+                            )}
+                          </div>
+                          <Badge variant="secondary">
+                            {Object.keys(plugin.params).length} params
+                          </Badge>
                         </div>
-                        <Badge variant="secondary">
-                          {Object.keys(plugin.params).length} params
-                        </Badge>
+                        
+                        {/* Parameter Details */}
+                        <div className="ml-8 space-y-1">
+                          {Object.entries(plugin.params).map(([paramName, value]) => (
+                            <div key={paramName} className="flex justify-between text-sm">
+                              <span className="text-slate-600 capitalize">
+                                {paramName.replace(/_/g, ' ')}:
+                              </span>
+                              <span className="font-mono">
+                                {typeof value === 'boolean' 
+                                  ? (value ? 'On' : 'Off')
+                                  : typeof value === 'number'
+                                  ? (
+                                      paramName.includes('freq') ? `${value.toFixed(0)} Hz` :
+                                      paramName.includes('gain') || paramName.includes('threshold') || paramName.includes('ceiling') ? `${value.toFixed(1)} dB` :
+                                      paramName.includes('ratio') ? `${value.toFixed(1)}:1` :
+                                      paramName.includes('attack') || paramName.includes('release') || paramName.includes('delay') ? `${value.toFixed(1)} ms` :
+                                      paramName.includes('mix') && value <= 1 ? `${(value * 100).toFixed(0)}%` :
+                                      paramName.includes('mix') && value > 1 ? `${value.toFixed(1)} dB` :
+                                      value.toFixed(2)
+                                    )
+                                  : String(value)
+                                }
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
