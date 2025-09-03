@@ -926,6 +926,13 @@ function App() {
                   >
                     {configLoading ? "Loading..." : "Refresh System Info"}
                   </Button>
+                  <Button 
+                    onClick={fetchPluginPaths} 
+                    disabled={configLoading}
+                    variant="outline"
+                  >
+                    {configLoading ? "Loading..." : "Load Plugin Paths"}
+                  </Button>
                 </div>
 
                 {systemInfo && (
