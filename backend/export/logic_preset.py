@@ -266,6 +266,153 @@ class LogicPresetExporter:
         key_elem = ET.SubElement(parent, "key")
         key_elem.text = key
     
+    async def _generate_user_plugin_preset(self, output_path, plugin_name, preset_name, params):
+        """Generate preset using CLI system for user's 9 plugins"""
+        try:
+            import sys
+            import subprocess
+            import json
+            from pathlib import Path
+            
+            # Plugin config for CLI system
+            plugin_config = {
+                "plugin": plugin_name,
+                "params": params
+            }
+            
+            # Map plugin names to seed files
+            plugin_mapping = {
+                "MEqualizer": "MEqualizerSeed.aupreset",
+                "MCompressor": "MCompressorSeed.aupreset", 
+                "1176 Compressor": "1176CompressorSeed.aupreset",
+                "TDR Nova": "TDRNovaSeed.aupreset",
+                "MAutoPitch": "MAutoPitchSeed.aupreset",
+                "Graillon 3": "Graillon3Seed.aupreset",
+                "Fresh Air": "FreshAirSeed.aupreset",
+                "LA-LA": "LALASeed.aupreset",
+                "MConvolutionEZ": "MConvolutionEZSeed.aupreset"
+            }
+            
+            seed_file = plugin_mapping.get(plugin_name)
+            if not seed_file:
+                logger.error(f"No seed file found for plugin: {plugin_name}")
+                return False
+            
+            # Create paths
+            aupreset_dir = Path("/app/aupreset")
+            seed_path = aupreset_dir / "seeds" / seed_file
+            map_file = f"{plugin_name.replace(' ', '')}.map.json"
+            map_path = aupreset_dir / "maps" / map_file
+            
+            # Create values mapping (same logic as individual export)
+            values_data = self._map_web_params_to_cli_params(plugin_name, params)
+            
+            # Create temporary values file
+            temp_values_path = aupreset_dir / f"temp_values_{plugin_name.replace(' ', '_')}.json"
+            with open(temp_values_path, 'w') as f:
+                json.dump(values_data, f, indent=2)
+            
+            try:
+                # Run the CLI tool
+                cmd = [
+                    sys.executable, "make_aupreset.py",
+                    "--seed", str(seed_path),
+                    "--map", str(map_path),
+                    "--values", str(temp_values_path),
+                    "--preset-name", preset_name,
+                    "--out", str(Path(output_path).parent)
+                ]
+                
+                result = subprocess.run(cmd, cwd=str(aupreset_dir), capture_output=True, text=True)
+                
+                if result.returncode == 0:
+                    # Find the generated file and move it to the expected output path
+                    generated_files = list(Path(output_path).parent.glob("**/*.aupreset"))
+                    if generated_files:
+                        import shutil
+                        shutil.move(str(generated_files[0]), str(output_path))
+                        logger.info(f"Successfully generated preset for {plugin_name}")
+                        return True
+                else:
+                    logger.error(f"CLI tool failed for {plugin_name}: {result.stderr}")
+                    
+            finally:
+                # Cleanup temp values file
+                if temp_values_path.exists():
+                    temp_values_path.unlink()
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Failed to generate user plugin preset for {plugin_name}: {str(e)}")
+            return False
+    
+    def _map_web_params_to_cli_params(self, plugin_name, web_params):
+        """Map web interface parameter names to CLI parameter names"""
+        values_data = {}
+        
+        if plugin_name == "MEqualizer":
+            param_mapping = {
+                "bypass": "Bypass",
+                "high_pass_enabled": "High_Pass_Enable", 
+                "high_pass_freq": "High_Pass_Frequency",
+                "high_pass_q": "High_Pass_Q",
+                "band_1_enabled": "Band_1_Enable",
+                "band_1_freq": "Band_1_Frequency",
+                "band_1_gain": "Band_1_Gain",
+                "band_1_q": "Band_1_Q",
+                "band_1_type": "Band_1_Type",
+                "band_2_enabled": "Band_2_Enable",
+                "band_2_freq": "Band_2_Frequency", 
+                "band_2_gain": "Band_2_Gain",
+                "band_2_q": "Band_2_Q",
+                "band_2_type": "Band_2_Type"
+            }
+            
+            filter_type_mapping = {
+                "bell": 0,
+                "high_shelf": 1, 
+                "low_shelf": 2,
+                "high_pass": 6,
+                "low_pass": 7
+            }
+            
+        elif plugin_name == "TDR Nova":
+            param_mapping = {
+                "bypass": "Bypass",
+                "band_1_selected": "Band_1_Selected",
+                "band_1_active": "Band_1_Active", 
+                "gain_1": "Gain_1",
+                "q_factor_1": "Q_Factor_1",
+                "frequency_1": "Frequency_1"
+            }
+            filter_type_mapping = {}
+            
+        else:
+            # Generic mapping for other plugins
+            param_mapping = {}
+            filter_type_mapping = {}
+            for param_name in web_params.keys():
+                formatted_name = param_name.replace("_", " ").title().replace(" ", "_")
+                param_mapping[param_name] = formatted_name
+        
+        # Apply parameter mapping
+        for web_param, value in web_params.items():
+            if web_param in param_mapping:
+                cli_param = param_mapping[web_param]
+                
+                # Handle special value conversions
+                if isinstance(value, str) and value in filter_type_mapping:
+                    values_data[cli_param] = filter_type_mapping[value]
+                else:
+                    values_data[cli_param] = value
+            else:
+                # Fallback generic mapping
+                formatted_name = web_param.replace("_", " ").title().replace(" ", "_")
+                values_data[formatted_name] = value
+        
+        return values_data
+
     def _create_zip_file(self, zip_path: str, source_dir: Path):
         """Create ZIP file with preset package"""
         
