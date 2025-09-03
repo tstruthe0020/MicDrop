@@ -147,6 +147,145 @@ async def export_logic_presets(request: ExportRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
+@api_router.post("/export/individual-plugin")
+async def export_individual_plugin(request: dict):
+    """Export individual plugin preset"""
+    try:
+        plugin_config = request.get('plugin')
+        preset_name = request.get('preset_name', 'Individual_Plugin_Preset')
+        
+        if not plugin_config:
+            raise HTTPException(status_code=400, detail="Plugin configuration required")
+        
+        # Create temporary directory for individual export
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            
+            plugin_name = plugin_config["plugin"]
+            
+            # Generate individual preset using the CLI tool
+            plugin_preset_path = temp_path / f"{preset_name}_{plugin_name.replace(' ', '_')}.aupreset"
+            
+            # Use our working CLI system to generate the preset
+            success = await generate_individual_aupreset(
+                plugin_config, preset_name, str(plugin_preset_path)
+            )
+            
+            if not success or not plugin_preset_path.exists():
+                raise HTTPException(status_code=500, detail=f"Failed to generate preset for {plugin_name}")
+            
+            # Read the generated preset file
+            with open(plugin_preset_path, 'rb') as preset_file:
+                preset_data = preset_file.read()
+                preset_base64 = base64.b64encode(preset_data).decode('utf-8')
+            
+            return {
+                "plugin_name": plugin_name,
+                "preset_name": preset_name,
+                "preset_base64": preset_base64,
+                "filename": f"{preset_name}_{plugin_name.replace(' ', '_')}.aupreset"
+            }
+            
+    except Exception as e:
+        logger.error(f"Individual plugin export failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+async def generate_individual_aupreset(plugin_config: Dict[str, Any], preset_name: str, output_path: str) -> bool:
+    """Generate individual .aupreset file using our working CLI system"""
+    try:
+        import sys
+        import subprocess
+        import json
+        
+        plugin_name = plugin_config["plugin"]
+        
+        # Map plugin names to our seed files
+        plugin_mapping = {
+            "MEqualizer": "MEqualizerSeed.aupreset",
+            "MCompressor": "MCompressorSeed.aupreset", 
+            "1176 Compressor": "1176CompressorSeed.aupreset",
+            "TDR Nova": "TDRNovaSeed.aupreset",
+            "MAutoPitch": "MAutoPitchSeed.aupreset",
+            "Graillon 3": "Graillon3Seed.aupreset",
+            "Fresh Air": "FreshAirSeed.aupreset",
+            "LA-LA": "LALASeed.aupreset",
+            "MConvolutionEZ": "MConvolutionEZSeed.aupreset"
+        }
+        
+        seed_file = plugin_mapping.get(plugin_name)
+        if not seed_file:
+            logger.error(f"No seed file found for plugin: {plugin_name}")
+            return False
+        
+        # Create paths
+        aupreset_dir = Path("/app/aupreset")
+        seed_path = aupreset_dir / "seeds" / seed_file
+        map_file = f"{plugin_name.replace(' ', '')}.map.json"
+        map_path = aupreset_dir / "maps" / map_file
+        
+        # Create temporary values file from plugin params
+        values_data = {}
+        for param_name, param_value in plugin_config.get("params", {}).items():
+            # Convert parameter names to match our mapping format
+            if param_name == "bypass":
+                values_data["Bypass"] = param_value
+            elif "gain" in param_name.lower() and "1" in param_name:
+                values_data["Gain_1"] = param_value
+            elif "freq" in param_name.lower() and "1" in param_name:
+                values_data["Frequency_1"] = param_value
+            elif "threshold" in param_name.lower():
+                values_data["Threshold"] = param_value
+            elif "ratio" in param_name.lower():
+                values_data["Ratio"] = param_value
+            elif "attack" in param_name.lower():
+                values_data["Attack"] = param_value
+            elif "release" in param_name.lower():
+                values_data["Release"] = param_value
+            # Add more parameter mappings as needed
+            else:
+                # Use a generic mapping
+                formatted_name = param_name.replace("_", " ").title().replace(" ", "_")
+                values_data[formatted_name] = param_value
+        
+        # Create temporary values file
+        temp_values_path = aupreset_dir / f"temp_values_{plugin_name.replace(' ', '_')}.json"
+        with open(temp_values_path, 'w') as f:
+            json.dump(values_data, f, indent=2)
+        
+        try:
+            # Run the CLI tool
+            cmd = [
+                sys.executable, "make_aupreset.py",
+                "--seed", str(seed_path),
+                "--map", str(map_path),
+                "--values", str(temp_values_path),
+                "--preset-name", preset_name,
+                "--out", str(Path(output_path).parent)
+            ]
+            
+            result = subprocess.run(cmd, cwd=str(aupreset_dir), capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                # Find the generated file and move it to the expected output path
+                generated_files = list(Path(output_path).parent.glob("**/*.aupreset"))
+                if generated_files:
+                    import shutil
+                    shutil.move(str(generated_files[0]), output_path)
+                    return True
+            else:
+                logger.error(f"CLI tool failed: {result.stderr}")
+                
+        finally:
+            # Cleanup temp values file
+            if temp_values_path.exists():
+                temp_values_path.unlink()
+        
+        return False
+        
+    except Exception as e:
+        logger.error(f"Failed to generate individual preset: {str(e)}")
+        return False
+
 @api_router.post("/all-in-one")
 async def all_in_one_processing(
     beat_file: UploadFile = File(..., description="Beat audio file (WAV/MP3)"),
