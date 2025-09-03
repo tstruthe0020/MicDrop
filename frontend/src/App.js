@@ -447,9 +447,60 @@ function App() {
                     <Settings className="w-5 h-5" />
                     Generated Vocal Chain
                   </CardTitle>
-                  <CardDescription>{chain.name}</CardDescription>
+                  <CardDescription>
+                    {chain.name} • {chain.genre && `${chain.genre} Style`} • Professional Free Plugins
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* System Info */}
+                  {chain.system_info && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="font-semibold text-blue-800">{chain.system_info.version}</span>
+                      </div>
+                      <p className="text-sm text-blue-700 mb-2">{chain.system_info.upgrade_reason}</p>
+                      {chain.system_info.benefits && (
+                        <ul className="text-xs text-blue-600 space-y-1">
+                          {chain.system_info.benefits.map((benefit, idx) => (
+                            <li key={idx}>• {benefit}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Required Plugins Alert */}
+                  {chain.required_plugins && (
+                    <Alert className="mb-4">
+                      <Download className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="space-y-2">
+                          <strong>⚠️ Required Free Plugins:</strong>
+                          <div className="text-xs space-y-1">
+                            {chain.required_plugins.map((plugin, idx) => (
+                              <div key={idx} className="flex justify-between items-center">
+                                <span><strong>{plugin.name}</strong> - {plugin.purpose}</span>
+                                <a 
+                                  href={plugin.download} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 underline"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-amber-600 mt-2">
+                            📥 Install these free plugins first, then download and install the presets below.
+                          </p>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Plugin Chain */}
                   <div className="space-y-2">
                     {chain.plugins.map((plugin, index) => (
                       <div key={index} className="p-4 bg-slate-50 rounded-lg border">
@@ -457,6 +508,9 @@ function App() {
                           <Badge variant="outline">{index + 1}</Badge>
                           <div className="flex-1">
                             <div className="font-medium">{plugin.plugin}</div>
+                            {plugin.role && (
+                              <div className="text-sm text-blue-600 font-medium">{plugin.role}</div>
+                            )}
                             {plugin.variant && (
                               <div className="text-sm text-slate-600">{plugin.variant}</div>
                             )}
