@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>data</key>
+	<dict>
+		<key>0</key>
+		<false/>
+		<key>1</key>
+		<real>0.6</real>
+		<key>2</key>
+		<real>0.25</real>
+		<key>3</key>
+		<real>0.1</real>
+		<key>4</key>
+		<real>0.5</real>
+		<key>5</key>
+		<real>0.0</real>
+	</dict>
+	<key>manufacturer</key>
+	<integer>1634758764</integer>
+	<key>name</key>
+	<string>Test Compressor</string>
+	<key>subtype</key>
+	<integer>1668114292</integer>
+	<key>type</key>
+	<integer>1635083896</integer>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>
