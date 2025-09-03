@@ -329,7 +329,7 @@ class ChainGenerator:
     
     def _generate_tape_delay(self, features: Dict[str, Any], vibe: str) -> Dict[str, Any]:
         """Generate Tape Delay for slap/doubling effect"""
-        bpm = features.bpm
+        bpm = features['bpm']
         
         # Note value based on tempo
         if bpm > 140:
