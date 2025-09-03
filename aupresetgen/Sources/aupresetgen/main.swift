@@ -452,7 +452,7 @@ struct AUInfo {
 }
 
 struct ValuesData: Codable {
-    let params: [String: AnyCodable]
+    let params: [String: Double]
 }
 
 struct AnyCodable: Codable {
