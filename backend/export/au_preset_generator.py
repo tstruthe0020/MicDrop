@@ -741,6 +741,10 @@ class AUPresetGenerator:
                                 'file_path': preset_files[0]
                             })
                         else:
+                            # Enhanced debugging: list all files in temp_dir to understand the issue
+                            all_files = list(Path(temp_dir).rglob("*"))
+                            logger.error(f"Preset file not found for {plugin_name}. Expected: {preset_name}.aupreset")
+                            logger.error(f"Files in temp_dir: {[f.name for f in all_files if f.is_file()]}")
                             errors.append(f"Preset file not found for {plugin_name}")
                     else:
                         errors.append(f"Failed to generate {plugin_name}: {stderr}")
