@@ -705,24 +705,38 @@ class AUPresetGenerator:
                     parameters = plugin_data.get('params', {})
                     preset_name = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}"
                     
-                    # Convert parameters using the centralized function
-                    def convert_parameters(backend_params):
-                        """Local copy of parameter conversion for Swift CLI compatibility"""
+                    # Convert parameters using plugin-specific conversion
+                    def convert_parameters(backend_params, plugin_name=None):
+                        """Local copy of parameter conversion with plugin-specific handling"""
                         converted = {}
-                        for key, value in backend_params.items():
-                            if isinstance(value, bool):
-                                converted[key] = 1.0 if value else 0.0
-                            elif isinstance(value, str):
-                                string_mappings = {
-                                    'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
-                                    'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
-                                    'notch': 6.0
-                                }
-                                converted[key] = string_mappings.get(value, 0.0)
-                            else:
-                                converted[key] = float(value)
+                        
+                        # TDR Nova uses special string format for boolean parameters
+                        if plugin_name == "TDR Nova":
+                            for key, value in backend_params.items():
+                                if isinstance(value, bool):
+                                    # TDR Nova uses "On"/"Off" for boolean parameters
+                                    converted[key] = "On" if value else "Off"
+                                elif isinstance(value, str):
+                                    # Pass string values through (they might already be "On"/"Off")
+                                    converted[key] = value
+                                else:
+                                    converted[key] = float(value)
+                        else:
+                            # Standard conversion for other plugins
+                            for key, value in backend_params.items():
+                                if isinstance(value, bool):
+                                    converted[key] = 1.0 if value else 0.0
+                                elif isinstance(value, str):
+                                    string_mappings = {
+                                        'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
+                                        'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
+                                        'notch': 6.0
+                                    }
+                                    converted[key] = string_mappings.get(value, 0.0)
+                                else:
+                                    converted[key] = float(value)
                         return converted
-                    converted_params = convert_parameters(parameters)
+                    converted_params = convert_parameters(parameters, plugin_name)
                     
                     # Generate individual preset (disable cleanup during chain generation)
                     success, stdout, stderr = self.generate_preset(
