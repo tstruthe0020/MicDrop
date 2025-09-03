@@ -717,7 +717,7 @@ class AUPresetGenerator:
                         return converted
                     converted_params = convert_parameters(parameters)
                     
-                    # Generate individual preset
+                    # Generate individual preset (disable cleanup during chain generation)
                     success, stdout, stderr = self.generate_preset(
                         plugin_name=plugin_name,
                         parameters=converted_params,
