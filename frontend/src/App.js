@@ -249,6 +249,108 @@ function App() {
     }
   };
 
+  const fetchPluginPaths = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/plugin-paths`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setPluginPaths(result.plugin_paths);
+      } else {
+        toast({
+          title: "Plugin Paths Error",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Plugin paths error:', error);
+      toast({
+        title: "Plugin Paths Error",
+        description: "Failed to fetch plugin paths",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const configurePluginPaths = async (pluginPaths) => {
+    setConfigLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/configure-plugin-paths`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plugin_paths: pluginPaths })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "✅ Plugin Paths Updated!",
+          description: result.message,
+          className: "border-green-200 bg-green-50"
+        });
+        
+        // Refresh plugin paths
+        await fetchPluginPaths();
+      } else {
+        toast({
+          title: "Configuration Failed",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Plugin paths configuration error:', error);
+      toast({
+        title: "Configuration Error",
+        description: "Failed to configure plugin paths",
+        variant: "destructive"
+      });
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
+  const resetPluginPath = async (pluginName) => {
+    setConfigLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/reset-plugin-path`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plugin_name: pluginName })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "✅ Path Reset!",
+          description: result.message,
+          className: "border-green-200 bg-green-50"
+        });
+        
+        // Refresh plugin paths
+        await fetchPluginPaths();
+      } else {
+        toast({
+          title: "Reset Failed",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Plugin path reset error:', error);
+      toast({
+        title: "Reset Error",
+        description: "Failed to reset plugin path",
+        variant: "destructive"
+      });
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
   const configurePaths = async (pathConfig) => {
     setConfigLoading(true);
     try {
