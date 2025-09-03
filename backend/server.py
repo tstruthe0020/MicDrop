@@ -232,7 +232,7 @@ async def install_presets_to_logic(request: RecommendRequest) -> Dict[str, Any]:
                     plugin_name=plugin_name,
                     parameters=parameters,
                     preset_name=preset_name,
-                    output_dir="/Library/Audio/Presets",  # Direct to Logic Pro
+                    output_dir=None,  # Use default Logic Pro directory
                     verbose=True
                 )
                 
