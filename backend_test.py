@@ -535,6 +535,166 @@ class VocalChainAPITester:
             self.log_test("All-in-One Pipeline", False, f"Exception: {str(e)}")
             return None
 
+    def test_individual_plugin_export(self):
+        """Test /export/individual-plugin endpoint with MEqualizer and TDR Nova"""
+        try:
+            # Test Case 1: MEqualizer (binary format)
+            mequalizer_config = {
+                "plugin": "MEqualizer",
+                "params": {
+                    "bypass": False,
+                    "gain_1": -2.5,
+                    "freq_1": 300.0,
+                    "q_1": 1.2,
+                    "gain_2": 1.8,
+                    "freq_2": 2500.0,
+                    "q_2": 0.8
+                }
+            }
+            
+            request_data = {
+                "plugin": mequalizer_config,
+                "preset_name": "Test_MEqualizer_Preset"
+            }
+            
+            response = requests.post(f"{self.api_url}/export/individual-plugin", 
+                                   json=request_data, timeout=20)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['plugin_name', 'preset_name', 'preset_base64', 'filename']
+                
+                missing_fields = [field for field in required_fields if field not in data]
+                if not missing_fields:
+                    # Verify plugin name
+                    if data['plugin_name'] == 'MEqualizer':
+                        # Verify filename format
+                        expected_filename = "Test_MEqualizer_Preset_MEqualizer.aupreset"
+                        if data['filename'] == expected_filename:
+                            # Verify base64 data is valid
+                            try:
+                                import base64
+                                decoded_data = base64.b64decode(data['preset_base64'])
+                                if len(decoded_data) > 0:
+                                    self.log_test("Individual Plugin Export - MEqualizer", True, 
+                                                f"Binary preset generated, size: {len(decoded_data)} bytes")
+                                else:
+                                    self.log_test("Individual Plugin Export - MEqualizer", False, 
+                                                "Empty base64 data")
+                            except Exception as decode_error:
+                                self.log_test("Individual Plugin Export - MEqualizer", False, 
+                                            f"Invalid base64 data: {decode_error}")
+                        else:
+                            self.log_test("Individual Plugin Export - MEqualizer", False, 
+                                        f"Wrong filename: got '{data['filename']}', expected '{expected_filename}'")
+                    else:
+                        self.log_test("Individual Plugin Export - MEqualizer", False, 
+                                    f"Wrong plugin name: {data['plugin_name']}")
+                else:
+                    self.log_test("Individual Plugin Export - MEqualizer", False, 
+                                f"Missing fields: {missing_fields}")
+            else:
+                self.log_test("Individual Plugin Export - MEqualizer", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+            
+            # Test Case 2: TDR Nova (XML format)
+            tdr_nova_config = {
+                "plugin": "TDR Nova",
+                "params": {
+                    "bypass": False,
+                    "band_1_frequency": 250.0,
+                    "band_1_gain": -3.0,
+                    "band_1_q": 1.5,
+                    "band_2_frequency": 1500.0,
+                    "band_2_gain": 2.2,
+                    "band_2_q": 0.9,
+                    "threshold": -12.0,
+                    "ratio": 2.5
+                }
+            }
+            
+            request_data = {
+                "plugin": tdr_nova_config,
+                "preset_name": "Test_TDR_Nova_Preset"
+            }
+            
+            response = requests.post(f"{self.api_url}/export/individual-plugin", 
+                                   json=request_data, timeout=20)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['plugin_name', 'preset_name', 'preset_base64', 'filename']
+                
+                missing_fields = [field for field in required_fields if field not in data]
+                if not missing_fields:
+                    # Verify plugin name
+                    if data['plugin_name'] == 'TDR Nova':
+                        # Verify filename format
+                        expected_filename = "Test_TDR_Nova_Preset_TDR_Nova.aupreset"
+                        if data['filename'] == expected_filename:
+                            # Verify base64 data is valid
+                            try:
+                                import base64
+                                decoded_data = base64.b64decode(data['preset_base64'])
+                                if len(decoded_data) > 0:
+                                    self.log_test("Individual Plugin Export - TDR Nova", True, 
+                                                f"XML preset generated, size: {len(decoded_data)} bytes")
+                                else:
+                                    self.log_test("Individual Plugin Export - TDR Nova", False, 
+                                                "Empty base64 data")
+                            except Exception as decode_error:
+                                self.log_test("Individual Plugin Export - TDR Nova", False, 
+                                            f"Invalid base64 data: {decode_error}")
+                        else:
+                            self.log_test("Individual Plugin Export - TDR Nova", False, 
+                                        f"Wrong filename: got '{data['filename']}', expected '{expected_filename}'")
+                    else:
+                        self.log_test("Individual Plugin Export - TDR Nova", False, 
+                                    f"Wrong plugin name: {data['plugin_name']}")
+                else:
+                    self.log_test("Individual Plugin Export - TDR Nova", False, 
+                                f"Missing fields: {missing_fields}")
+            else:
+                self.log_test("Individual Plugin Export - TDR Nova", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+            
+            # Test Case 3: Error handling - Invalid plugin
+            invalid_request = {
+                "plugin": {
+                    "plugin": "NonExistentPlugin",
+                    "params": {"test": "value"}
+                },
+                "preset_name": "Test_Invalid"
+            }
+            
+            response = requests.post(f"{self.api_url}/export/individual-plugin", 
+                                   json=invalid_request, timeout=10)
+            
+            if response.status_code in [400, 500]:  # Expected error codes
+                self.log_test("Individual Plugin Export - Error Handling", True, 
+                            f"Correctly handled invalid plugin: {response.status_code}")
+            else:
+                self.log_test("Individual Plugin Export - Error Handling", False, 
+                            f"Unexpected status for invalid plugin: {response.status_code}")
+            
+            # Test Case 4: Error handling - Missing plugin config
+            missing_config_request = {
+                "preset_name": "Test_Missing_Config"
+            }
+            
+            response = requests.post(f"{self.api_url}/export/individual-plugin", 
+                                   json=missing_config_request, timeout=10)
+            
+            if response.status_code in [400, 422]:  # Expected error codes
+                self.log_test("Individual Plugin Export - Missing Config", True, 
+                            f"Correctly handled missing config: {response.status_code}")
+            else:
+                self.log_test("Individual Plugin Export - Missing Config", False, 
+                            f"Unexpected status for missing config: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Individual Plugin Export", False, f"Exception: {str(e)}")
+
     def test_error_handling(self):
         """Test API error handling with invalid inputs"""
         try:
