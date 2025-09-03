@@ -5,32 +5,28 @@
 	<key>data</key>
 	<dict>
 		<key>10</key>
-		<real>4.385924063490245e-41</real>
+		<real>-0.024762282148003578</real>
 		<key>11</key>
 		<real>0.0</real>
 		<key>12</key>
 		<real>0.0</real>
 		<key>13</key>
-		<real>4.600602988224807e-41</real>
+		<real>0.0</real>
 		<key>14</key>
-		<real>4.600602988224807e-41</real>
+		<real>0.0</real>
 		<key>15</key>
-		<real>0.0</real>
-		<key>16</key>
-		<real>0.0</real>
-		<key>17</key>
-		<real>0.0</real>
-		<key>8</key>
-		<real>5.74868682004613e-41</real>
-		<key>9</key>
 		<real>4.600602988224807e-41</real>
+		<key>8</key>
+		<real>8.880028368426366e-42</real>
+		<key>9</key>
+		<real>0.0</real>
 	</dict>
 	<key>manufacturer</key>
 	<string>appl</string>
 	<key>name</key>
-	<string>Limiter Default</string>
+	<string>DeEsser2 Default</string>
 	<key>subtype</key>
-	<string>lmtr</string>
+	<string>des2</string>
 	<key>type</key>
 	<string>aufx</string>
 	<key>version</key>

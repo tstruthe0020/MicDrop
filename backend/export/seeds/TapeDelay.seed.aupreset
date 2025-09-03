@@ -4,67 +4,55 @@
 <dict>
 	<key>data</key>
 	<dict>
-		<key>10</key>
-		<real>2.735614862054908e-41</real>
 		<key>11</key>
-		<real>0.0</real>
+		<real>5.933532100475216e-39</real>
 		<key>12</key>
-		<real>4.172329326479485e-08</real>
+		<real>5.748826949892562e-41</real>
 		<key>13</key>
 		<real>4.600602988224807e-41</real>
 		<key>14</key>
-		<real>8.96831017167883e-44</real>
+		<real>4.600743118071239e-41</real>
 		<key>15</key>
 		<real>0.0</real>
 		<key>16</key>
-		<real>0.0</real>
+		<real>1.157192271839434e-41</real>
 		<key>17</key>
 		<real>0.0</real>
 		<key>18</key>
 		<real>0.0</real>
-		<key>19</key>
-		<real>0.0</real>
 		<key>20</key>
-		<real>4.600602988224807e-41</real>
+		<real>0.0</real>
 		<key>21</key>
 		<real>0.0</real>
 		<key>22</key>
-		<real>0.0</real>
+		<real>8.61882633467622e-41</real>
 		<key>23</key>
 		<real>0.0</real>
 		<key>24</key>
-		<real>7.901781910481211e-41</real>
+		<real>0.0</real>
 		<key>25</key>
-		<real>4.600602988224807e-41</real>
+		<real>0.0</real>
 		<key>26</key>
-		<real>0.0</real>
+		<real>5.031502266004688e-41</real>
 		<key>27</key>
-		<real>0.0</real>
+		<real>8.618686204829787e-41</real>
 		<key>28</key>
 		<real>0.0</real>
 		<key>29</key>
-		<real>4.600602988224807e-41</real>
+		<real>-0.00012158092431491241</real>
 		<key>30</key>
 		<real>0.0</real>
-		<key>31</key>
-		<real>7.183896707207607e-41</real>
-		<key>32</key>
-		<real>0.0</real>
-		<key>33</key>
-		<real>0.0</real>
-		<key>34</key>
-		<real>0.0</real>
-		<key>35</key>
+		<key>8</key>
 		<real>0.0</real>
 		<key>9</key>
-		<real>4.026911396930227e-41</real>
+		<real>0.0</real>
 	</dict>
 	<key>manufacturer</key>
 	<string>appl</string>
 	<key>name</key>
-	<string>Compressor Default</string>
+	<string>TapeDelay Default</string>
 	<key>subtype</key>
-	<string>comp</string>
+	<string>tDLY</string>
 	<key>type</key>
 	<string>aufx</string>
 	<key>version</key>
