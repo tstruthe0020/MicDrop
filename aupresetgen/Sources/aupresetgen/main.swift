@@ -303,26 +303,8 @@ class AUPresetGenerator {
         }
     }
     
-    func convertAndClampValue(_ value: Any, for param: AUParameter) throws -> AUValue {
-        let floatValue: Float
-        
-        switch value {
-        case let boolVal as Bool:
-            floatValue = boolVal ? 1.0 : 0.0
-        case let intVal as Int:
-            floatValue = Float(intVal)
-        case let doubleVal as Double:
-            floatValue = Float(doubleVal)
-        case let floatVal as Float:
-            floatValue = floatVal
-        case let stringVal as String:
-            guard let parsedFloat = Float(stringVal) else {
-                throw PresetError.invalidValueType(stringVal)
-            }
-            floatValue = parsedFloat
-        default:
-            throw PresetError.invalidValueType(String(describing: value))
-        }
+    func convertAndClampValue(_ value: Double, for param: AUParameter) throws -> AUValue {
+        let floatValue = Float(value)
         
         // Clamp to parameter range
         let clampedValue = max(param.minValue, min(param.maxValue, floatValue))
