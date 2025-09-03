@@ -1,11 +1,15 @@
 {
-  "Threshold": -18.0,
-  "Ratio": 3.5,
+  "Bypass": false,
+  "Threshold": -15.0,
+  "Ratio": 4.0,
   "Attack": 8.0,
-  "Release": 80.0,
+  "Release": 60.0,
   "Knee": 2.0,
-  "Makeup_Gain": 2.5,
-  "Lookahead": true,
-  "Detector": "RMS",
-  "Bypass": false
+  "Makeup_Gain": 3.0,
+  "Mix": 1.0,
+  "Lookahead": 1.0,
+  "Output_Gain": 0.0,
+  "RMS_Peak": 0.5,
+  "Auto_Release": false,
+  "Vintage_Mode": false
 }

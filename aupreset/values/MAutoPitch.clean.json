@@ -1,9 +1,15 @@
 {
-  "Correction_Amount": 0.8,
-  "Speed": 0.6,
-  "Key": "C",
-  "Scale": "Major",
-  "Formant_Correction": 0.0,
-  "Natural": true,
-  "Bypass": false
+  "Bypass": false,
+  "Correction_Amount": 85.0,
+  "Correction_Speed": 80.0,
+  "Formant_Correction": true,
+  "Scale": 0,
+  "Key": 0,
+  "Reference_Pitch": 440.0,
+  "Mix": 1.0,
+  "Output_Gain": 0.0,
+  "Preserve_Formants": true,
+  "Natural_Mode": true,
+  "Pitch_Shift": 0.0,
+  "Humanize": 0.2
 }
