@@ -730,13 +730,13 @@ class AUPresetGenerator:
                         # Look for the generated preset file (search recursively)
                         logger.info(f"🔍 Looking for preset: {preset_name}.aupreset in {temp_dir}")
                         preset_files = list(Path(temp_dir).glob(f"**/{preset_name}.aupreset"))
-                        logger.info(f"🔍 Direct search found: {len(preset_files)} files")
+                        logger.info(f"🔍 Direct search found: {len(preset_files)} files: {[f.name for f in preset_files]}")
                         if not preset_files:
                             # Also try looking for any .aupreset files that might have been generated
                             all_presets = list(Path(temp_dir).glob(f"**/*.aupreset"))
-                            logger.info(f"🔍 All .aupreset files found: {len(all_presets)}")
+                            logger.info(f"🔍 All .aupreset files found: {len(all_presets)}: {[f.name for f in all_presets]}")
                             preset_files = [f for f in all_presets if preset_name in f.name]
-                            logger.info(f"🔍 Matching preset files: {len(preset_files)}")
+                            logger.info(f"🔍 Matching preset files: {len(preset_files)}: {[f.name for f in preset_files]}")
                         
                         if preset_files:
                             generated_presets.append({
