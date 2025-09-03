@@ -846,13 +846,29 @@ PRESET FILES INCLUDED:
                     plugin_name = preset['plugin']
                     preset_file = preset['file_path']
                     
+                    # Ensure the preset file exists before adding to ZIP
+                    if not Path(preset_file).exists():
+                        logger.error(f"Preset file not found: {preset_file}")
+                        continue
+                    
                     # Create Logic Pro path structure in ZIP
                     zip_path_in_archive = f"Audio Music Apps/Plug-In Settings/{plugin_name}/{preset_file.name}"
-                    zipf.write(preset_file, zip_path_in_archive)
+                    try:
+                        zipf.write(preset_file, zip_path_in_archive)
+                        if verbose:
+                            logger.info(f"Added to ZIP: {zip_path_in_archive}")
+                    except Exception as add_error:
+                        logger.error(f"Failed to add {preset_file} to ZIP: {add_error}")
+                        return False
             
-            if verbose:
-                logger.info(f"✅ Created Logic Pro ZIP with Python: {zip_path}")
-            return True
+            # Verify ZIP was created and has content
+            if zip_path.exists() and zip_path.stat().st_size > 0:
+                if verbose:
+                    logger.info(f"✅ Created Logic Pro ZIP with Python: {zip_path} ({zip_path.stat().st_size} bytes)")
+                return True
+            else:
+                logger.error(f"ZIP file was not created or is empty: {zip_path}")
+                return False
             
         except Exception as e:
             logger.error(f"Python ZIP creation failed: {e}")
