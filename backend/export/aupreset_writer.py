@@ -114,12 +114,27 @@ class AUPresetWriter:
     
     def _load_seed_preset(self, plugin_name: str) -> Optional[Dict[str, Any]]:
         """Load seed preset if available"""
-        seed_file = self.seeds_dir / f"{plugin_name.replace(' ', '_')}.seed.aupreset"
+        # Map plugin names to seed file names
+        name_mapping = {
+            "Channel EQ": "ChannelEQ",
+            "Compressor": "Compressor", 
+            "DeEsser 2": "DeEsser2",
+            "Multipressor": "Multipressor",
+            "Clip Distortion": "ClipDistortion",
+            "Tape Delay": "TapeDelay",
+            "ChromaVerb": "ChromaVerb",
+            "Limiter": "Limiter"
+        }
+        
+        mapped_name = name_mapping.get(plugin_name, plugin_name.replace(' ', ''))
+        seed_file = self.seeds_dir / f"{mapped_name}.seed.aupreset"
         
         if seed_file.exists():
             try:
                 with open(seed_file, 'rb') as f:
-                    return plistlib.load(f)
+                    seed_data = plistlib.load(f)
+                    logger.info(f"Loaded real Logic Pro seed for {plugin_name}")
+                    return seed_data
             except Exception as e:
                 logger.warning(f"Could not load seed for {plugin_name}: {e}")
         
