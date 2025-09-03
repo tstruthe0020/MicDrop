@@ -181,24 +181,38 @@ async def export_logic_presets(request: ExportRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
-def convert_parameters(backend_params):
+def convert_parameters(backend_params, plugin_name=None):
     """
-    Convert backend parameters to Swift CLI compatible format
-    Handles boolean -> float, string -> float mappings, and ensures all values are doubles
+    Convert backend parameters to plugin-specific format
+    Handles different parameter formats for different plugins
     """
     converted = {}
-    for key, value in backend_params.items():
-        if isinstance(value, bool):
-            converted[key] = 1.0 if value else 0.0
-        elif isinstance(value, str):
-            string_mappings = {
-                'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
-                'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
-                'notch': 6.0
-            }
-            converted[key] = string_mappings.get(value, 0.0)
-        else:
-            converted[key] = float(value)
+    
+    # TDR Nova uses special string format for boolean parameters
+    if plugin_name == "TDR Nova":
+        for key, value in backend_params.items():
+            if isinstance(value, bool):
+                # TDR Nova uses "On"/"Off" for boolean parameters
+                converted[key] = "On" if value else "Off"
+            elif isinstance(value, str):
+                # Pass string values through (they might already be "On"/"Off")
+                converted[key] = value
+            else:
+                converted[key] = float(value)
+    else:
+        # Standard conversion for other plugins
+        for key, value in backend_params.items():
+            if isinstance(value, bool):
+                converted[key] = 1.0 if value else 0.0
+            elif isinstance(value, str):
+                string_mappings = {
+                    'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
+                    'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
+                    'notch': 6.0
+                }
+                converted[key] = string_mappings.get(value, 0.0)
+            else:
+                converted[key] = float(value)
     return converted
 
 @api_router.post("/export/download-presets")
