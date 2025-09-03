@@ -197,7 +197,7 @@ class ChainGenerator:
     
     def _generate_post_eq(self, features: Dict[str, Any], vibe: str) -> Dict[str, Any]:
         """Generate post-compression EQ"""
-        spectral = features.spectral
+        spectral = features['spectral']
         
         params = {
             "bypass": False
