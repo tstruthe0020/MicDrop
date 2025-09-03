@@ -1,0 +1,14 @@
+{
+  "bypass": "0",
+  "high_pass_freq": "1",
+  "high_pass_enabled": "2",
+  "eq_band_1_freq": "10",
+  "eq_band_1_gain": "11",
+  "eq_band_1_q": "12",
+  "eq_band_2_freq": "20",
+  "eq_band_2_gain": "21",
+  "eq_band_2_q": "22",
+  "eq_band_3_freq": "30",
+  "eq_band_3_gain": "31",
+  "eq_band_3_q": "32"
+}

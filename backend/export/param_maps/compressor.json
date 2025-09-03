@@ -5,5 +5,7 @@
   "attack": "3",
   "release": "4",
   "makeup_gain": "5",
-  "model": "6"
+  "model": "6",
+  "knee": "7",
+  "distortion_mode": "8"
 }

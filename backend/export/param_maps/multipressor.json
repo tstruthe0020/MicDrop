@@ -1,0 +1,10 @@
+{
+  "bypass": "0",
+  "crossover_1": "1",
+  "crossover_2": "2",
+  "crossover_3": "3",
+  "band_1_threshold": "10",
+  "band_1_ratio": "11",
+  "band_2_threshold": "20",
+  "band_2_ratio": "21"
+}

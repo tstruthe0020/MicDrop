@@ -1,0 +1,10 @@
+{
+  "bypass": "0",
+  "delay_time": "1",
+  "feedback": "2",
+  "low_pass": "3",
+  "high_pass": "4",
+  "mix": "5",
+  "flutter": "6",
+  "wow": "7"
+}

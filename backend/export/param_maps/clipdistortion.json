@@ -1,0 +1,9 @@
+{
+  "bypass": "0",
+  "drive": "1",
+  "tone": "2",
+  "high_cut": "3",
+  "low_cut": "4",
+  "output": "5",
+  "mix": "6"
+}

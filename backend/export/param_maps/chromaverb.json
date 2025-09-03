@@ -1,0 +1,11 @@
+{
+  "bypass": "0",
+  "room_type": "1",
+  "predelay": "2",
+  "decay": "3",
+  "high_pass": "4",
+  "low_pass": "5",
+  "mix": "6",
+  "size": "7",
+  "density": "8"
+}
