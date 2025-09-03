@@ -180,13 +180,13 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
-  - task: "Swift CLI Tool Compilation"
-    implemented: true
-    working: true
+  - task: "Swift CLI Tool Clean Setup"
+    implemented: false
+    working: "NA"
     file: "/app/aupresetgen/Sources/aupresetgen/main.swift"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
         - agent: "main"
@@ -194,6 +194,9 @@ test_plan:
         - working: true
         - agent: "main"
         - comment: "✅ COMPILATION SUCCESSFUL! Fixed Swift compilation issues: 1) Added explicit type annotation for nil parameter (nil as AUParameterObserverToken?), 2) Simplified ValuesData to use [String: Double] instead of AnyCodable, 3) Fixed manufacturer string formatting with fourCC conversion. User confirmed 'swift build -c release' now works successfully."
+        - working: "NA"
+        - agent: "main"
+        - comment: "User encountered path issues and confusion with multiple build locations. Decided to start completely fresh with clean setup process."
 
   - task: "Swift CLI Tool Functionality Testing"
     implemented: false
