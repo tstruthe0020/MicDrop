@@ -15,5 +15,22 @@
   "band_1_gain": "bandGain_1",
   "band_2_gain": "bandGain_2",
   "band_3_gain": "bandGain_3",
-  "band_4_gain": "bandGain_4"
+  "band_4_gain": "bandGain_4",
+  "bypass_master": "bypass_master",
+  "bandDynActive_1": "bandDynActive_1",
+  "bandDynActive_2": "bandDynActive_2",
+  "bandDynActive_3": "bandDynActive_3",
+  "bandDynActive_4": "bandDynActive_4",
+  "bandActive_1": "bandActive_1",
+  "bandActive_2": "bandActive_2",
+  "bandActive_3": "bandActive_3",
+  "bandActive_4": "bandActive_4",
+  "bandSelected_1": "bandSelected_1",
+  "bandSelected_2": "bandSelected_2",
+  "bandSelected_3": "bandSelected_3",
+  "bandSelected_4": "bandSelected_4",
+  "bandGain_1": "bandGain_1",
+  "bandGain_2": "bandGain_2",
+  "bandGain_3": "bandGain_3",
+  "bandGain_4": "bandGain_4"
 }
