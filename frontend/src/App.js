@@ -30,6 +30,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('upload');
   const [loading, setLoading] = useState(false);
   const [installationResult, setInstallationResult] = useState(null);
+  const [systemInfo, setSystemInfo] = useState(null);
+  const [configLoading, setConfigLoading] = useState(false);
   
   const beatInputRef = useRef(null);
   const vocalInputRef = useRef(null);
