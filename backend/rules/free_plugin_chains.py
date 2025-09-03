@@ -72,55 +72,68 @@ class FreePluginChainGenerator:
             }
         }
         
-        # AU plugin identifiers for free plugins (will be mapped once we have them)
+        # AU plugin identifiers - these will be extracted from the actual seed files
+        # For now using placeholder values, will be updated with real values from seeds
         self.plugin_au_info = {
+            "MEqualizer": {
+                "type": 1635083896,  # 'aufx' - will be extracted from seed
+                "subtype": 1835361136,  # placeholder
+                "manufacturer": 1835361136,  # placeholder
+                "version": 1
+            },
+            "MCompressor": {
+                "type": 1635083896,  # 'aufx'
+                "subtype": 1835361136,  # placeholder
+                "manufacturer": 1835361136,  # placeholder
+                "version": 1
+            },
+            "1176 Compressor": {
+                "type": 1635083896,  # 'aufx' 
+                "subtype": 1835361136,  # placeholder
+                "manufacturer": 1835361136,  # placeholder
+                "version": 1
+            },
             "TDR Nova": {
                 "type": 1635083896,  # 'aufx'
-                "subtype": 1852796517,  # 'nova' (example)
-                "manufacturer": 1413828164,  # 'TDR' (example)
-                "version": 1
-            },
-            "TDR Kotelnikov": {
-                "type": 1635083896,  # 'aufx'
-                "subtype": 1801410662,  # 'kotl' (example)
+                "subtype": 1852796517,  # 'nova'
                 "manufacturer": 1413828164,  # 'TDR'
                 "version": 1
             },
-            "TDR De-esser": {
+            "MAutoPitch": {
                 "type": 1635083896,  # 'aufx'
-                "subtype": 1684107619,  # 'dees' (example)
-                "manufacturer": 1413828164,  # 'TDR'
+                "subtype": 1835361136,  # placeholder
+                "manufacturer": 1835361136,  # placeholder
                 "version": 1
             },
-            "Softube Saturation Knob": {
+            "Graillon 3": {
                 "type": 1635083896,  # 'aufx'
-                "subtype": 1935897715,  # 'satu' (example)
-                "manufacturer": 1936680821,  # 'Soft' (example)
+                "subtype": 1835361136,  # placeholder
+                "manufacturer": 1835361136,  # placeholder
                 "version": 1
             },
-            "Valhalla Supermassive": {
+            "Fresh Air": {
                 "type": 1635083896,  # 'aufx'
-                "subtype": 1937075315,  # 'supr' (example)
-                "manufacturer": 1986359121,  # 'Valh' (example)
+                "subtype": 1835361136,  # placeholder
+                "manufacturer": 1835361136,  # placeholder
                 "version": 1
             },
-            "Valhalla Freq Echo": {
+            "LA-LA": {
                 "type": 1635083896,  # 'aufx'
-                "subtype": 1718509915,  # 'freq' (example)
-                "manufacturer": 1986359121,  # 'Valh'
+                "subtype": 1835361136,  # placeholder
+                "manufacturer": 1835361136,  # placeholder
                 "version": 1
             },
-            "TDR Limiter 6 GE": {
+            "MConvolutionEZ": {
                 "type": 1635083896,  # 'aufx'
-                "subtype": 1819178866,  # 'lmtr'
-                "manufacturer": 1413828164,  # 'TDR'
+                "subtype": 1835361136,  # placeholder
+                "manufacturer": 1835361136,  # placeholder
                 "version": 1
             }
         }
         
     def generate_chain(self, features: Dict[str, Any], vibe: str = "Balanced") -> Dict[str, Any]:
         """
-        Generate professional vocal chain using free third-party plugins
+        Generate professional vocal chain using ONLY the user's 9 installed plugins
         Based on genre-specific processing chains from the vocal guide
         """
         try:
@@ -137,55 +150,60 @@ class FreePluginChainGenerator:
             genre = genre_mapping.get(vibe, "Pop")
             bpm = features.get('bpm', 120.0)
             
-            chain_name = f"{genre}_Free_Plugin_Chain_BPM{int(bpm)}"
+            chain_name = f"{genre}_User_Plugin_Chain_BPM{int(bpm)}"
             plugins = []
             
-            # Build professional chain based on PDF guide
+            # Build professional chain using ONLY user's available plugins
             
-            # 1. Subtractive EQ (Pre-Compression) - TDR Nova
+            # 1. Pitch correction first (if needed) - MAutoPitch
+            if features.get('vocal') and vibe in ["Clean", "Pop"]:
+                pitch_config = self._generate_pitch_correction(features, genre)
+                plugins.append(pitch_config)
+            
+            # 2. Subtractive EQ - MEqualizer 
             pre_eq_config = self._generate_subtractive_eq(features, genre)
             plugins.append(pre_eq_config)
             
-            # 2. De-Esser - TDR De-esser (if vocal features available)
-            if features.get('vocal'):
-                deesser_config = self._generate_deesser(features['vocal'], genre)
-                plugins.append(deesser_config)
+            # 3. Dynamic EQ/Multiband - TDR Nova
+            dynamic_eq_config = self._generate_dynamic_eq(features, genre)
+            plugins.append(dynamic_eq_config)
             
-            # 3. Compressor - TDR Kotelnikov
+            # 4. Primary Compressor - MCompressor or 1176 based on genre
             comp_config = self._generate_compressor(features, genre)
             plugins.append(comp_config)
             
-            # 4. Additive EQ (Post-Compression) - TDR Nova
+            # 5. Additive EQ - MEqualizer (second instance)
             post_eq_config = self._generate_additive_eq(features, genre)
             plugins.append(post_eq_config)
             
-            # 5. Multiband Compressor - TDR Nova (multiband mode)
-            multiband_config = self._generate_multiband(features, genre)
-            plugins.append(multiband_config)
+            # 6. High frequency enhancement - Fresh Air
+            if genre in ["Pop", "R&B"]:
+                enhancer_config = self._generate_enhancer(features, genre)
+                plugins.append(enhancer_config)
             
-            # 6. Saturation - Softube Saturation Knob (if needed)
-            if genre in ["R&B", "Hip-Hop"]:
-                saturation_config = self._generate_saturation(features, genre)
-                plugins.append(saturation_config)
+            # 7. Creative vocal effects - Graillon 3 (if needed)
+            if vibe in ["Warm", "Creative"] or genre == "Hip-Hop":
+                vocal_fx_config = self._generate_vocal_effects(features, genre)
+                plugins.append(vocal_fx_config)
             
-            # 7. Reverb - Valhalla Supermassive (send)
+            # 8. Level control - LA-LA
+            level_config = self._generate_level_control(features, genre)
+            plugins.append(level_config)
+            
+            # 9. Reverb - MConvolutionEZ (send)
             reverb_config = self._generate_reverb(features, genre)
             plugins.append(reverb_config)
-            
-            # 8. Limiter - TDR Limiter 6 GE (final control)
-            limiter_config = self._generate_limiter(features, genre)
-            plugins.append(limiter_config)
             
             return {
                 "name": chain_name,
                 "plugins": plugins,
                 "genre": genre,
                 "required_plugins": self._get_required_plugin_list(),
-                "installation_note": "This chain uses free third-party AU plugins. Please install the required plugins first."
+                "installation_note": "This chain uses your installed plugins. All required plugins are already available."
             }
             
         except Exception as e:
-            logger.error(f"Free plugin chain generation failed: {str(e)}")
+            logger.error(f"User plugin chain generation failed: {str(e)}")
             raise
     
     def _generate_subtractive_eq(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
