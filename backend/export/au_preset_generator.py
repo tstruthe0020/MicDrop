@@ -292,6 +292,38 @@ class AUPresetGenerator:
             if os.path.exists(values_path):
                 os.unlink(values_path)
     
+    def _get_component_info_from_seed(self, seed_file: Path) -> Optional[Tuple[str, str, str]]:
+        """Extract component identifiers from seed .aupreset file"""
+        try:
+            with open(seed_file, 'rb') as f:
+                plist_data = f.read()
+            
+            import plistlib
+            plist = plistlib.loads(plist_data)
+            
+            # Extract component info
+            manufacturer = plist.get('manufacturer', 0)
+            subtype = plist.get('subtype', 0) 
+            type_val = plist.get('type', 0)
+            
+            # Convert to 4-character strings
+            def int_to_fourcc(val):
+                return ''.join([
+                    chr((val >> 24) & 0xFF),
+                    chr((val >> 16) & 0xFF), 
+                    chr((val >> 8) & 0xFF),
+                    chr(val & 0xFF)
+                ])
+            
+            return (
+                int_to_fourcc(type_val),
+                int_to_fourcc(subtype),
+                int_to_fourcc(manufacturer)
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to extract component info from {seed_file}: {e}")
+            return None
     def _generate_with_python_fallback(
         self, plugin_name: str, parameters: Dict[str, Any], preset_name: str,
         output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
