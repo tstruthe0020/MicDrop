@@ -468,13 +468,21 @@ def save_param_csv(preset: Dict[str, Any], path: Union[str, Path]) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     
+    # Extract parameters using enhanced extraction
+    params = extract_param_map(preset)
+    
     with open(path, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['ParamID', 'SeedValue', 'Type'])
+        writer.writerow(['ParamID', 'SeedValue', 'Type', 'HumanName'])
         
-        if 'data' in preset and isinstance(preset['data'], dict):
-            for param_id, value in preset['data'].items():
-                writer.writerow([param_id, value, type(value).__name__])
+        if params and not params.get('binary_data'):
+            for param_id, value in params.items():
+                human_name = _generate_human_param_name(param_id, value)
+                writer.writerow([param_id, value, type(value).__name__, human_name])
+        elif params.get('binary_data'):
+            writer.writerow(['binary_data', f"<binary data>", 'bytes', 'Binary_Plugin_Data'])
+        else:
+            writer.writerow(['no_params', 'N/A', 'None', 'No_Parameters_Found'])
     
     logger.info(f"Saved parameter CSV: {path}")
 
