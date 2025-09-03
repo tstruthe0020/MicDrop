@@ -132,6 +132,50 @@ function App() {
     }
   };
 
+  const downloadIndividualPreset = async (plugin, index) => {
+    try {
+      setIsProcessing(true);
+      
+      const response = await axios.post(`${API}/export/individual-plugin`, {
+        plugin: plugin,
+        preset_name: `${presetName}_${plugin.plugin.replace(' ', '_')}`
+      });
+
+      // Create download URL from base64
+      const binaryString = atob(response.data.preset_base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+
+      // Download immediately
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = response.data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download started",
+        description: `${plugin.plugin} preset is downloading`
+      });
+
+    } catch (error) {
+      console.error('Individual download error:', error);
+      toast({
+        title: "Download failed",
+        description: error.response?.data?.detail || "Failed to download individual preset",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const downloadPreset = () => {
     if (downloadUrl) {
       const link = document.createElement('a');
