@@ -208,7 +208,7 @@ class AUPresetGenerator:
         output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
         verbose: bool
     ) -> Tuple[bool, str, str]:
-        """Generate preset using Swift CLI"""
+        """Generate preset using Swift CLI with new command structure"""
         
         # Create temporary values file
         values_data = {"params": parameters}
