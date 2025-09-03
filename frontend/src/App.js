@@ -612,8 +612,8 @@ function App() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => downloadIndividualPreset(plugin, index)}
-                              disabled={isProcessing}
+                              onClick={() => installIndividualPreset(plugin)}
+                              disabled={loading}
                               className="px-3 py-1 text-xs"
                             >
                               <Download className="w-3 h-3 mr-1" />
