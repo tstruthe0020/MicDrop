@@ -271,7 +271,7 @@ class ChainGenerator:
         """Generate saturation using Clip Distortion (replaces Saturator)"""
         
         # Intensity based on vibe and dynamics
-        crest = features.crest
+        crest = features.get('crest', 6.0)
         
         drive_db = 2.0  # Base saturation
         if vibe == "Warm":
