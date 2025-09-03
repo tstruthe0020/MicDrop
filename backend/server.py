@@ -16,8 +16,10 @@ from datetime import datetime
 import json
 
 # Import our custom modules
+import sys
+sys.path.append('/app/backend')
 from analysis.features import AudioAnalyzer
-from rules.mapping import ChainGenerator
+from rules.mapping import ChainGenerator  
 from export.logic_preset import LogicPresetExporter
 
 ROOT_DIR = Path(__file__).parent
