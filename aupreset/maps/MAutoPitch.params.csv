@@ -1,1 +1,2 @@
-ParamID,SeedValue,Type
+ParamID,SeedValue,Type,HumanName
+detected_param_names,"['xUQK', 'kV6', 'bAYZ', 'nbdI', 'uqM']",list,Detected_Param_Names

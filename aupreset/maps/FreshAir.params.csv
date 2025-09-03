@@ -1,1 +1,2 @@
-ParamID,SeedValue,Type
+ParamID,SeedValue,Type,HumanName
+detected_param_names,"['Vocal', 'Air', 'factory', 'Factory', 'Bank', 'Vocal', 'Air', 'epf']",list,Detected_Param_Names
