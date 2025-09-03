@@ -3,511 +3,610 @@ import AVFoundation
 import AudioToolbox
 import ArgumentParser
 
-@main
-struct AUPresetGen: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "aupresetgen",
-        abstract: "Generate Logic Pro .aupreset files using Audio Unit APIs",
-        discussion: """
-        Creates valid .aupreset files by instantiating Audio Units and exporting their state.
-        This avoids reverse-engineering vendor binary formats.
-        """
-    )
-    
-    @Option(name: .long, help: "Path to seed .aupreset file")
-    var seed: String
-    
-    @Option(name: .long, help: "Path to values JSON file")
-    var values: String
-    
-    @Option(name: .long, help: "Preset name for the output")
-    var presetName: String
-    
-    @Option(name: .long, help: "Output directory")
-    var outDir: String
-    
-    @Option(name: .long, help: "Optional parameter mapping JSON")
-    var map: String?
-    
-    @Flag(name: .long, help: "Write binary plist instead of XML")
-    var writeBinary = false
-    
-    @Flag(name: .long, help: "Validate output with plutil")
-    var lint = false
-    
-    @Flag(name: .long, help: "Print parameter assignments without writing")
-    var dryRun = false
-    
-    @Flag(name: .long, help: "List all available parameters")
-    var listParams = false
-    
-    @Flag(name: .long, help: "Discover plugin info from seed")
-    var discover = false
-    
-    @Flag(name: .long, help: "Strict mode - fail on missing parameters")
-    var strict = false
-    
-    @Flag(name: .long, help: "Verbose output")
-    var verbose = false
-    
-    func run() async throws {
-        let generator = AUPresetGenerator()
-        
-        do {
-            try await generator.generate(
-                seedPath: seed,
-                valuesPath: values,
-                presetName: presetName,
-                outDir: outDir,
-                mapPath: map,
-                writeBinary: writeBinary,
-                lint: lint,
-                dryRun: dryRun,
-                listParams: listParams,
-                discover: discover,
-                strict: strict,
-                verbose: verbose
-            )
-        } catch {
-            print("Error: \(error)")
-            throw ExitCode.failure
-        }
+struct RuntimeError: Error, CustomStringConvertible {
+    let description: String
+    init(_ description: String) {
+        self.description = description
     }
 }
 
+@main
+struct AUPresetGen: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Generate Audio Unit presets using native macOS APIs",
+        subcommands: [DumpParams.self, SavePreset.self, PackageZip.self]
+    )
+}
+
+struct DumpParams: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Dump available parameters for an Audio Unit")
+    
+    @Option(help: "Component type (4-char string or hex)")
+    var type: String
+    
+    @Option(help: "Component subtype (4-char string or hex)")
+    var subtype: String
+    
+    @Option(help: "Component manufacturer (4-char string or hex)")
+    var manufacturer: String
+    
+    @Flag(help: "Enable verbose output")
+    var verbose = false
+    
+    func run() throws {
+        let (componentType, componentSubtype, componentManufacturer) = try parseComponentIdentifiers(type: type, subtype: subtype, manufacturer: manufacturer)
+        
+        let generator = AUPresetGenerator()
+        try generator.dumpParameters(
+            type: componentType,
+            subtype: componentSubtype,
+            manufacturer: componentManufacturer,
+            verbose: verbose
+        )
+    }
+}
+
+struct SavePreset: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Save Audio Unit preset with parameters")
+    
+    @Option(help: "Component type (4-char string or hex)")
+    var type: String
+    
+    @Option(help: "Component subtype (4-char string or hex)")
+    var subtype: String
+    
+    @Option(help: "Component manufacturer (4-char string or hex)")
+    var manufacturer: String
+    
+    @Option(help: "JSON file with parameter values")
+    var values: String
+    
+    @Option(help: "Name for the preset")
+    var presetName: String
+    
+    @Option(help: "Output directory")
+    var outDir: String
+    
+    @Option(help: "Plugin name for folder structure (required for --make-zip)")
+    var pluginName: String?
+    
+    @Flag(help: "Create zip package")
+    var makeZip = false
+    
+    @Option(help: "Path for zip file (default: <out-dir>/<plugin-name>.zip)")
+    var zipPath: String?
+    
+    @Option(help: "Bundle root folder name")
+    var bundleRoot: String = "Audio Music Apps"
+    
+    @Flag(help: "Append to existing zip")
+    var appendZip = false
+    
+    @Flag(help: "Force overwrite existing zip")
+    var force = false
+    
+    @Flag(help: "Enable verbose output")
+    var verbose = false
+    
+    func run() throws {
+        let (componentType, componentSubtype, componentManufacturer) = try parseComponentIdentifiers(type: type, subtype: subtype, manufacturer: manufacturer)
+        
+        // Validate required options for zip creation
+        if makeZip && pluginName == nil {
+            throw ValidationError("--plugin-name is required when using --make-zip")
+        }
+        
+        let generator = AUPresetGenerator()
+        try generator.savePreset(
+            type: componentType,
+            subtype: componentSubtype,
+            manufacturer: componentManufacturer,
+            valuesFile: values,
+            presetName: presetName,
+            outDir: outDir,
+            pluginName: pluginName,
+            makeZip: makeZip,
+            zipPath: zipPath,
+            bundleRoot: bundleRoot,
+            appendZip: appendZip,
+            force: force,
+            verbose: verbose
+        )
+    }
+}
+
+struct PackageZip: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Package existing presets into Logic Pro compatible zip")
+    
+    @Option(help: "Directory containing existing presets")
+    var rootDir: String
+    
+    @Option(help: "Plugin name for folder structure")
+    var pluginName: String
+    
+    @Option(help: "Output zip path")
+    var zipPath: String
+    
+    @Option(help: "Bundle root folder name")
+        var bundleRoot: String = "Audio Music Apps"
+    
+    @Flag(help: "Force overwrite existing zip")
+    var force = false
+    
+    @Flag(help: "Enable verbose output")
+    var verbose = false
+    
+    func run() throws {
+        let generator = AUPresetGenerator()
+        try generator.packageExistingPresets(
+            rootDir: rootDir,
+            pluginName: pluginName,
+            zipPath: zipPath,
+            bundleRoot: bundleRoot,
+            force: force,
+            verbose: verbose
+        )
+    }
+}
+
+// Helper function to parse component identifiers
+func parseComponentIdentifiers(type: String, subtype: String, manufacturer: String) throws -> (OSType, OSType, OSType) {
+    func parseIdentifier(_ identifier: String) throws -> OSType {
+        if identifier.hasPrefix("0x") || identifier.hasPrefix("0X") {
+            // Parse as hex
+            let hexString = String(identifier.dropFirst(2))
+            guard let value = UInt32(hexString, radix: 16) else {
+                throw ValidationError("Invalid hex identifier: \(identifier)")
+            }
+            return OSType(value)
+        } else if identifier.count == 4 {
+            // Parse as 4-character string
+            return identifier.withCString { cString in
+                return OSType(cString[0]) << 24 | OSType(cString[1]) << 16 | OSType(cString[2]) << 8 | OSType(cString[3])
+            }
+        } else {
+            throw ValidationError("Identifier must be 4 characters or hex (0x...): \(identifier)")
+        }
+    }
+    
+    return (
+        try parseIdentifier(type),
+        try parseIdentifier(subtype),
+        try parseIdentifier(manufacturer)
+    )
+}
+
 class AUPresetGenerator {
-    func generate(
-        seedPath: String,
-        valuesPath: String,
-        presetName: String,
-        outDir: String,
-        mapPath: String?,
-        writeBinary: Bool,
-        lint: Bool,
-        dryRun: Bool,
-        listParams: Bool,
-        discover: Bool,
-        strict: Bool,
-        verbose: Bool
-    ) async throws {
+    func dumpParameters(type: OSType, subtype: OSType, manufacturer: OSType, verbose: Bool) throws {
+        print("🔍 Looking for Audio Unit...")
         
-        // 1. Load seed preset
-        let seedURL = URL(fileURLWithPath: seedPath)
-        guard let seedPlist = NSDictionary(contentsOf: seedURL) else {
-            throw PresetError.invalidSeedFile(seedPath)
+        let description = AudioComponentDescription(
+            componentType: type,
+            componentSubtype: subtype,
+            componentManufacturer: manufacturer,
+            componentFlags: 0,
+            componentFlagsMask: 0
+        )
+        
+        guard let component = AudioComponentFindNext(nil, &description) else {
+            throw RuntimeError("Audio Unit not found")
         }
         
         if verbose {
-            print("✓ Loaded seed preset: \(seedPath)")
+            print("✓ Found Audio Unit component")
         }
         
-        // 2. Extract AU identifiers
-        let auInfo = try extractAUInfo(from: seedPlist)
+        // Get component info
+        var componentName: Unmanaged<CFString>?
+        AudioComponentCopyName(component, &componentName)
+        let name = componentName?.takeRetainedValue() as String? ?? "Unknown"
         
-        if discover {
-            print("Plugin Info:")
-            print("  Name: \(auInfo.name)")
-            print("  Manufacturer: \(fourCCToString(auInfo.manufacturer))")
-            print("  Type: \(fourCCToString(auInfo.type))")
-            print("  Subtype: \(fourCCToString(auInfo.subtype))")
-            print("  Version: \(auInfo.version)")
-            return
+        print("✓ Plugin: \(name)")
+        
+        // Instantiate the Audio Unit
+        var audioUnit: AudioUnit?
+        let status = AudioComponentInstanceNew(component, &audioUnit)
+        guard status == noErr, let au = audioUnit else {
+            throw RuntimeError("Failed to instantiate Audio Unit: \(status)")
         }
         
-        if verbose {
-            print("✓ Plugin: \(auInfo.name) by \(fourCCToString(auInfo.manufacturer))")
+        defer {
+            AudioComponentInstanceDispose(au)
         }
-        
-        // 3. Instantiate Audio Unit
-        let audioUnit = try await instantiateAU(info: auInfo)
         
         if verbose {
             print("✓ Audio Unit instantiated")
         }
         
-        // 4. List parameters if requested
-        if listParams {
-            try listParameters(audioUnit: audioUnit)
+        // Initialize the Audio Unit
+        let initStatus = AudioUnitInitialize(au)
+        guard initStatus == noErr else {
+            throw RuntimeError("Failed to initialize Audio Unit: \(initStatus)")
+        }
+        
+        defer {
+            AudioUnitUninitialize(au)
+        }
+        
+        // Get parameter list
+        var paramListSize: UInt32 = 0
+        let paramListStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, nil, &paramListSize)
+        guard paramListStatus == noErr else {
+            throw RuntimeError("Failed to get parameter list size: \(paramListStatus)")
+        }
+        
+        let paramCount = Int(paramListSize) / MemoryLayout<AudioUnitParameterID>.size
+        if paramCount == 0 {
+            print("No parameters found")
             return
         }
         
-        // 5. Load values and optional map
-        let valuesData = try loadValues(path: valuesPath)
-        let paramMap = try loadMap(path: mapPath)
-        
-        if verbose {
-            print("✓ Loaded \(valuesData.params.count) parameter values")
+        var parameterIDs = [AudioUnitParameterID](repeating: 0, count: paramCount)
+        let getParamsStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, &parameterIDs, &paramListSize)
+        guard getParamsStatus == noErr else {
+            throw RuntimeError("Failed to get parameter list: \(getParamsStatus)")
         }
         
-        // 6. Set parameters
-        try await setParameters(
-            audioUnit: audioUnit,
-            values: valuesData.params,
-            map: paramMap,
-            strict: strict,
-            verbose: verbose,
-            dryRun: dryRun
-        )
+        print("📊 Found \(paramCount) parameters:")
         
-        if dryRun {
-            print("Dry run complete - no files written")
-            return
-        }
-        
-        // 7. Export AU state
-        let auState = try await exportAUState(audioUnit: audioUnit)
-        
-        if verbose {
-            print("✓ Exported Audio Unit state")
-        }
-        
-        // 8. Create output preset
-        let outputPlist = try createOutputPreset(
-            seedPlist: seedPlist,
-            auState: auState,
-            presetName: presetName,
-            auInfo: auInfo
-        )
-        
-        // 9. Write output file
-        let outputPath = try writeOutputFile(
-            plist: outputPlist,
-            outDir: outDir,
-            presetName: presetName,
-            auInfo: auInfo,
-            writeBinary: writeBinary
-        )
-        
-        print("✓ Generated preset: \(outputPath)")
-        
-        // 10. Validate if requested
-        if lint {
-            try validateOutput(path: outputPath)
-            if verbose {
-                print("✓ Validation passed")
+        for paramID in parameterIDs {
+            // Get parameter info
+            var paramInfo = AudioUnitParameterInfo()
+            var infoSize = UInt32(MemoryLayout<AudioUnitParameterInfo>.size)
+            
+            let infoStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ParameterInfo, kAudioUnitScope_Global, paramID, &paramInfo, &infoSize)
+            if infoStatus == noErr {
+                let name = withUnsafePointer(to: &paramInfo.name) { ptr in
+                    return String(cString: UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self))
+                }
+                
+                // Get current value
+                var currentValue: Float = 0
+                let valueStatus = AudioUnitGetParameter(au, paramID, kAudioUnitScope_Global, 0, &currentValue)
+                let valueStr = valueStatus == noErr ? String(format: "%.3f", currentValue) : "N/A"
+                
+                print("  \(paramID): \(name) = \(valueStr) (min: \(paramInfo.minValue), max: \(paramInfo.maxValue))")
+            } else {
+                print("  \(paramID): <unknown>")
             }
         }
     }
     
-    // MARK: - AU Operations
-    
-    func extractAUInfo(from plist: NSDictionary) throws -> AUInfo {
-        // Try plugin block first, then top-level
-        let pluginBlock = plist["plugin"] as? NSDictionary
-        let sourceDict = pluginBlock ?? plist
+    func savePreset(type: OSType, subtype: OSType, manufacturer: OSType, valuesFile: String, presetName: String, outDir: String, pluginName: String?, makeZip: Bool, zipPath: String?, bundleRoot: String, appendZip: Bool, force: Bool, verbose: Bool) throws {
         
-        guard let type = sourceDict["type"] as? NSNumber,
-              let subtype = sourceDict["subtype"] as? NSNumber,
-              let manufacturer = sourceDict["manufacturer"] as? NSNumber else {
-            throw PresetError.missingAUIdentifiers
+        if verbose {
+            print("🔍 Loading parameter values from \(valuesFile)")
         }
         
-        let name = sourceDict["name"] as? String ?? "Unknown"
-        let version = sourceDict["version"] as? NSNumber ?? 0
+        // Load parameter values
+        guard let data = FileManager.default.contents(atPath: valuesFile) else {
+            throw RuntimeError("Cannot read values file: \(valuesFile)")
+        }
         
-        return AUInfo(
-            type: type.uint32Value,
-            subtype: subtype.uint32Value,
-            manufacturer: manufacturer.uint32Value,
-            name: name,
-            version: version.uint32Value
+        let paramValues = try JSONSerialization.jsonObject(with: data) as? [String: Double] ?? [:]
+        
+        if verbose {
+            print("✓ Loaded \(paramValues.count) parameter values")
+        }
+        
+        // Create output directory
+        try FileManager.default.createDirectory(atPath: outDir, withIntermediateDirectories: true, attributes: nil)
+        
+        // Generate the preset
+        let presetURL = URL(fileURLWithPath: outDir).appendingPathComponent("\(presetName).aupreset")
+        try generateAUPreset(
+            type: type,
+            subtype: subtype,
+            manufacturer: manufacturer,
+            paramValues: paramValues,
+            outputURL: presetURL,
+            verbose: verbose
         )
+        
+        print("✓ Generated preset: \(presetURL.path)")
+        
+        // Handle zip creation if requested
+        if makeZip {
+            guard let pluginName = pluginName else {
+                throw RuntimeError("Plugin name is required for zip creation")
+            }
+            
+            let finalZipPath = zipPath ?? URL(fileURLWithPath: outDir).appendingPathComponent("\(pluginName).zip").path
+            let zipURL = URL(fileURLWithPath: finalZipPath)
+            
+            // Check if zip exists and handle accordingly
+            if FileManager.default.fileExists(atPath: zipURL.path) {
+                if appendZip {
+                    try appendToExistingZip(presetURL: presetURL, pluginName: pluginName, zipURL: zipURL, bundleRoot: bundleRoot, verbose: verbose)
+                } else if force {
+                    try FileManager.default.removeItem(at: zipURL)
+                    try createNewZip(presetURL: presetURL, pluginName: pluginName, zipURL: zipURL, bundleRoot: bundleRoot, verbose: verbose)
+                } else {
+                    throw RuntimeError("Zip file exists: \(zipURL.path). Use --force to overwrite or --append-zip to add to existing zip.")
+                }
+            } else {
+                try createNewZip(presetURL: presetURL, pluginName: pluginName, zipURL: zipURL, bundleRoot: bundleRoot, verbose: verbose)
+            }
+            
+            print("✓ Created zip: \(zipURL.path)")
+        }
     }
     
-    func instantiateAU(info: AUInfo) async throws -> AVAudioUnit {
-        let desc = AudioComponentDescription(
-            componentType: info.type,
-            componentSubType: info.subtype,
-            componentManufacturer: info.manufacturer,
+    private func generateAUPreset(type: OSType, subtype: OSType, manufacturer: OSType, paramValues: [String: Double], outputURL: URL, verbose: Bool) throws {
+        
+        if verbose {
+            print("🔍 Looking for Audio Unit...")
+        }
+        
+        let description = AudioComponentDescription(
+            componentType: type,
+            componentSubtype: subtype,
+            componentManufacturer: manufacturer,
             componentFlags: 0,
             componentFlagsMask: 0
         )
         
-        return try await withCheckedThrowingContinuation { continuation in
-            AVAudioUnit.instantiate(with: desc) { audioUnit, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else if let audioUnit = audioUnit {
-                    continuation.resume(returning: audioUnit)
-                } else {
-                    continuation.resume(throwing: PresetError.auInstantiationFailed)
-                }
-            }
-        }
-    }
-    
-    func listParameters(audioUnit: AVAudioUnit) throws {
-        guard let parameterTree = audioUnit.auAudioUnit.parameterTree else {
-            print("No parameter tree available")
-            return
+        guard let component = AudioComponentFindNext(nil, &description) else {
+            throw RuntimeError("Audio Unit not found")
         }
         
-        print("Available Parameters:")
-        for param in parameterTree.allParameters {
-            let range = param.minValue != param.maxValue ? " [\(param.minValue)-\(param.maxValue)]" : ""
-            print("  \(param.identifier): \(param.displayName)\(range)")
-        }
-    }
-    
-    func setParameters(
-        audioUnit: AVAudioUnit,
-        values: [String: Double],
-        map: [String: String]?,
-        strict: Bool,
-        verbose: Bool,
-        dryRun: Bool
-    ) async throws {
-        guard let parameterTree = audioUnit.auAudioUnit.parameterTree else {
-            throw PresetError.noParameterTree
+        // Get component info
+        var componentName: Unmanaged<CFString>?
+        AudioComponentCopyName(component, &componentName)
+        let name = componentName?.takeRetainedValue() as String? ?? "Unknown"
+        
+        if verbose {
+            print("✓ Plugin: \(name)")
         }
         
-        let allParams = parameterTree.allParameters
+        // Instantiate the Audio Unit
+        var audioUnit: AudioUnit?
+        let status = AudioComponentInstanceNew(component, &audioUnit)
+        guard status == noErr, let au = audioUnit else {
+            throw RuntimeError("Failed to instantiate Audio Unit: \(status)")
+        }
+        
+        defer {
+            AudioComponentInstanceDispose(au)
+        }
+        
+        if verbose {
+            print("✓ Audio Unit instantiated")
+        }
+        
+        // Initialize the Audio Unit
+        let initStatus = AudioUnitInitialize(au)
+        guard initStatus == noErr else {
+            throw RuntimeError("Failed to initialize Audio Unit: \(initStatus)")
+        }
+        
+        defer {
+            AudioUnitUninitialize(au)
+        }
+        
+        // Apply parameters
         var appliedCount = 0
-        
-        for (humanName, value) in values {
-            // Resolve parameter identifier
-            let paramIdentifier = map?[humanName] ?? humanName
-            
-            // Find parameter by identifier or display name
-            let parameter = allParams.first { param in
-                param.identifier.caseInsensitiveCompare(paramIdentifier) == .orderedSame ||
-                param.displayName.caseInsensitiveCompare(paramIdentifier) == .orderedSame
-            }
-            
-            guard let param = parameter else {
-                let message = "Parameter not found: \(humanName) (\(paramIdentifier))"
-                if strict {
-                    throw PresetError.parameterNotFound(paramIdentifier)
-                } else {
-                    print("Warning: \(message)")
-                    continue
-                }
-            }
-            
-            // Convert and clamp value
-            let clampedValue = try convertAndClampValue(value, for: param)
-            
-            if verbose || dryRun {
-                print("  \(humanName) -> \(param.identifier) = \(clampedValue)")
-            }
-            
-            if !dryRun {
-                param.setValue(clampedValue, originator: nil as AUParameterObserverToken?)
-            }
-            
-            appliedCount += 1
+        if verbose {
+            print("🎛️ Applying \(paramValues.count) parameters...")
         }
         
-        if verbose && !dryRun {
+        for (key, value) in paramValues {
+            if let paramID = AudioUnitParameterID(key) {
+                let setStatus = AudioUnitSetParameter(au, paramID, kAudioUnitScope_Global, 0, Float(value), 0)
+                if setStatus == noErr {
+                    appliedCount += 1
+                    if verbose {
+                        print("  \(paramID) = \(value)")
+                    }
+                } else if verbose {
+                    print("  ⚠️ Failed to set parameter \(paramID): \(setStatus)")
+                }
+            } else if verbose {
+                print("  ⚠️ Invalid parameter ID: \(key)")
+            }
+        }
+        
+        if verbose {
             print("✓ Applied \(appliedCount) parameters")
         }
-    }
-    
-    func convertAndClampValue(_ value: Double, for param: AUParameter) throws -> AUValue {
-        let floatValue = Float(value)
         
-        // Clamp to parameter range
-        let clampedValue = max(param.minValue, min(param.maxValue, floatValue))
-        
-        // Round if parameter is discrete/integer
-        if param.flags.contains(.flag_IsDiscrete) || param.unit == .indexed {
-            return AUValue(round(clampedValue))
+        // Export Audio Unit state
+        var propertySize: UInt32 = 0
+        let sizeStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, nil, &propertySize)
+        guard sizeStatus == noErr else {
+            throw RuntimeError("Failed to get ClassInfo size: \(sizeStatus)")
         }
         
-        return AUValue(clampedValue)
-    }
-    
-    func exportAUState(audioUnit: AVAudioUnit) async throws -> [String: Any] {
-        let auAudioUnit = audioUnit.auAudioUnit
+        let classInfoData = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(propertySize))
+        defer { classInfoData.deallocate() }
         
-        // Try fullState first (preferred)
-        if let fullState = auAudioUnit.fullState {
-            return fullState
+        let getStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, classInfoData, &propertySize)
+        guard getStatus == noErr else {
+            throw RuntimeError("Failed to get ClassInfo: \(getStatus)")
         }
         
-        // Fallback to fullStateForDocument
-        if let documentState = auAudioUnit.fullStateForDocument {
-            return documentState
-        }
+        // Create CFData from the raw data
+        let cfData = CFDataCreate(nil, classInfoData, Int(propertySize))!
         
-        // Last resort: try to get ClassInfo
-        throw PresetError.cannotExportState
-    }
-    
-    // MARK: - File Operations
-    
-    func loadValues(path: String) throws -> ValuesData {
-        let url = URL(fileURLWithPath: path)
-        let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode(ValuesData.self, from: data)
-    }
-    
-    func loadMap(path: String?) throws -> [String: String]? {
-        guard let path = path else { return nil }
-        
-        let url = URL(fileURLWithPath: path)
-        let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode([String: String].self, from: data)
-    }
-    
-    func createOutputPreset(
-        seedPlist: NSDictionary,
-        auState: [String: Any],
-        presetName: String,
-        auInfo: AUInfo
-    ) throws -> NSMutableDictionary {
-        // Start with seed plist to preserve all unknown keys
-        let outputPlist = seedPlist.mutableCopy() as! NSMutableDictionary
-        
-        // Update preset name
-        outputPlist["name"] = presetName
-        
-        // Update AU state - try different keys based on what seed had
-        if seedPlist["jucePluginState"] != nil {
-            // TDR Nova style - update jucePluginState
-            if let stateData = auState["jucePluginState"] {
-                outputPlist["jucePluginState"] = stateData
-            }
-        } else if seedPlist["data"] != nil {
-            // Generic data field
-            if let stateData = auState["data"] {
-                outputPlist["data"] = stateData
-            }
-        } else {
-            // Store full state in data field
-            outputPlist["data"] = auState
-        }
-        
-        return outputPlist
-    }
-    
-    func writeOutputFile(
-        plist: NSMutableDictionary,
-        outDir: String,
-        presetName: String,
-        auInfo: AUInfo,
-        writeBinary: Bool
-    ) throws -> String {
-        // Create directory structure with proper Logic Pro names
-        let (manufacturerName, pluginName) = getLogicProNames(auInfo: auInfo)
-        
-        let outputDir = URL(fileURLWithPath: outDir)
-            .appendingPathComponent("Presets")
-            .appendingPathComponent(manufacturerName)
-            .appendingPathComponent(pluginName)
-        
-        try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
-        
-        let outputPath = outputDir.appendingPathComponent("\(presetName).aupreset")
-        
-        // Write plist
-        let format: PropertyListSerialization.PropertyListFormat = writeBinary ? .binary : .xml
-        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: format, options: 0)
-        try data.write(to: outputPath)
-        
-        return outputPath.path
-    }
-    
-    func getLogicProNames(auInfo: AUInfo) -> (manufacturer: String, plugin: String) {
-        // Map raw AU identifiers to proper Logic Pro directory names
-        let manufacturerMappings = [
-            "Tdrl": "Tokyo Dawn Labs",
-            "Meld": "MeldaProduction",
-            "MDA ": "MeldaProduction", 
-            "Mlda": "MeldaProduction",
-            "AUVL": "Auburn Sounds",
-            "Acon": "Acon Digital"
+        // Create preset dictionary
+        let preset: [String: Any] = [
+            "data": cfData,
+            "manufacturer": Int(manufacturer),
+            "name": name,
+            "subtype": Int(subtype),
+            "type": Int(type),
+            "version": 0
         ]
         
-        let pluginMappings = [
-            "TDRNovaSeed": "TDR Nova",
-            "MEqualizerSeed": "MEqualizer",
-            "MCompressorSeed": "MCompressor",
-            "1176CompressorSeed": "1176 Compressor",
-            "MAutoPitchSeed": "MAutoPitch",
-            "Graillon3Seed": "Graillon 3",
-            "FreshAirSeed": "Fresh Air",
-            "LALASeed": "LA-LA",
-            "MConvolutionEZSeed": "MConvolutionEZ"
-        ]
+        // Write to .aupreset file
+        let plistData = try PropertyListSerialization.data(fromPropertyList: preset, format: .xml, options: 0)
+        try plistData.write(to: outputURL)
         
-        let rawManufacturer = fourCCToString(auInfo.manufacturer)
-        let manufacturerName = manufacturerMappings[rawManufacturer] ?? rawManufacturer
-        let pluginName = pluginMappings[auInfo.name] ?? auInfo.name
-        
-        return (manufacturerName, pluginName)
-    }
-    
-    func validateOutput(path: String) throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/plutil")
-        process.arguments = ["-lint", path]
-        
-        try process.run()
-        process.waitUntilExit()
-        
-        if process.terminationStatus != 0 {
-            throw PresetError.validationFailed
+        if verbose {
+            print("✓ Exported Audio Unit state")
         }
     }
-}
-
-// MARK: - Data Types
-
-struct AUInfo {
-    let type: UInt32
-    let subtype: UInt32
-    let manufacturer: UInt32
-    let name: String
-    let version: UInt32
-}
-
-struct ValuesData: Codable {
-    let params: [String: Double]
-}
-
-// MARK: - Errors
-
-enum PresetError: Error, CustomStringConvertible {
-    case invalidSeedFile(String)
-    case missingAUIdentifiers
-    case auInstantiationFailed
-    case noParameterTree
-    case parameterNotFound(String)
-    case invalidValueType(String)
-    case cannotExportState
-    case validationFailed
     
-    var description: String {
-        switch self {
-        case .invalidSeedFile(let path):
-            return "Cannot load seed file: \(path)"
-        case .missingAUIdentifiers:
-            return "Seed file missing AU identifiers (type, subtype, manufacturer)"
-        case .auInstantiationFailed:
-            return "Failed to instantiate Audio Unit"
-        case .noParameterTree:
-            return "Audio Unit has no parameter tree"
-        case .parameterNotFound(let param):
-            return "Parameter not found: \(param)"
-        case .invalidValueType(let value):
-            return "Invalid value type: \(value)"
-        case .cannotExportState:
-            return "Cannot export Audio Unit state"
-        case .validationFailed:
-            return "Output file validation failed"
+    private func createNewZip(presetURL: URL, pluginName: String, zipURL: URL, bundleRoot: String, verbose: Bool) throws {
+        // Create temporary directory for staging
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("aupreset_bundle_\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+        
+        // Stage the preset file
+        let bundleRootURL = try stagePresetForZip(tempRoot: tempDir, pluginName: pluginName, presetFile: presetURL, bundleRootName: bundleRoot)
+        
+        // Create zip using ditto
+        try runDittoZip(at: bundleRootURL, to: zipURL, verbose: verbose)
+    }
+    
+    private func appendToExistingZip(presetURL: URL, pluginName: String, zipURL: URL, bundleRoot: String, verbose: Bool) throws {
+        // Create temporary directory for extraction and staging
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("aupreset_append_\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+        
+        // Extract existing zip
+        let extractDir = tempDir.appendingPathComponent("extracted")
+        try runDittoExtract(from: zipURL, to: extractDir, verbose: verbose)
+        
+        // Find the bundle root in extracted content
+        let extractedBundleRoot = extractDir.appendingPathComponent(bundleRoot)
+        
+        // Stage new preset file
+        _ = try stagePresetForZip(tempRoot: extractDir, pluginName: pluginName, presetFile: presetURL, bundleRootName: bundleRoot)
+        
+        // Remove old zip and create new one
+        try FileManager.default.removeItem(at: zipURL)
+        try runDittoZip(at: extractedBundleRoot, to: zipURL, verbose: verbose)
+    }
+    
+    private func stagePresetForZip(tempRoot: URL, pluginName: String, presetFile: URL, bundleRootName: String) throws -> URL {
+        let bundleRoot = tempRoot.appendingPathComponent(bundleRootName, isDirectory: true)
+        let destDir = bundleRoot
+            .appendingPathComponent("Plug-In Settings", isDirectory: true)
+            .appendingPathComponent(pluginName, isDirectory: true)
+        
+        try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+        
+        let destFile = destDir.appendingPathComponent(presetFile.lastPathComponent)
+        if FileManager.default.fileExists(atPath: destFile.path) {
+            try FileManager.default.removeItem(at: destFile)
+        }
+        
+        try FileManager.default.copyItem(at: presetFile, to: destFile)
+        return bundleRoot
+    }
+    
+    private func runDittoZip(at bundleRoot: URL, to zipURL: URL, verbose: Bool) throws {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        task.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent",
+                          bundleRoot.lastPathComponent, zipURL.path]
+        task.currentDirectoryURL = bundleRoot.deletingLastPathComponent()
+        
+        let pipe = Pipe()
+        task.standardError = pipe
+        task.standardOutput = Pipe()
+        
+        if verbose {
+            print("🗜️ Creating zip with ditto...")
+        }
+        
+        try task.run()
+        task.waitUntilExit()
+        
+        if task.terminationStatus != 0 {
+            let err = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+            throw RuntimeError("ditto failed (\(task.terminationStatus)): \(err)")
         }
     }
-}
-
-// MARK: - Utilities
-
-func fourCCToString(_ code: UInt32) -> String {
-    let chars = [
-        Character(UnicodeScalar((code >> 24) & 0xFF)!),
-        Character(UnicodeScalar((code >> 16) & 0xFF)!),
-        Character(UnicodeScalar((code >> 8) & 0xFF)!),
-        Character(UnicodeScalar(code & 0xFF)!)
-    ]
-    return String(chars)
+    
+    private func runDittoExtract(from zipURL: URL, to extractURL: URL, verbose: Bool) throws {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        task.arguments = ["-x", "-k", zipURL.path, extractURL.path]
+        
+        let pipe = Pipe()
+        task.standardError = pipe
+        task.standardOutput = Pipe()
+        
+        if verbose {
+            print("📦 Extracting zip with ditto...")
+        }
+        
+        try task.run()
+        task.waitUntilExit()
+        
+        if task.terminationStatus != 0 {
+            let err = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+            throw RuntimeError("ditto extract failed (\(task.terminationStatus)): \(err)")
+        }
+    }
+    
+    func packageExistingPresets(rootDir: String, pluginName: String, zipPath: String, bundleRoot: String, force: Bool, verbose: Bool) throws {
+        let rootURL = URL(fileURLWithPath: rootDir)
+        let zipURL = URL(fileURLWithPath: zipPath)
+        
+        // Check if zip exists
+        if FileManager.default.fileExists(atPath: zipURL.path) && !force {
+            throw RuntimeError("Zip file exists: \(zipURL.path). Use --force to overwrite.")
+        }
+        
+        // Find all .aupreset files
+        let fileManager = FileManager.default
+        let enumerator = fileManager.enumerator(at: rootURL, includingPropertiesForKeys: [.isRegularFileKey])
+        var presetFiles: [URL] = []
+        
+        while let fileURL = enumerator?.nextObject() as? URL {
+            if fileURL.pathExtension == "aupreset" {
+                presetFiles.append(fileURL)
+            }
+        }
+        
+        if presetFiles.isEmpty {
+            throw RuntimeError("No .aupreset files found in \(rootDir)")
+        }
+        
+        if verbose {
+            print("📁 Found \(presetFiles.count) preset files")
+        }
+        
+        // Create temporary directory for staging
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("aupreset_package_\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+        
+        // Stage all preset files
+        let bundleRootURL = tempDir.appendingPathComponent(bundleRoot)
+        let destDir = bundleRootURL
+            .appendingPathComponent("Plug-In Settings", isDirectory: true)
+            .appendingPathComponent(pluginName, isDirectory: true)
+        
+        try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+        
+        for presetFile in presetFiles {
+            let destFile = destDir.appendingPathComponent(presetFile.lastPathComponent)
+            try FileManager.default.copyItem(at: presetFile, to: destFile)
+        }
+        
+        // Remove existing zip if force is enabled
+        if FileManager.default.fileExists(atPath: zipURL.path) {
+            try FileManager.default.removeItem(at: zipURL)
+        }
+        
+        // Create zip
+        try runDittoZip(at: bundleRootURL, to: zipURL, verbose: verbose)
+        
+        print("✓ Created zip: \(zipURL.path) with \(presetFiles.count) presets")
+    }
 }
