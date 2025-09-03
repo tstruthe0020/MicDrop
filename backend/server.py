@@ -173,48 +173,135 @@ async def export_logic_presets(request: ExportRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
-@api_router.post("/export/individual-plugin")
-async def export_individual_plugin(request: dict):
-    """Export individual plugin preset"""
+@api_router.post("/export/install-to-logic")
+async def install_presets_to_logic(request: RecommendRequest) -> Dict[str, Any]:
+    """
+    Generate and install presets directly to Logic Pro directories
+    No downloads needed - presets appear in Logic Pro automatically
+    """
     try:
-        plugin_config = request.get('plugin')
-        preset_name = request.get('preset_name', 'Individual_Plugin_Preset')
+        logger.info(f"Installing presets to Logic Pro for vibe: {request.vibe}")
         
-        if not plugin_config:
-            raise HTTPException(status_code=400, detail="Plugin configuration required")
+        # Get recommendation for the vibe
+        recommendations = recommend_vocal_chain(request.vibe, request.genre, request.audio_type)
         
-        # Create temporary directory for individual export
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
+        if not recommendations or not recommendations.get("chain"):
+            return {"success": False, "message": "No recommendations generated"}
+        
+        chain = recommendations["chain"]
+        chain_name = f"VocalChain_{request.vibe}_{request.genre or 'Universal'}"
+        
+        # Install each plugin preset to Logic Pro
+        installed_presets = []
+        errors = []
+        
+        for i, plugin_config in enumerate(chain):
+            plugin_name = plugin_config.get("plugin", f"Unknown_{i}")
+            parameters = plugin_config.get("params", {})
             
-            plugin_name = plugin_config["plugin"]
+            if not parameters:
+                logger.warning(f"No parameters for {plugin_name}, skipping")
+                continue
             
-            # Generate individual preset using the CLI tool
-            plugin_preset_path = temp_path / f"{preset_name}_{plugin_name.replace(' ', '_')}.aupreset"
+            preset_name = f"{chain_name}_{plugin_name.replace(' ', '_')}"
             
-            # Use our working CLI system to generate the preset
-            success = await generate_individual_aupreset(
-                plugin_config, preset_name, str(plugin_preset_path)
-            )
-            
-            if not success or not plugin_preset_path.exists():
-                raise HTTPException(status_code=500, detail=f"Failed to generate preset for {plugin_name}")
-            
-            # Read the generated preset file
-            with open(plugin_preset_path, 'rb') as preset_file:
-                preset_data = preset_file.read()
-                preset_base64 = base64.b64encode(preset_data).decode('utf-8')
-            
+            # Use Swift CLI to install directly to Logic Pro
+            if au_preset_generator.check_available():
+                success, stdout, stderr = au_preset_generator.generate_preset(
+                    plugin_name=plugin_name,
+                    parameters=parameters,
+                    preset_name=preset_name,
+                    output_dir="/Library/Audio/Presets",  # Direct to Logic Pro
+                    verbose=True
+                )
+                
+                if success:
+                    installed_presets.append({
+                        "plugin": plugin_name,
+                        "preset_name": preset_name,
+                        "status": "installed"
+                    })
+                    logger.info(f"✅ Installed {plugin_name} preset to Logic Pro")
+                else:
+                    error_msg = f"Failed to install {plugin_name}: {stderr}"
+                    errors.append(error_msg)
+                    logger.error(f"❌ {error_msg}")
+            else:
+                errors.append(f"Swift CLI not available for {plugin_name}")
+        
+        if installed_presets:
             return {
-                "plugin_name": plugin_name,
-                "preset_name": preset_name,
-                "preset_base64": preset_base64,
-                "filename": f"{preset_name}_{plugin_name.replace(' ', '_')}.aupreset"
+                "success": True,
+                "message": f"🎵 Installed {len(installed_presets)} presets to Logic Pro!",
+                "installed_presets": installed_presets,
+                "chain_name": chain_name,
+                "instructions": f"Open Logic Pro and look for presets starting with '{chain_name}_'",
+                "errors": errors if errors else None
+            }
+        else:
+            return {
+                "success": False,
+                "message": "No presets were installed",
+                "errors": errors
             }
             
     except Exception as e:
-        logger.error(f"Individual plugin export failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+        logger.error(f"Error installing presets to Logic Pro: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+
+@api_router.post("/export/install-individual")
+async def install_individual_preset_to_logic(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Install a single preset directly to Logic Pro
+    """
+    try:
+        plugin_name = request.get("plugin")
+        parameters = request.get("parameters", {})
+        preset_name = request.get("preset_name", f"{plugin_name}_Custom")
+        
+        if not plugin_name or not parameters:
+            return {
+                "success": False,
+                "message": "Missing plugin name or parameters"
+            }
+        
+        # Use Swift CLI to install directly to Logic Pro
+        if au_preset_generator.check_available():
+            success, stdout, stderr = au_preset_generator.generate_preset(
+                plugin_name=plugin_name,
+                parameters=parameters,
+                preset_name=preset_name,
+                output_dir="/Library/Audio/Presets",
+                verbose=True
+            )
+            
+            if success:
+                return {
+                    "success": True,
+                    "message": f"✅ Installed {plugin_name} preset '{preset_name}' to Logic Pro",
+                    "preset_name": preset_name,
+                    "plugin": plugin_name
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": f"Failed to install preset: {stderr}"
+                }
+        else:
+            return {
+                "success": False,
+                "message": "Swift CLI not available"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error installing individual preset: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
 
 async def generate_individual_aupreset(plugin_config: Dict[str, Any], preset_name: str, output_path: str) -> bool:
     """Generate individual .aupreset file with fallback approaches"""
