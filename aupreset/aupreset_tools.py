@@ -275,8 +275,6 @@ def _extract_binary_params(data: bytes) -> Dict[str, Any]:
 
 def _update_juce_xml_params(preset: Dict[str, Any], new_params: Dict[str, Any]) -> Dict[str, Any]:
     """Update JUCE XML parameters in jucePluginState"""
-    import xml.etree.ElementTree as ET
-    
     new_preset = preset.copy()
     
     try:
@@ -288,57 +286,53 @@ def _update_juce_xml_params(preset: Dict[str, Any], new_params: Dict[str, Any]) 
             logger.warning("No XML found in jucePluginState")
             return new_preset
         
-        # Extract XML portion
-        xml_data = juce_state[xml_start:]
+        # Extract the full XML portion as string
+        xml_data = juce_state[xml_start:].decode('utf-8', errors='ignore')
         
-        # Find the end of the first XML element
-        root_start = xml_data.find(b'<', 5)  # Skip <?xml declaration
-        if root_start < 0:
-            return new_preset
+        # For TDR Nova, the XML is a single self-closing element with attributes
+        # We need to update the attributes directly in the string rather than parsing as XML
         
-        # Find root element name
-        root_name_end = xml_data.find(b' ', root_start)
-        if root_name_end < 0:
-            root_name_end = xml_data.find(b'>', root_start)
+        updated_xml = xml_data
         
-        root_name = xml_data[root_start+1:root_name_end].decode('utf-8')
-        
-        # Find the end of the root element
-        if b'/>' in xml_data[:1000]:  # Self-closing
-            xml_end = xml_data.find(b'/>') + 2
-        else:  # Find matching end tag
-            end_tag = f'</{root_name}>'.encode('utf-8')
-            xml_end = xml_data.find(end_tag)
-            if xml_end > 0:
-                xml_end += len(end_tag)
-            else:
-                xml_end = min(len(xml_data), 2000)
-        
-        xml_chunk = xml_data[:xml_end].decode('utf-8', errors='ignore')
-        
-        # Parse and update XML
-        root = ET.fromstring(xml_chunk)
-        
-        # Update attributes with new parameter values
+        # Update each parameter by replacing the attribute value in the string
         for param_id, value in new_params.items():
-            if param_id in root.attrib:
-                # Convert value to string for XML
+            if param_id in xml_data:
+                # Create the attribute pattern to search for
+                # Look for: paramname="oldvalue"
+                import re
+                pattern = f'{param_id}="[^"]*"'
+                
+                # Convert value to appropriate string format
                 if isinstance(value, bool):
-                    root.attrib[param_id] = 'true' if value else 'false'
+                    value_str = 'true' if value else 'false'
+                elif isinstance(value, str):
+                    value_str = value
                 else:
-                    root.attrib[param_id] = str(value)
+                    value_str = str(value)
+                
+                replacement = f'{param_id}="{value_str}"'
+                
+                # Replace in the XML string
+                updated_xml = re.sub(pattern, replacement, updated_xml)
+                logger.debug(f"Updated XML attribute {param_id} = {value_str}")
         
-        # Convert back to bytes
-        updated_xml = ET.tostring(root, encoding='utf-8')
+        # Convert back to bytes and reconstruct the JUCE state
+        updated_xml_bytes = updated_xml.encode('utf-8')
+        
+        # Calculate the original XML length
+        original_xml_length = len(juce_state) - xml_start
         
         # Replace the XML portion in the original juce state
-        new_juce_state = juce_state[:xml_start] + updated_xml + juce_state[xml_start + xml_end:]
+        new_juce_state = juce_state[:xml_start] + updated_xml_bytes
+        
         new_preset['jucePluginState'] = new_juce_state
         
-        logger.debug("Updated JUCE XML parameters")
+        logger.debug(f"Updated JUCE XML parameters: {len(new_params)} parameters")
         
     except Exception as e:
         logger.warning(f"Failed to update JUCE XML parameters: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
     
     return new_preset
 
