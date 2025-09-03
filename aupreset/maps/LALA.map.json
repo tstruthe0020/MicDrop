@@ -1,16 +1,13 @@
 {
-  "Bypass": "param_0",
-  "Target_Level": "param_1",
-  "Dynamics": "param_2",
-  "Speed": "param_3",
-  "Release": "param_4",
-  "Mix": "param_5",
-  "Output_Gain": "param_6",
-  "Input_Gain": "param_7",
-  "Limiter_Enable": "param_8",
-  "Compressor_Enable": "param_9",
-  "Gate_Enable": "param_10",
-  "Gate_Threshold": "param_11",
-  "Stereo_Link": "param_12",
-  "Auto_Release": "param_13"
+  "Gain": "0",
+  "Peak_Reduction": "1",
+  "HF_Gain": "2",
+  "HF_Frequency": "3",
+  "MF_Gain": "4",
+  "MF_Frequency": "5",
+  "HF_Attenuation": "6",
+  "External_Sidechain": "8",
+  "Mode": "9",
+  "Bypass": "10",
+  "Oversampling": "11"
 }
