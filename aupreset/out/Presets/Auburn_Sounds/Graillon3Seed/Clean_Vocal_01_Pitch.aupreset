@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>data</key>
+	<data>
+	CyC6kgEAAAAAAAAAAAEDAAAAAABBAAAA7zs1PwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAA
+	AAAAAADvOzU/AAAAAAAAAAAAAAAAAACAPwAAAD8AAAAAAAAAPwAAgD8AAIA/FaTSPgAA
+	gD/TMgE/zcxMPgAAgD8AAIA/AACAPwAAgD8AAIA/AACAPwAAgD8AAIA/AACAPwAAgD8A
+	AIA/AACAPwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAA/
+	AAAAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAPwAAAD8AAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAD8AAAAAAACAPwAAgD8AAIA/AAAAAAAAAAAAAAAA
+	</data>
+	<key>manufacturer</key>
+	<integer>1098211950</integer>
+	<key>name</key>
+	<string>Clean_Vocal_01_Pitch</string>
+	<key>subtype</key>
+	<integer>1081291059</integer>
+	<key>type</key>
+	<integer>1635085670</integer>
+	<key>version</key>
+	<integer>196864</integer>
+</dict>
+</plist>
