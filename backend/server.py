@@ -255,9 +255,36 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
             )
             
             if success:
-                preset_path = Path(download_dir) / preset_filename
+                preset_filename = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}.aupreset"
                 
-                if preset_path.exists():
+                # Look for the file in multiple possible locations
+                possible_paths = [
+                    Path(download_dir) / preset_filename,  # Direct location
+                    Path(download_dir) / "Presets" / "**" / preset_filename,  # Nested structure
+                ]
+                
+                preset_path = None
+                # Search for the file in nested directories
+                for pattern_path in possible_paths:
+                    if "*" in str(pattern_path):
+                        # Use glob for wildcard search
+                        matches = list(Path(download_dir).glob(f"**/{ preset_filename}"))
+                        if matches:
+                            preset_path = matches[0]
+                            break
+                    else:
+                        if pattern_path.exists():
+                            preset_path = pattern_path  
+                            break
+                
+                if preset_path and preset_path.exists():
+                    # Move file to direct location for ZIP packaging
+                    final_path = Path(download_dir) / preset_filename
+                    if preset_path != final_path:
+                        import shutil
+                        shutil.move(str(preset_path), str(final_path))
+                        preset_path = final_path
+                    
                     generated_files.append({
                         "plugin": plugin_name,
                         "filename": preset_filename,
@@ -266,7 +293,9 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
                     })
                     logger.info(f"✅ Generated downloadable preset: {preset_filename}")
                 else:
-                    errors.append(f"Generated {plugin_name} but file not found at expected location: {preset_path}")
+                    # Debug: list all files in the directory
+                    all_files = list(Path(download_dir).rglob("*.aupreset"))
+                    errors.append(f"Generated {plugin_name} but file not found. Available files: {[f.name for f in all_files]}")
             else:
                 errors.append(f"Failed to generate {plugin_name}: {stderr}")
                 logger.error(f"❌ {plugin_name} generation failed: {stderr}")
