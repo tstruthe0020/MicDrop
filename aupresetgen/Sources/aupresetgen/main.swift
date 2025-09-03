@@ -292,7 +292,7 @@ class AUPresetGenerator {
             }
             
             if !dryRun {
-                param.setValue(clampedValue, originator: nil)
+                param.setValue(clampedValue, originator: nil as AUParameterObserverToken?)
             }
             
             appliedCount += 1
