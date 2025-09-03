@@ -198,6 +198,25 @@ class AUPresetGenerator:
                     plugin_name, parameters, preset_name, output_dir, 
                     seed_file, parameter_map, verbose
                 )
+            
+            # Find seed file
+            seed_file = self._find_seed_file(plugin_name)
+            if not seed_file:
+                return False, "", f"No seed file found for plugin: {plugin_name}"
+            
+            # Try Swift CLI first if available
+            if self.check_available():
+                return self._generate_with_swift_cli(
+                    plugin_name, parameters, preset_name, output_dir, 
+                    seed_file, parameter_map, verbose
+                )
+            else:
+                # Fall back to Python CLI
+                logger.info(f"Swift CLI not available, using Python fallback for {plugin_name}")
+                return self._generate_with_python_fallback(
+                    plugin_name, parameters, preset_name, output_dir, 
+                    seed_file, parameter_map, verbose
+                )
                 
         except Exception as e:
             logger.error(f"Exception in AU preset generation: {e}")
