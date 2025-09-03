@@ -766,7 +766,7 @@ function App() {
 
                   {/* Plugin Chain */}
                   <div className="space-y-2">
-                    {chain.chain.plugins.map((plugin, index) => (
+                    {chain && chain.chain && chain.chain.plugins ? chain.chain.plugins.map((plugin, index) => (
                       <div key={index} className="p-4 bg-slate-50 rounded-lg border">
                         <div className="flex items-center gap-3 mb-3">
                           <Badge variant="outline">{index + 1}</Badge>
