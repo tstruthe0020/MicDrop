@@ -617,7 +617,7 @@ function App() {
                               className="px-3 py-1 text-xs"
                             >
                               <Download className="w-3 h-3 mr-1" />
-                              Download
+                              Install
                             </Button>
                           </div>
                         </div>
