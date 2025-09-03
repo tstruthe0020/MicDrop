@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the new individual plugin download endpoint that was just added"
+user_problem_statement: "Also, where each plugin is listed on the chain in the final page, include an individual download button to download just that preset"
 
 backend:
   - task: "Fix Plugin Recommendation System"
