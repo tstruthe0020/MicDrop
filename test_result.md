@@ -195,6 +195,18 @@ test_plan:
         - agent: "main"
         - comment: "✅ COMPILATION SUCCESSFUL! Fixed Swift compilation issues: 1) Added explicit type annotation for nil parameter (nil as AUParameterObserverToken?), 2) Simplified ValuesData to use [String: Double] instead of AnyCodable, 3) Fixed manufacturer string formatting with fourCC conversion. User confirmed 'swift build -c release' now works successfully."
 
+  - task: "Swift CLI Tool Functionality Testing"
+    implemented: false
+    working: "NA"
+    file: "/app/aupresetgen/Sources/aupresetgen/main.swift"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Need to test that the compiled Swift CLI can generate valid .aupreset files for the 9 plugins and that the generated presets correctly apply parameters in Logic Pro."
+
 agent_communication:
     - agent: "main"
     - message: "Found critical issue: free_plugin_chains.py is using wrong plugins. User has 9 specific plugins with seed files but system recommends different plugins they don't have. Need to completely rewrite chain generation to use only user's 9 plugins."
@@ -208,3 +220,5 @@ agent_communication:
     - message: "✅ INDIVIDUAL PLUGIN ENDPOINT TESTING COMPLETE: The new /api/export/individual-plugin endpoint is working excellently! Successfully tested with MEqualizer (binary), TDR Nova (XML), and MCompressor. All generate valid .aupreset files with correct base64 encoding. Filenames are properly formatted. Both XML and binary plugin formats work correctly. Error handling is functional. The endpoint is ready for production use and will enable individual download buttons for each plugin in vocal chains as requested by the user."
     - agent: "main"
     - message: "Working on Swift CLI compilation issues. User has Swift package structure but compilation failing with type inference errors. Need to fix parameter setting and type annotations in main.swift."
+    - agent: "main"
+    - message: "✅ SWIFT CLI COMPILATION SUCCESS! Fixed all Swift compilation errors - explicit type annotations, simplified parameter handling, and proper fourCC conversion. User confirmed successful build. Now need to test actual preset generation functionality."
