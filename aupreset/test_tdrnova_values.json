@@ -1,0 +1,10 @@
+{
+  "bypass_master": false,
+  "bandActive_1": true,
+  "bandSelected_1": true,
+  "bandGain_1": -2.5,
+  "bandFreq_1": 250.0,
+  "bandQ_1": 0.7,
+  "gain_master": 0.0,
+  "dryMix_master": 0.0
+}
