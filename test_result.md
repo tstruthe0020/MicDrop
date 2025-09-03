@@ -251,3 +251,5 @@ agent_communication:
     - message: "🚀 SWIFT CLI FULLY VALIDATED! Both XML (TDR Nova) and binary (MEqualizer) formats confirmed working in Logic Pro. All parameters applying correctly. Ready for backend integration and production deployment. Swift CLI can replace Python fallback completely!"    
     - agent: "main"
     - message: "🎯 COMPLETE SYSTEM INTEGRATION ACHIEVED! 1) All 9 plugin parameter maps updated with correct numeric IDs, 2) Backend API endpoints working (install-to-logic, install-individual), 3) Frontend updated with 'Install to Logic Pro' functionality, 4) Swift CLI integrated with Python fallback, 5) Full vocal chain generation working, 6) System ready for production with Swift CLI binary deployment. MAJOR SUCCESS!"
+    - agent: "main"  
+    - message: "🔍 DEBUGGING SWIFT CLI INTEGRATION ISSUE: Found root cause! Swift CLI binary not available in container (Linux) - needs to run on user's Mac (macOS). Container has placeholder script. Seed files exist but need path configuration. Audio Units only work on macOS. Need hybrid approach: Swift CLI for Mac users, Python fallback for others. Also need configurable paths for user setup."
