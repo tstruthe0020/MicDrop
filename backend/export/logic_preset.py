@@ -111,9 +111,14 @@ class LogicPresetExporter:
                             "file_path": f"Plug-In Settings/{plugin_name}/{plugin_preset_name}.aupreset"
                         })
                 
-                # Generate .cst file (Channel Strip Template)
+                # Generate .cst file (Channel Strip Template) using binary format
                 cst_path = channel_strip_dir / f"{preset_name}.cst"
-                self._create_channel_strip_file(cst_path, plugin_references, preset_name)
+                cst_success = self.cst_writer.create_cst_file(str(cst_path), plugin_references, preset_name)
+                
+                if not cst_success:
+                    logger.warning("Failed to create binary .cst file, falling back to XML")
+                    # Fallback to XML method
+                    self._create_channel_strip_file(cst_path, plugin_references, preset_name)
                 
                 # Create ZIP file
                 zip_path = f"/tmp/{preset_name}_LogicPresets.zip"
