@@ -226,29 +226,27 @@ async def install_presets_to_logic(request: RecommendRequest) -> Dict[str, Any]:
             
             preset_name = f"{chain_name}_{plugin_name.replace(' ', '_')}"
             
-            # Use Swift CLI to install directly to Logic Pro
-            if au_preset_generator.check_available():
-                success, stdout, stderr = au_preset_generator.generate_preset(
-                    plugin_name=plugin_name,
-                    parameters=parameters,
-                    preset_name=preset_name,
-                    output_dir="/Library/Audio/Presets",  # Direct to Logic Pro
-                    verbose=True
-                )
-                
-                if success:
-                    installed_presets.append({
-                        "plugin": plugin_name,
-                        "preset_name": preset_name,
-                        "status": "installed"
-                    })
-                    logger.info(f"✅ Installed {plugin_name} preset to Logic Pro")
-                else:
-                    error_msg = f"Failed to install {plugin_name}: {stderr}"
-                    errors.append(error_msg)
-                    logger.error(f"❌ {error_msg}")
+            # Use AU Preset Generator (tries Swift CLI first, then Python fallback)
+            success, stdout, stderr = au_preset_generator.generate_preset(
+                plugin_name=plugin_name,
+                parameters=parameters,
+                preset_name=preset_name,
+                output_dir=None,  # Use default Logic Pro directory
+                verbose=True
+            )
+            
+            if success:
+                installed_presets.append({
+                    "plugin": plugin_name,
+                    "preset_name": preset_name,
+                    "status": "installed",
+                    "output": stdout
+                })
+                logger.info(f"✅ Installed {plugin_name} preset to Logic Pro")
             else:
-                errors.append(f"Swift CLI not available for {plugin_name}")
+                error_msg = f"Failed to install {plugin_name}: {stderr}"
+                errors.append(error_msg)
+                logger.error(f"❌ {error_msg}")
         
         if installed_presets:
             return {
@@ -289,32 +287,27 @@ async def install_individual_preset_to_logic(request: Dict[str, Any]) -> Dict[st
                 "message": "Missing plugin name or parameters"
             }
         
-        # Use Swift CLI to install directly to Logic Pro
-        if au_preset_generator.check_available():
-            success, stdout, stderr = au_preset_generator.generate_preset(
-                plugin_name=plugin_name,
-                parameters=parameters,
-                preset_name=preset_name,
-                output_dir="/Library/Audio/Presets",
-                verbose=True
-            )
-            
-            if success:
-                return {
-                    "success": True,
-                    "message": f"✅ Installed {plugin_name} preset '{preset_name}' to Logic Pro",
-                    "preset_name": preset_name,
-                    "plugin": plugin_name
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"Failed to install preset: {stderr}"
-                }
+        # Use AU Preset Generator (tries Swift CLI first, then Python fallback)
+        success, stdout, stderr = au_preset_generator.generate_preset(
+            plugin_name=plugin_name,
+            parameters=parameters,
+            preset_name=preset_name,
+            output_dir=None,  # Use default Logic Pro directory  
+            verbose=True
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"✅ Installed {plugin_name} preset '{preset_name}' to Logic Pro",
+                "preset_name": preset_name,
+                "plugin": plugin_name,
+                "output": stdout
+            }
         else:
             return {
                 "success": False,
-                "message": "Swift CLI not available"
+                "message": f"Failed to install preset: {stderr}"
             }
             
     except Exception as e:
@@ -481,7 +474,54 @@ async def generate_individual_aupreset_python_fallback(plugin_config: Dict[str, 
         logger.error(f"Python fallback failed for {plugin_name}: {str(e)}")
         return False
 
-@api_router.post("/all-in-one")
+@api_router.get("/system-info")
+async def get_system_info() -> Dict[str, Any]:
+    """
+    Get system information for debugging and setup
+    """
+    try:
+        system_info = au_preset_generator.get_system_info()
+        return {
+            "success": True,
+            "system_info": system_info
+        }
+    except Exception as e:
+        logger.error(f"Error getting system info: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+
+@api_router.post("/configure-paths")
+async def configure_paths(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Configure paths for Swift CLI, seeds, and Logic Pro presets
+    Supports user's request for path configuration on first startup
+    """
+    try:
+        swift_cli_path = request.get("swift_cli_path")
+        seeds_dir = request.get("seeds_dir") 
+        logic_presets_dir = request.get("logic_presets_dir")
+        
+        config_result = au_preset_generator.configure_paths(
+            swift_cli_path=swift_cli_path,
+            seeds_dir=seeds_dir,
+            logic_presets_dir=logic_presets_dir
+        )
+        
+        return {
+            "success": True,
+            "message": "Paths configured successfully",
+            "configuration": config_result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error configuring paths: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+
 async def all_in_one_processing(
     beat_file: UploadFile = File(..., description="Beat audio file (WAV/MP3)"),
     vocal_file: Optional[UploadFile] = File(None, description="Optional vocal audio file"),

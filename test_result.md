@@ -175,7 +175,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Individual Plugin Download Endpoint"
+    - "Fix Swift CLI Path Configuration and Environment"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -228,6 +228,24 @@ test_plan:
         - agent: "main"
         - comment: "✅ FULL SYSTEM INTEGRATION COMPLETE! 1) Updated all 9 plugin parameter maps with correct numeric IDs, 2) Fixed backend chain processing and API endpoints, 3) Updated frontend to use 'Install to Logic Pro' instead of downloads, 4) Created complete vocal chain system with Swift CLI integration (+ Python fallback), 5) System tested and functional - ready for Swift CLI binary deployment."
 
+  - task: "Fix Swift CLI Path Configuration and Environment"
+    implemented: true
+    working: true
+    file: "/app/backend/export/au_preset_generator.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "CRITICAL ISSUE IDENTIFIED: Swift CLI can only run on macOS but backend is in Linux container. Current paths hardcoded to container locations. Need configurable paths, environment detection, and hybrid approach (Swift CLI for Mac, Python fallback for container). Also need first-time user setup for Logic Pro preset directories."
+        - working: true
+        - agent: "main"
+        - comment: "✅ COMPREHENSIVE SOLUTION IMPLEMENTED! 1) Added environment-aware path detection (macOS vs Linux container), 2) Implemented hybrid approach: Swift CLI first, then Python fallback, 3) Fixed seed file mapping discrepancy (handles both TDRNova.aupreset and TDRNovaSeed.aupreset), 4) Added configurable paths with /api/configure-paths endpoint, 5) Created /api/system-info endpoint for debugging, 6) Updated frontend with System Config tab for user path configuration, 7) Improved preset installation logic to try both approaches automatically. System now works in container (Python) and can be configured for Mac (Swift CLI). Individual and bulk preset installation both working."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ COMPREHENSIVE TESTING SUCCESS! Thoroughly tested the complete Swift CLI path configuration and hybrid preset generation system. ALL KEY FEATURES WORKING PERFECTLY: 1) System Info API (/api/system-info) correctly detects Linux container environment, Swift CLI unavailable, 9 seed files present, 2) Path Configuration API (/api/configure-paths) successfully handles custom path setup for user configuration, 3) Hybrid Preset Generation (/api/export/install-to-logic) works flawlessly across all 6 vibes (Clean, Warm, Punchy, Bright, Vintage, Balanced) with Python fallback generating 7-8 presets per vibe, 4) Individual Preset Installation (/api/export/install-individual) successfully installs presets for TDR Nova, MEqualizer, MCompressor, Fresh Air with proper parameter application, 5) Error handling and fallback logic correctly handles invalid plugins, missing parameters, and gracefully falls back from Swift CLI to Python CLI, 6) File system integration creates presets in correct directories with proper naming. The system perfectly solves the 'No presets were installed' issue with environment detection, configurable paths, and hybrid approach. Python fallback is working excellently in container environment. All 31/31 tests passed including critical plugin restriction compliance."
+
 agent_communication:
     - agent: "main"
     - message: "Found critical issue: free_plugin_chains.py is using wrong plugins. User has 9 specific plugins with seed files but system recommends different plugins they don't have. Need to completely rewrite chain generation to use only user's 9 plugins."
@@ -251,3 +269,7 @@ agent_communication:
     - message: "🚀 SWIFT CLI FULLY VALIDATED! Both XML (TDR Nova) and binary (MEqualizer) formats confirmed working in Logic Pro. All parameters applying correctly. Ready for backend integration and production deployment. Swift CLI can replace Python fallback completely!"    
     - agent: "main"
     - message: "🎯 COMPLETE SYSTEM INTEGRATION ACHIEVED! 1) All 9 plugin parameter maps updated with correct numeric IDs, 2) Backend API endpoints working (install-to-logic, install-individual), 3) Frontend updated with 'Install to Logic Pro' functionality, 4) Swift CLI integrated with Python fallback, 5) Full vocal chain generation working, 6) System ready for production with Swift CLI binary deployment. MAJOR SUCCESS!"
+    - agent: "main"  
+    - message: "🔍 DEBUGGING SWIFT CLI INTEGRATION ISSUE: Found root cause! Swift CLI binary not available in container (Linux) - needs to run on user's Mac (macOS). Container has placeholder script. Seed files exist but need path configuration. Audio Units only work on macOS. Need hybrid approach: Swift CLI for Mac users, Python fallback for others. Also need configurable paths for user setup."
+    - agent: "testing"
+    - message: "🎉 COMPREHENSIVE SWIFT CLI SYSTEM TESTING SUCCESS! Completed thorough testing of the Swift CLI path configuration and hybrid preset generation system. ALL CRITICAL FEATURES WORKING PERFECTLY: ✅ System Info API detects environment correctly (Linux container, Swift CLI unavailable, 9 seed files), ✅ Path Configuration API handles custom path setup flawlessly, ✅ Hybrid Preset Generation works across all 6 vibes with Python fallback generating 7-8 presets each, ✅ Individual Preset Installation successfully installs presets for all tested plugins (TDR Nova, MEqualizer, MCompressor, Fresh Air), ✅ Error handling and fallback logic gracefully handles invalid inputs and missing Swift CLI, ✅ File system integration creates presets in correct directories with proper naming. The system completely solves the 'No presets were installed' issue through environment detection, configurable paths, and seamless hybrid approach. Python fallback is working excellently in container. All 31/31 backend tests passed. The implementation successfully addresses all requirements from the review request."
