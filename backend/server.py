@@ -503,20 +503,115 @@ async def configure_paths(request: Dict[str, Any]) -> Dict[str, Any]:
         seeds_dir = request.get("seeds_dir") 
         logic_presets_dir = request.get("logic_presets_dir")
         
-        config_result = au_preset_generator.configure_paths(
-            swift_cli_path=swift_cli_path,
-            seeds_dir=seeds_dir,
-            logic_presets_dir=logic_presets_dir
-        )
+        # Legacy support for old configure_paths - just update global defaults
+        updated = {}
+        if swift_cli_path and os.path.isfile(swift_cli_path):
+            au_preset_generator.aupresetgen_path = swift_cli_path
+            updated['swift_cli'] = swift_cli_path
+            
+        if seeds_dir and os.path.isdir(seeds_dir):
+            au_preset_generator.seeds_dir = Path(seeds_dir)
+            updated['seeds_dir'] = seeds_dir
+            
+        if logic_presets_dir:
+            os.makedirs(logic_presets_dir, exist_ok=True)
+            au_preset_generator.logic_preset_dirs['custom'] = logic_presets_dir
+            updated['logic_presets'] = logic_presets_dir
         
         return {
             "success": True,
             "message": "Paths configured successfully",
-            "configuration": config_result
+            "configuration": {
+                "swift_cli_path": au_preset_generator.aupresetgen_path,
+                "seeds_directory": str(au_preset_generator.seeds_dir), 
+                "logic_presets_directory": au_preset_generator.logic_preset_dirs['custom'],
+                "updated": updated
+            }
         }
         
     except Exception as e:
         logger.error(f"Error configuring paths: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+
+@api_router.get("/plugin-paths")
+async def get_plugin_paths() -> Dict[str, Any]:
+    """
+    Get current per-plugin path configuration
+    """
+    try:
+        plugin_paths = au_preset_generator.get_plugin_paths()
+        return {
+            "success": True,
+            "plugin_paths": plugin_paths
+        }
+    except Exception as e:
+        logger.error(f"Error getting plugin paths: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+
+@api_router.post("/configure-plugin-paths")
+async def configure_plugin_paths(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Configure individual paths for each plugin
+    """
+    try:
+        plugin_paths = request.get("plugin_paths", {})
+        
+        if not plugin_paths:
+            return {
+                "success": False,
+                "message": "No plugin paths provided"
+            }
+        
+        result = au_preset_generator.configure_plugin_paths(plugin_paths)
+        
+        return {
+            "success": True,
+            "message": f"Configured paths for {len(result['updated_plugins'])} plugins",
+            "result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error configuring plugin paths: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+
+@api_router.post("/reset-plugin-path")
+async def reset_plugin_path(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Reset a plugin to default path
+    """
+    try:
+        plugin_name = request.get("plugin_name")
+        
+        if not plugin_name:
+            return {
+                "success": False,
+                "message": "Plugin name is required"
+            }
+        
+        success = au_preset_generator.reset_plugin_path(plugin_name)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Reset {plugin_name} to default path"
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Plugin {plugin_name} not found"
+            }
+        
+    except Exception as e:
+        logger.error(f"Error resetting plugin path: {str(e)}")
         return {
             "success": False,
             "message": f"Error: {str(e)}"
