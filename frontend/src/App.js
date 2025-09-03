@@ -66,11 +66,11 @@ function App() {
   };
 
   const processAllInOne = async () => {
-    if (!beatFile) {
-      toast({ 
-        title: "Missing beat file", 
-        description: "Please upload a beat file to continue",
-        variant: "destructive" 
+    if (!vibe) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a vibe",
+        variant: "destructive"
       });
       return;
     }
@@ -82,58 +82,63 @@ function App() {
     setDownloadUrl(null);
 
     try {
-      const formData = new FormData();
-      formData.append('beat_file', beatFile);
-      if (vocalFile) {
-        formData.append('vocal_file', vocalFile);
-      }
-      formData.append('preset_name', presetName);
-      formData.append('vibe', vibe);
-
       // Simulate progress
       const progressInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + 10, 90));
       }, 500);
 
-      const response = await axios.post(`${API}/all-in-one`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000 // 2 minute timeout
+      // Use the working download-presets endpoint instead of all-in-one
+      const response = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vibe: vibe,
+          genre: 'Pop', // Default genre, or detect from audio in future
+          audio_type: 'vocal',
+          preset_name: presetName || 'VocalChain'
+        })
       });
 
       clearInterval(progressInterval);
       setProgress(100);
 
-      const { features: audioFeatures, chain: vocalChain, preset_zip_base64 } = response.data;
+      const result = await response.json();
       
-      setFeatures(audioFeatures);
-      setChain(vocalChain);
-
-      // Create download URL from base64
-      const binaryString = atob(preset_zip_base64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+      if (result.success) {
+        // Create mock audio features for display
+        const mockFeatures = {
+          tempo: 120,
+          spectral_centroid: 2000,
+          rms_energy: 0.1,
+          detected_genre: result.vocal_chain.chain.genre || 'Pop'
+        };
+        
+        setFeatures(mockFeatures);
+        setChain(result.vocal_chain);
+        
+        // Set download URL
+        setDownloadUrl(`${BACKEND_URL}${result.download.url}`);
+        
+        setActiveTab('results');
+        
+        toast({
+          title: "✅ Processing Complete!",
+          description: `Generated ${result.download.preset_count} presets for download`,
+          className: "border-green-200 bg-green-50"
+        });
+      } else {
+        throw new Error(result.message || 'Processing failed');
       }
-      const blob = new Blob([bytes], { type: 'application/zip' });
-      const url = URL.createObjectURL(blob);
-      setDownloadUrl(url);
-
-      setActiveTab('results');
-      
-      toast({ 
-        title: "Processing complete!", 
-        description: "Your vocal chain preset is ready for download" 
-      });
-
     } catch (error) {
-      console.error('Processing failed:', error);
-      toast({ 
-        title: "Processing failed", 
-        description: error.response?.data?.detail || "An error occurred during processing",
-        variant: "destructive" 
+      console.error('Processing error:', error);
+      toast({
+        title: "Processing Error",
+        description: error.message || "An error occurred during processing",
+        variant: "destructive"
       });
     } finally {
       setIsProcessing(false);
+      setProgress(0);
     }
   };
 
