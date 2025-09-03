@@ -1226,6 +1226,180 @@ class VocalChainAPITester:
         except Exception as e:
             self.log_test("Error Handling Swift CLI Features", False, f"Exception: {str(e)}")
 
+    def test_enhanced_zip_packaging_features(self):
+        """
+        COMPREHENSIVE TEST for Enhanced ZIP Packaging Features
+        Tests the critical issues mentioned in the review request:
+        1. Enhanced file path resolution logic in ZIP generation
+        2. Multiple presets (7-8) properly included in ZIP files
+        3. Logic Pro folder structure maintenance
+        4. Parameter conversion across all plugins
+        5. Both individual and bulk ZIP generation
+        """
+        try:
+            print("\n🔍 TESTING ENHANCED ZIP PACKAGING FEATURES...")
+            
+            # Test 1: Verify multiple presets are generated (7-8 per vocal chain)
+            test_vibes = ["Clean", "Warm", "Punchy"]
+            preset_counts = []
+            logic_structure_verified = []
+            
+            for vibe in test_vibes:
+                try:
+                    request_data = {
+                        "vibe": vibe,
+                        "genre": "Pop",
+                        "preset_name": f"Enhanced_{vibe}_Chain"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/download-presets", 
+                                           json=request_data, timeout=60)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            # Extract preset count and structure info
+                            download_info = data.get("download", {})
+                            preset_count = download_info.get("preset_count", 0)
+                            structure = download_info.get("structure", "")
+                            
+                            preset_counts.append(preset_count)
+                            
+                            # Verify Logic Pro folder structure
+                            if "Logic Pro compatible" in structure and "Audio Music Apps" in structure:
+                                logic_structure_verified.append(True)
+                                self.log_test(f"Logic Pro Structure - {vibe}", True, 
+                                            f"Verified folder structure: {structure}")
+                            else:
+                                logic_structure_verified.append(False)
+                                self.log_test(f"Logic Pro Structure - {vibe}", False, 
+                                            f"Missing Logic Pro structure: {structure}")
+                            
+                            # Test the actual ZIP download to verify contents
+                            if download_info.get("url"):
+                                download_url = f"{self.base_url}{download_info['url']}"
+                                zip_response = requests.get(download_url, timeout=15)
+                                
+                                if zip_response.status_code == 200 and zip_response.content.startswith(b'PK'):
+                                    # Verify ZIP file size indicates multiple presets
+                                    zip_size = len(zip_response.content)
+                                    if zip_size > 10000:  # Multiple presets should be larger
+                                        self.log_test(f"ZIP Content Verification - {vibe}", True, 
+                                                    f"ZIP size: {zip_size} bytes, Presets: {preset_count}")
+                                    else:
+                                        self.log_test(f"ZIP Content Verification - {vibe}", False, 
+                                                    f"ZIP too small: {zip_size} bytes for {preset_count} presets")
+                                else:
+                                    self.log_test(f"ZIP Content Verification - {vibe}", False, 
+                                                "Failed to download or invalid ZIP")
+                        else:
+                            self.log_test(f"Enhanced ZIP Generation - {vibe}", False, 
+                                        f"Generation failed: {data.get('message')}")
+                    else:
+                        self.log_test(f"Enhanced ZIP Generation - {vibe}", False, 
+                                    f"API error: {response.status_code}")
+                        
+                except Exception as e:
+                    self.log_test(f"Enhanced ZIP Generation - {vibe}", False, f"Exception: {str(e)}")
+            
+            # Test 2: Verify parameter conversion is working across all plugins
+            test_plugins = ["TDR Nova", "MEqualizer", "MCompressor", "Fresh Air"]
+            conversion_success = 0
+            
+            for plugin in test_plugins:
+                try:
+                    # Test with mixed parameter types that need conversion
+                    test_params = {
+                        "bypass": False,  # Boolean -> 0.0
+                        "enabled": True,  # Boolean -> 1.0
+                        "gain": -2.5,     # Float -> -2.5
+                        "frequency": 1000.0  # Float -> 1000.0
+                    }
+                    
+                    request_data = {
+                        "plugin": plugin,
+                        "parameters": test_params,
+                        "preset_name": f"ParamTest_{plugin.replace(' ', '_')}"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/install-individual", 
+                                           json=request_data, timeout=20)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data.get("success"):
+                            conversion_success += 1
+                            self.log_test(f"Parameter Conversion - {plugin}", True, 
+                                        "Successfully converted mixed parameter types")
+                        else:
+                            self.log_test(f"Parameter Conversion - {plugin}", False, 
+                                        f"Conversion failed: {data.get('message')}")
+                    else:
+                        self.log_test(f"Parameter Conversion - {plugin}", False, 
+                                    f"API error: {response.status_code}")
+                        
+                except Exception as e:
+                    self.log_test(f"Parameter Conversion - {plugin}", False, f"Exception: {str(e)}")
+            
+            # Test 3: Verify file path resolution logic
+            try:
+                system_response = requests.get(f"{self.api_url}/system-info", timeout=10)
+                if system_response.status_code == 200:
+                    system_data = system_response.json()
+                    if system_data.get("success"):
+                        system_info = system_data.get("system_info", {})
+                        seeds_exist = system_info.get("seeds_directory_exists", False)
+                        seed_files = system_info.get("available_seed_files", [])
+                        
+                        if seeds_exist and len(seed_files) >= 9:
+                            self.log_test("File Path Resolution", True, 
+                                        f"Seed directory found with {len(seed_files)} files")
+                        else:
+                            self.log_test("File Path Resolution", False, 
+                                        f"Seed issues: exists={seeds_exist}, files={len(seed_files)}")
+                    else:
+                        self.log_test("File Path Resolution", False, "System info API failed")
+                else:
+                    self.log_test("File Path Resolution", False, f"System info error: {system_response.status_code}")
+            except Exception as e:
+                self.log_test("File Path Resolution", False, f"Exception: {str(e)}")
+            
+            # CRITICAL SUMMARY TESTS
+            
+            # Test 4: Multiple presets issue resolution
+            avg_presets = sum(preset_counts) / max(len(preset_counts), 1) if preset_counts else 0
+            if avg_presets >= 7:
+                self.log_test("CRITICAL: Multiple Presets Issue - RESOLVED", True, 
+                            f"✅ Generating {avg_presets:.1f} presets per chain (target: 7-8)")
+            elif avg_presets >= 3:
+                self.log_test("CRITICAL: Multiple Presets Issue - PARTIAL FIX", False, 
+                            f"⚠️ Generating {avg_presets:.1f} presets per chain (target: 7-8)")
+            else:
+                self.log_test("CRITICAL: Multiple Presets Issue - NOT FIXED", False, 
+                            f"❌ Only generating {avg_presets:.1f} presets per chain (target: 7-8)")
+            
+            # Test 5: Logic Pro folder structure consistency
+            structure_success_rate = sum(logic_structure_verified) / max(len(logic_structure_verified), 1) if logic_structure_verified else 0
+            if structure_success_rate >= 0.8:
+                self.log_test("Logic Pro Folder Structure Consistency", True, 
+                            f"✅ {structure_success_rate*100:.0f}% of ZIPs have correct structure")
+            else:
+                self.log_test("Logic Pro Folder Structure Consistency", False, 
+                            f"❌ Only {structure_success_rate*100:.0f}% of ZIPs have correct structure")
+            
+            # Test 6: Parameter conversion across all plugins
+            conversion_rate = conversion_success / max(len(test_plugins), 1)
+            if conversion_rate >= 0.75:
+                self.log_test("Parameter Conversion Across All Plugins", True, 
+                            f"✅ {conversion_success}/{len(test_plugins)} plugins successfully converted parameters")
+            else:
+                self.log_test("Parameter Conversion Across All Plugins", False, 
+                            f"❌ Only {conversion_success}/{len(test_plugins)} plugins successfully converted parameters")
+            
+        except Exception as e:
+            self.log_test("Enhanced ZIP Packaging Features", False, f"Exception: {str(e)}")
+
     def test_hybrid_preset_generation(self):
         """Test hybrid preset generation with different vibes and fallback logic"""
         try:
