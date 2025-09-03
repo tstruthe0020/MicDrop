@@ -142,16 +142,31 @@ class AUPresetWriter:
     
     def _load_parameter_map(self, plugin_name: str) -> Dict[str, str]:
         """Load parameter mapping (human name -> AU parameter ID)"""
-        map_file = self.param_maps_dir / f"{plugin_name.replace(' ', '_').lower()}.json"
+        # Map plugin names to parameter map file names
+        name_mapping = {
+            "Channel EQ": "channeleq",
+            "Compressor": "compressor",
+            "DeEsser 2": "deesser2", 
+            "Multipressor": "multipressor",
+            "Clip Distortion": "clipdistortion",
+            "Tape Delay": "tapedelay",
+            "ChromaVerb": "chromaverb",
+            "Limiter": "limiter"
+        }
+        
+        mapped_name = name_mapping.get(plugin_name, plugin_name.lower().replace(' ', '_'))
+        map_file = self.param_maps_dir / f"{mapped_name}.json"
         
         if map_file.exists():
             try:
                 with open(map_file, 'r') as f:
-                    return json.load(f)
+                    param_map = json.load(f)
+                    logger.info(f"Loaded real parameter map for {plugin_name} with {len(param_map)} parameters")
+                    return param_map
             except Exception as e:
                 logger.warning(f"Could not load param map for {plugin_name}: {e}")
         
-        # Return empty map if not found - will use default mapping
+        # Return empty map if not found - will use fallback mapping
         return {}
     
     def _create_preset_data(self, plugin_name: str, preset_name: str, params: Dict[str, Any],
