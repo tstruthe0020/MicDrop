@@ -802,6 +802,182 @@ function App() {
               </Card>
             )}
           </TabsContent>
+
+          <TabsContent value="config" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  System Configuration
+                </CardTitle>
+                <CardDescription>
+                  Configure paths and view system information for optimal preset generation
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex gap-4">
+                  <Button 
+                    onClick={fetchSystemInfo} 
+                    disabled={configLoading}
+                    variant="outline"
+                  >
+                    {configLoading ? "Loading..." : "Refresh System Info"}
+                  </Button>
+                </div>
+
+                {systemInfo && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-slate-50 rounded-lg border">
+                      <h3 className="font-semibold mb-3">System Information</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <strong>Platform:</strong> {systemInfo.platform}
+                        </div>
+                        <div>
+                          <strong>macOS:</strong> {systemInfo.is_macos ? "✅ Yes" : "❌ No"}
+                        </div>
+                        <div>
+                          <strong>Container:</strong> {systemInfo.is_container ? "✅ Yes" : "❌ No"}
+                        </div>
+                        <div>
+                          <strong>Swift CLI Available:</strong> {systemInfo.swift_cli_available ? "✅ Yes" : "❌ No"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-lg border">
+                      <h3 className="font-semibold mb-3">Path Configuration</h3>
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <strong>Swift CLI:</strong>
+                          <br />
+                          <code className="text-xs bg-slate-100 p-1 rounded">{systemInfo.swift_cli_path}</code>
+                        </div>
+                        <div>
+                          <strong>Seeds Directory:</strong>
+                          <br />
+                          <code className="text-xs bg-slate-100 p-1 rounded">{systemInfo.seeds_directory}</code>
+                          <span className="ml-2">
+                            {systemInfo.seeds_directory_exists ? "✅ Exists" : "❌ Not Found"}
+                          </span>
+                        </div>
+                        <div>
+                          <strong>Logic Pro Presets:</strong>
+                          <br />
+                          <code className="text-xs bg-slate-100 p-1 rounded">
+                            {systemInfo.logic_preset_dirs.custom}
+                          </code>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-lg border">
+                      <h3 className="font-semibold mb-3">Available Seed Files ({systemInfo.available_seed_files.length})</h3>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {systemInfo.available_seed_files.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="text-green-600">✅</span>
+                            <code>{file}</code>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {!systemInfo.swift_cli_available && (
+                      <Alert>
+                        <AlertDescription>
+                          <div className="space-y-2">
+                            <strong>⚠️ Swift CLI Not Available</strong>
+                            <p>
+                              The system is using Python fallback for preset generation. 
+                              For best results on macOS, configure the Swift CLI path below.
+                            </p>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="p-4 border rounded-lg">
+                      <h3 className="font-semibold mb-3">Configure Custom Paths</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="swift-cli-path">Swift CLI Binary Path (macOS only)</Label>
+                          <Input 
+                            id="swift-cli-path"
+                            placeholder="/Users/yourname/MicDrop/aupresetgen/.build/release/aupresetgen"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="seeds-dir">Seed Files Directory</Label>
+                          <Input 
+                            id="seeds-dir"
+                            placeholder="/Users/yourname/Desktop/Plugin Seeds"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="logic-presets-dir">Logic Pro Presets Directory</Label>
+                          <Input 
+                            id="logic-presets-dir"
+                            placeholder="/Users/yourname/Library/Audio/Presets"
+                            className="mt-1"
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => {
+                            const swiftPath = document.getElementById('swift-cli-path').value;
+                            const seedsDir = document.getElementById('seeds-dir').value;
+                            const presetsDir = document.getElementById('logic-presets-dir').value;
+                            
+                            const config = {};
+                            if (swiftPath) config.swift_cli_path = swiftPath;
+                            if (seedsDir) config.seeds_dir = seedsDir;
+                            if (presetsDir) config.logic_presets_dir = presetsDir;
+                            
+                            if (Object.keys(config).length > 0) {
+                              configurePaths(config);
+                            } else {
+                              toast({
+                                title: "No Changes",
+                                description: "Please enter at least one path to configure",
+                                variant: "outline"
+                              });
+                            }
+                          }}
+                          disabled={configLoading}
+                          className="w-full"
+                        >
+                          {configLoading ? "Configuring..." : "Apply Configuration"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Alert>
+                      <AlertDescription>
+                        <div className="space-y-2">
+                          <strong>💡 Configuration Tips:</strong>
+                          <ul className="text-sm space-y-1 mt-2">
+                            <li>• <strong>macOS Users:</strong> Configure the Swift CLI path for optimal performance</li>
+                            <li>• <strong>First Time Setup:</strong> Use this to point to your actual seed files location</li>
+                            <li>• <strong>Logic Pro Directory:</strong> Presets will be installed to this location</li>
+                            <li>• <strong>Container Users:</strong> Python fallback works automatically</li>
+                          </ul>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+
+                {!systemInfo && (
+                  <div className="text-center py-8 text-slate-600">
+                    <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Click "Refresh System Info" to view configuration details</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
       
