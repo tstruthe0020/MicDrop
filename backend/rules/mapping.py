@@ -411,13 +411,13 @@ class ChainGenerator:
     
     def _generate_limiter(self, features: Dict[str, Any], vibe: str) -> Dict[str, Any]:
         """Generate final limiter settings"""
-        lufs = features.get('lufs', -23.0)
+        lufs = features.lufs
         
         # Ceiling and release based on target loudness
         ceiling_db = -1.0  # Standard for streaming
         
         # Release time - slower for dynamic content
-        crest = features.get('crest', 6.0)
+        crest = features.crest
         release_ms = max(5, min(50, crest * 8))
         
         params = {
