@@ -40,12 +40,16 @@ class AUPresetGenerator:
         # Configure Logic Pro preset directories
         self.logic_preset_dirs = self._get_logic_preset_dirs()
         
+        # Per-plugin path configuration
+        self.plugin_paths = self._load_plugin_paths()
+        
         logger.info(f"AU Preset Generator initialized:")
         logger.info(f"  Platform: {'macOS' if self.is_macos else 'Linux'}")
         logger.info(f"  Container: {self.is_container}")
         logger.info(f"  Swift CLI: {self.aupresetgen_path}")
         logger.info(f"  Seeds dir: {self.seeds_dir}")
         logger.info(f"  Logic dirs: {self.logic_preset_dirs}")
+        logger.info(f"  Plugin paths: {len(self.plugin_paths)} configured")
         
     def _detect_swift_cli_path(self) -> str:
         """Auto-detect Swift CLI path based on environment"""
@@ -88,8 +92,41 @@ class AUPresetGenerator:
             if path and os.path.isdir(path):
                 return Path(path)
                 
-        # Return container path as fallback
+        # Container path as fallback
         return Path('/app/aupreset/seeds')
+    
+    def _load_plugin_paths(self) -> Dict[str, str]:
+        """Load per-plugin path configuration"""
+        config_file = Path('/tmp/plugin_paths_config.json')
+        try:
+            if config_file.exists():
+                with open(config_file, 'r') as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.warning(f"Failed to load plugin paths config: {e}")
+        
+        # Default plugin paths (can be customized)
+        return {
+            "TDR Nova": "/Library/Audio",
+            "MEqualizer": "/Library/Audio", 
+            "MCompressor": "/Library/Audio",
+            "1176 Compressor": "/Library/Audio",
+            "MAutoPitch": "/Library/Audio",
+            "Graillon 3": "/Library/Audio",
+            "Fresh Air": "/Library/Audio",
+            "LA-LA": "/Library/Audio",
+            "MConvolutionEZ": "/Library/Audio"
+        }
+    
+    def _save_plugin_paths(self):
+        """Save per-plugin path configuration"""
+        config_file = Path('/tmp/plugin_paths_config.json')
+        try:
+            with open(config_file, 'w') as f:
+                json.dump(self.plugin_paths, f, indent=2)
+            logger.info(f"Plugin paths saved to {config_file}")
+        except Exception as e:
+            logger.warning(f"Failed to save plugin paths: {e}")
     
     def _get_logic_preset_dirs(self) -> Dict[str, str]:
         """Get Logic Pro preset directories based on environment"""
@@ -132,10 +169,14 @@ class AUPresetGenerator:
             Tuple of (success, stdout, stderr)
         """
         try:
-            # Determine output directory
+            # Determine output directory - check for plugin-specific path first
             if not output_dir:
-                output_dir = self.logic_preset_dirs['custom']
-                
+                plugin_path = self.plugin_paths.get(plugin_name)
+                if plugin_path:
+                    output_dir = plugin_path
+                else:
+                    output_dir = self.logic_preset_dirs['custom']
+                    
             # Ensure output directory exists
             os.makedirs(output_dir, exist_ok=True)
             
@@ -451,44 +492,47 @@ class AUPresetGenerator:
         
         return None
     
-    def configure_paths(self, swift_cli_path: Optional[str] = None, 
-                       seeds_dir: Optional[str] = None,
-                       logic_presets_dir: Optional[str] = None) -> Dict[str, str]:
+    def configure_plugin_paths(self, plugin_paths: Dict[str, str]) -> Dict[str, Any]:
         """
-        Configure paths for user setup (requested feature)
+        Configure individual paths for each plugin
         
         Args:
-            swift_cli_path: Custom path to Swift CLI binary
-            seeds_dir: Custom path to seed files directory
-            logic_presets_dir: Custom path to Logic Pro presets directory
+            plugin_paths: Dictionary mapping plugin names to their custom paths
             
         Returns:
-            Dictionary with current configuration
+            Dictionary with updated configuration
         """
         updated = {}
         
-        if swift_cli_path and os.path.isfile(swift_cli_path):
-            self.aupresetgen_path = swift_cli_path
-            updated['swift_cli'] = swift_cli_path
-            
-        if seeds_dir and os.path.isdir(seeds_dir):
-            self.seeds_dir = Path(seeds_dir)
-            updated['seeds_dir'] = seeds_dir
-            
-        if logic_presets_dir:
-            os.makedirs(logic_presets_dir, exist_ok=True)
-            self.logic_preset_dirs['custom'] = logic_presets_dir
-            updated['logic_presets'] = logic_presets_dir
+        for plugin_name, path in plugin_paths.items():
+            if path and path.strip():
+                # Ensure directory exists
+                try:
+                    os.makedirs(path, exist_ok=True)
+                    self.plugin_paths[plugin_name] = path.strip()
+                    updated[plugin_name] = path.strip()
+                except Exception as e:
+                    logger.error(f"Failed to create directory {path} for {plugin_name}: {e}")
         
-        # Save configuration to environment variables or config file
-        self._save_configuration()
+        # Save updated configuration
+        self._save_plugin_paths()
         
         return {
-            'swift_cli_path': self.aupresetgen_path,
-            'seeds_directory': str(self.seeds_dir),
-            'logic_presets_directory': self.logic_preset_dirs['custom'],
-            'updated': updated
+            'updated_plugins': updated,
+            'all_plugin_paths': self.plugin_paths.copy()
         }
+    
+    def get_plugin_paths(self) -> Dict[str, str]:
+        """Get current per-plugin path configuration"""
+        return self.plugin_paths.copy()
+    
+    def reset_plugin_path(self, plugin_name: str) -> bool:
+        """Reset a plugin to default path"""
+        if plugin_name in self.plugin_paths:
+            self.plugin_paths[plugin_name] = self.logic_preset_dirs['custom']
+            self._save_plugin_paths()
+            return True
+        return False
     
     def _save_configuration(self):
         """Save current configuration for future use"""
