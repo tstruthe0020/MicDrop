@@ -363,8 +363,8 @@ class ChainGenerator:
     
     def _generate_reverb(self, features: Dict[str, Any], vibe: str) -> Dict[str, Any]:
         """Generate ChromaVerb settings"""
-        bpm = features['bpm']
-        spectral = features['spectral']
+        bpm = features.bpm
+        spectral = features.spectral
         
         # Room type based on vibe
         room_type = "Plate"  # Default
