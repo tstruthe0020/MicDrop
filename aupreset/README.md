@@ -223,30 +223,30 @@ plutil -lint out/Presets/*/path/to/preset.aupreset
 
 ## Plugin Support
 
-Current support for:
+**ONLY the following plugins are supported (based on provided seed files):**
 
 - **Graillon 3** (Auburn Sounds) - Pitch correction
-- **TDR Nova** (Tokyo Dawn Records) - Dynamic EQ  
-- **1176 Compressor** (Universal Audio) - FET compression
+- **MEqualizer** (MeldaProduction) - Subtractive EQ  
+- **TDR Nova** (Tokyo Dawn Records) - Dynamic EQ + De-esser
+- **MCompressor** (MeldaProduction) - Primary compression
+- **1176 Compressor** (Universal Audio) - Character compression
 - **LA-LA** (Analog Obsession) - Opto compression
-- **Fresh Air** (Slate Digital) - HF exciter
+- **Fresh Air** (Slate Digital) - HF enhancement
 - **MConvolutionEZ** (MeldaProduction) - Convolution reverb
-- **MAutoPitch** (MeldaProduction) - Auto-pitch
-- **MCompressor** (MeldaProduction) - Compressor
-- **MEqualizer** (MeldaProduction) - EQ
+- **MAutoPitch** (MeldaProduction) - Alternative pitch correction
 
-## Vocal Chain Philosophy
+## Vocal Chain Order
 
-This system implements a professional vocal chain order:
+Based on YOUR provided plugins, the recommended vocal chain order is:
 
-1. **Pitch Correction** (Graillon 3) - Fix pitch issues first
-2. **Subtractive EQ** (TDR Nova) - Remove problems before compression  
-3. **Fast Compression** (1176) - Peak control and character
-4. **Smooth Leveling** (LA-LA) - Opto compression for musical dynamics
-5. **High-Frequency Enhancement** (Fresh Air) - Add air and presence
-6. **Spatial Processing** (MConvolutionEZ) - Reverb and space
-
-Each plugin serves a specific purpose and the order minimizes artifacts while maximizing musicality.
+1. **Pitch Correction** (Graillon 3 or MAutoPitch) - Fix pitch first
+2. **Subtractive EQ** (MEqualizer) - Remove problems before compression  
+3. **Dynamic EQ/De-ess** (TDR Nova) - Frequency-dependent processing
+4. **Primary Compression** (MCompressor) - Main dynamics control
+5. **Character Compression** (1176 Compressor) - Add color and punch
+6. **Opto Leveling** (LA-LA) - Smooth final dynamics
+7. **High-Frequency Enhancement** (Fresh Air) - Add air and presence
+8. **Spatial Processing** (MConvolutionEZ) - Reverb and space
 
 ## Advanced Usage
 
