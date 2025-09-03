@@ -238,7 +238,11 @@ class AUPresetGenerator:
             values_path = f.name
         
         try:
-            # Use new CLI format
+            # Create ZIP path with Logic Pro mirroring structure
+            zip_filename = f"{plugin_name}_Presets.zip"
+            zip_path = Path(output_dir) / zip_filename
+            
+            # Use new CLI format with enhanced ZIP packaging
             cmd = [
                 self.aupresetgen_path,
                 "save-preset",
@@ -250,6 +254,7 @@ class AUPresetGenerator:
                 "--out-dir", output_dir,
                 "--plugin-name", plugin_name,
                 "--make-zip",
+                "--zip-path", str(zip_path),
                 "--bundle-root", "Audio Music Apps"
             ]
             
@@ -267,21 +272,20 @@ class AUPresetGenerator:
             success = result.returncode == 0
             
             if success:
-                # Look for generated files
+                # Look for generated files (both individual preset and ZIP)
                 preset_file = Path(output_dir) / f"{preset_name}.aupreset"
-                zip_file = Path(output_dir) / f"{plugin_name}.zip"
                 
-                if preset_file.exists():
+                # Check for ZIP with Logic Pro structure
+                if zip_path.exists():
                     if verbose:
-                        logger.info(f"✅ Swift CLI: Successfully generated preset for {plugin_name}")
-                    
-                    # Extract zip to proper location if it exists
-                    if zip_file.exists():
-                        return True, f"✅ Generated preset with zip: {preset_file}", ""
-                    else:
-                        return True, f"✅ Generated preset: {preset_file}", ""
+                        logger.info(f"✅ Swift CLI: Generated preset with Logic Pro ZIP structure for {plugin_name}")
+                    return True, f"✅ Generated preset with Logic Pro ZIP: {zip_path}", ""
+                elif preset_file.exists():
+                    if verbose:
+                        logger.info(f"✅ Swift CLI: Successfully generated individual preset for {plugin_name}")
+                    return True, f"✅ Generated preset: {preset_file}", ""
                 else:
-                    return False, result.stdout, "Preset file not found after generation"
+                    return False, result.stdout, "No preset or ZIP file found after generation"
             else:
                 if verbose:
                     logger.error(f"❌ Swift CLI failed for {plugin_name}: {result.stderr}")
