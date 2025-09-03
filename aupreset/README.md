@@ -59,70 +59,88 @@ python make_aupreset.py \
 
 ```bash
 #!/bin/bash
-# generate_vocal_chain.sh - Complete clean vocal chain
+# generate_vocal_chain.sh - Complete vocal chain using PROVIDED plugins
 
 PRESET_NAME_BASE="Clean_Vocal"
 OUT_DIR="./out" 
 
-echo "Generating complete vocal chain presets..."
+echo "Generating vocal chain presets (PROVIDED PLUGINS ONLY)..."
 
-# 1. Graillon 3 (pitch correction)
+# 1. Graillon 3 (tuning)
 python make_aupreset.py \
   --seed ./seeds/Graillon3Seed.aupreset \
   --map ./maps/Graillon3.map.json \
   --values ./values/Graillon3.clean.json \
-  --preset-name "${PRESET_NAME_BASE}_Pitch" \
+  --preset-name "${PRESET_NAME_BASE}_01_Pitch" \
   --out "$OUT_DIR" --lint
 
-# 2. TDR Nova (subtractive EQ + dynamic de-ess)  
+# 2. MEqualizer (subtractive EQ)
+python make_aupreset.py \
+  --seed ./seeds/MEqualizerSeed.aupreset \
+  --map ./maps/MEqualizer.map.json \
+  --values ./values/MEqualizer.clean.json \
+  --preset-name "${PRESET_NAME_BASE}_02_SubEQ" \
+  --out "$OUT_DIR" --lint
+
+# 3. TDR Nova (dynamic EQ + de-ess)
 python make_aupreset.py \
   --seed ./seeds/TDRNovaSeed.aupreset \
   --map ./maps/TDRNova.map.json \
   --values ./values/TDRNova.clean.json \
-  --preset-name "${PRESET_NAME_BASE}_EQ" \
+  --preset-name "${PRESET_NAME_BASE}_03_DynEQ" \
   --out "$OUT_DIR" --lint
 
-# 3. 1176 (fast FET peak control)
+# 4. MCompressor (primary compression)
+python make_aupreset.py \
+  --seed ./seeds/MCompressorSeed.aupreset \
+  --map ./maps/MCompressor.map.json \
+  --values ./values/MCompressor.clean.json \
+  --preset-name "${PRESET_NAME_BASE}_04_Comp" \
+  --out "$OUT_DIR" --lint
+
+# 5. 1176 Compressor (character)
 python make_aupreset.py \
   --seed ./seeds/1176CompressorSeed.aupreset \
   --map ./maps/1176Compressor.map.json \
-  --values ./values/1176.clean.json \
-  --preset-name "${PRESET_NAME_BASE}_FET" \
+  --values ./values/1176Compressor.clean.json \
+  --preset-name "${PRESET_NAME_BASE}_05_1176" \
   --out "$OUT_DIR" --lint
 
-# 4. LA-LA (opto leveling)
+# 6. LA-LA (opto leveling)
 python make_aupreset.py \
   --seed ./seeds/LALASeed.aupreset \
   --map ./maps/LALA.map.json \
   --values ./values/LALA.clean.json \
-  --preset-name "${PRESET_NAME_BASE}_Opto" \
+  --preset-name "${PRESET_NAME_BASE}_06_Opto" \
   --out "$OUT_DIR" --lint
 
-# 5. Fresh Air (HF exciter)
+# 7. Fresh Air (HF enhancement)
 python make_aupreset.py \
   --seed ./seeds/FreshAirSeed.aupreset \
   --map ./maps/FreshAir.map.json \
   --values ./values/FreshAir.clean.json \
-  --preset-name "${PRESET_NAME_BASE}_Air" \
+  --preset-name "${PRESET_NAME_BASE}_07_Air" \
   --out "$OUT_DIR" --lint
 
-# 6. MConvolutionEZ (reverb)
+# 8. MConvolutionEZ (reverb)
 python make_aupreset.py \
   --seed ./seeds/MConvolutionEZSeed.aupreset \
   --map ./maps/MConvolutionEZ.map.json \
   --values ./values/MConvolutionEZ.clean.json \
-  --preset-name "${PRESET_NAME_BASE}_Reverb" \
+  --preset-name "${PRESET_NAME_BASE}_08_Reverb" \
   --out "$OUT_DIR" --lint
 
 echo "Vocal chain presets generated in: $OUT_DIR/Presets/"
 echo ""
 echo "Chain order in Logic Pro:"
 echo "1. Graillon 3 (pitch correction)"
-echo "2. TDR Nova (subtractive EQ + de-ess)"  
-echo "3. 1176 Compressor (fast FET control)"
-echo "4. LA-LA (opto leveling)"
-echo "5. Fresh Air (HF enhancement)"
-echo "6. MConvolutionEZ (reverb - can be on aux send)"
+echo "2. MEqualizer (subtractive EQ)"
+echo "3. TDR Nova (dynamic EQ + de-ess)"  
+echo "4. MCompressor (primary compression)"
+echo "5. 1176 Compressor (character compression)"
+echo "6. LA-LA (opto leveling)"
+echo "7. Fresh Air (HF enhancement)"
+echo "8. MConvolutionEZ (reverb)"
 ```
 
 ## File Structure
