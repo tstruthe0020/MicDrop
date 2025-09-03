@@ -304,7 +304,7 @@ class ChainGenerator:
     
     def _generate_glue_compressor(self, features: Dict[str, Any], vibe: str) -> Dict[str, Any]:
         """Generate glue compressor (Stage 2)"""
-        bpm = features.bpm
+        bpm = features['bpm']
         
         # Fast glue compression
         release_ms = max(30, 60000 / (bpm * 8))  # Eighth note timing
