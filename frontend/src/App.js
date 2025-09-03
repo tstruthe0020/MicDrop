@@ -642,11 +642,11 @@ function App() {
                   </Button>
                 </div>
 
-                {!beatFile && (
+                {!vibe && (
                   <Alert>
                     <Upload className="h-4 w-4" />
                     <AlertDescription>
-                      Upload a beat file to enable processing
+                      Select a processing style (vibe) to enable processing
                     </AlertDescription>
                   </Alert>
                 )}
