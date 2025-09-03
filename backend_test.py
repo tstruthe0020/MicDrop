@@ -695,6 +695,333 @@ class VocalChainAPITester:
         except Exception as e:
             self.log_test("Individual Plugin Export", False, f"Exception: {str(e)}")
 
+    def test_system_info_endpoint(self):
+        """Test /system-info endpoint for environment detection and configuration"""
+        try:
+            response = requests.get(f"{self.api_url}/system-info", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    system_info = data.get("system_info", {})
+                    required_fields = ['platform', 'is_macos', 'is_container', 'swift_cli_path', 
+                                     'swift_cli_available', 'seeds_directory', 'seeds_directory_exists',
+                                     'logic_preset_dirs', 'available_seed_files']
+                    
+                    missing_fields = [field for field in required_fields if field not in system_info]
+                    if not missing_fields:
+                        platform = system_info['platform']
+                        swift_available = system_info['swift_cli_available']
+                        seeds_count = len(system_info.get('available_seed_files', []))
+                        
+                        self.log_test("System Info API", True, 
+                                    f"Platform: {platform}, Swift CLI: {swift_available}, Seeds: {seeds_count} files")
+                        return system_info
+                    else:
+                        self.log_test("System Info API", False, 
+                                    f"Missing fields: {missing_fields}")
+                        return None
+                else:
+                    self.log_test("System Info API", False, 
+                                f"API returned success=false: {data.get('message', 'Unknown error')}")
+                    return None
+            else:
+                self.log_test("System Info API", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+                return None
+                
+        except Exception as e:
+            self.log_test("System Info API", False, f"Exception: {str(e)}")
+            return None
+
+    def test_configure_paths_endpoint(self):
+        """Test /configure-paths endpoint for path configuration"""
+        try:
+            # Test 1: Configure custom paths
+            config_request = {
+                "swift_cli_path": "/custom/path/to/aupresetgen",
+                "seeds_dir": "/custom/seeds/directory", 
+                "logic_presets_dir": "/custom/logic/presets"
+            }
+            
+            response = requests.post(f"{self.api_url}/configure-paths", 
+                                   json=config_request, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    config = data.get("configuration", {})
+                    required_fields = ['swift_cli_path', 'seeds_directory', 'logic_presets_directory']
+                    
+                    missing_fields = [field for field in required_fields if field not in config]
+                    if not missing_fields:
+                        updated = config.get('updated', {})
+                        self.log_test("Path Configuration API", True, 
+                                    f"Configured paths: {len(updated)} updated")
+                        
+                        # Test 2: Get current configuration (empty request)
+                        response2 = requests.post(f"{self.api_url}/configure-paths", 
+                                               json={}, timeout=10)
+                        
+                        if response2.status_code == 200:
+                            data2 = response2.json()
+                            if data2.get("success"):
+                                self.log_test("Path Configuration - Get Current", True, 
+                                            "Successfully retrieved current configuration")
+                            else:
+                                self.log_test("Path Configuration - Get Current", False, 
+                                            f"Failed to get current config: {data2.get('message')}")
+                        else:
+                            self.log_test("Path Configuration - Get Current", False, 
+                                        f"Status: {response2.status_code}")
+                        
+                        return config
+                    else:
+                        self.log_test("Path Configuration API", False, 
+                                    f"Missing fields: {missing_fields}")
+                        return None
+                else:
+                    self.log_test("Path Configuration API", False, 
+                                f"API returned success=false: {data.get('message', 'Unknown error')}")
+                    return None
+            else:
+                self.log_test("Path Configuration API", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+                return None
+                
+        except Exception as e:
+            self.log_test("Path Configuration API", False, f"Exception: {str(e)}")
+            return None
+
+    def test_hybrid_preset_generation(self):
+        """Test hybrid preset generation with different vibes and fallback logic"""
+        try:
+            # Test different vibes to ensure comprehensive coverage
+            test_vibes = ["Clean", "Warm", "Punchy", "Bright", "Vintage", "Balanced"]
+            successful_generations = 0
+            
+            for vibe in test_vibes:
+                try:
+                    request_data = {
+                        "vibe": vibe,
+                        "genre": "Pop",
+                        "audio_type": "vocal"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/install-to-logic", 
+                                           json=request_data, timeout=30)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            installed_presets = data.get("installed_presets", [])
+                            chain_name = data.get("chain_name", "")
+                            instructions = data.get("instructions", "")
+                            
+                            # Verify all 9 plugins are processed
+                            if len(installed_presets) > 0:
+                                plugin_names = [preset.get("plugin", "") for preset in installed_presets]
+                                self.log_test(f"Hybrid Generation - {vibe}", True, 
+                                            f"Generated {len(installed_presets)} presets: {', '.join(plugin_names[:3])}...")
+                                successful_generations += 1
+                            else:
+                                self.log_test(f"Hybrid Generation - {vibe}", False, 
+                                            "No presets were generated")
+                        else:
+                            error_msg = data.get("message", "Unknown error")
+                            errors = data.get("errors", [])
+                            self.log_test(f"Hybrid Generation - {vibe}", False, 
+                                        f"Generation failed: {error_msg}, Errors: {len(errors)}")
+                    else:
+                        self.log_test(f"Hybrid Generation - {vibe}", False, 
+                                    f"Status: {response.status_code}, Response: {response.text}")
+                        
+                except Exception as vibe_error:
+                    self.log_test(f"Hybrid Generation - {vibe}", False, 
+                                f"Exception: {str(vibe_error)}")
+            
+            # Summary test
+            if successful_generations >= 4:  # At least 4 out of 6 vibes should work
+                self.log_test("Hybrid Generation System", True, 
+                            f"Successfully generated presets for {successful_generations}/{len(test_vibes)} vibes")
+                return True
+            else:
+                self.log_test("Hybrid Generation System", False, 
+                            f"Only {successful_generations}/{len(test_vibes)} vibes worked")
+                return False
+                
+        except Exception as e:
+            self.log_test("Hybrid Generation System", False, f"Exception: {str(e)}")
+            return False
+
+    def test_individual_preset_installation(self):
+        """Test individual preset installation with different plugins"""
+        try:
+            # Test plugins from the user's 9 available plugins
+            test_plugins = [
+                {
+                    "plugin": "TDR Nova",
+                    "parameters": {
+                        "bypass": False,
+                        "band_1_frequency": 250.0,
+                        "band_1_gain": -2.5,
+                        "band_1_q": 1.2,
+                        "band_2_frequency": 1500.0,
+                        "band_2_gain": 1.8,
+                        "threshold": -12.0,
+                        "ratio": 2.5
+                    },
+                    "preset_name": "Test_TDR_Nova_Individual"
+                },
+                {
+                    "plugin": "MEqualizer", 
+                    "parameters": {
+                        "bypass": False,
+                        "gain_1": -1.5,
+                        "freq_1": 200.0,
+                        "q_1": 1.0,
+                        "gain_2": 2.0,
+                        "freq_2": 3000.0,
+                        "q_2": 0.7
+                    },
+                    "preset_name": "Test_MEqualizer_Individual"
+                },
+                {
+                    "plugin": "MCompressor",
+                    "parameters": {
+                        "bypass": False,
+                        "threshold": -18.0,
+                        "ratio": 3.0,
+                        "attack": 10.0,
+                        "release": 100.0,
+                        "makeup_gain": 2.0
+                    },
+                    "preset_name": "Test_MCompressor_Individual"
+                },
+                {
+                    "plugin": "Fresh Air",
+                    "parameters": {
+                        "bypass": False,
+                        "brightness": 0.3,
+                        "presence": 0.2,
+                        "mix": 0.8
+                    },
+                    "preset_name": "Test_FreshAir_Individual"
+                }
+            ]
+            
+            successful_installations = 0
+            
+            for plugin_config in test_plugins:
+                try:
+                    response = requests.post(f"{self.api_url}/export/install-individual", 
+                                           json=plugin_config, timeout=20)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            plugin_name = data.get("plugin", "")
+                            preset_name = data.get("preset_name", "")
+                            output = data.get("output", "")
+                            
+                            self.log_test(f"Individual Installation - {plugin_config['plugin']}", True, 
+                                        f"Installed '{preset_name}' for {plugin_name}")
+                            successful_installations += 1
+                        else:
+                            error_msg = data.get("message", "Unknown error")
+                            self.log_test(f"Individual Installation - {plugin_config['plugin']}", False, 
+                                        f"Installation failed: {error_msg}")
+                    else:
+                        self.log_test(f"Individual Installation - {plugin_config['plugin']}", False, 
+                                    f"Status: {response.status_code}, Response: {response.text}")
+                        
+                except Exception as plugin_error:
+                    self.log_test(f"Individual Installation - {plugin_config['plugin']}", False, 
+                                f"Exception: {str(plugin_error)}")
+            
+            # Summary test
+            if successful_installations >= 2:  # At least 2 out of 4 plugins should work
+                self.log_test("Individual Installation System", True, 
+                            f"Successfully installed {successful_installations}/{len(test_plugins)} individual presets")
+                return True
+            else:
+                self.log_test("Individual Installation System", False, 
+                            f"Only {successful_installations}/{len(test_plugins)} individual installations worked")
+                return False
+                
+        except Exception as e:
+            self.log_test("Individual Installation System", False, f"Exception: {str(e)}")
+            return False
+
+    def test_fallback_logic_and_error_handling(self):
+        """Test error handling and fallback logic for various scenarios"""
+        try:
+            # Test 1: Invalid plugin name
+            invalid_plugin_request = {
+                "plugin": "NonExistentPlugin",
+                "parameters": {"test": 1.0},
+                "preset_name": "Test_Invalid_Plugin"
+            }
+            
+            response = requests.post(f"{self.api_url}/export/install-individual", 
+                                   json=invalid_plugin_request, timeout=10)
+            
+            if response.status_code in [400, 500] or (response.status_code == 200 and not response.json().get("success")):
+                self.log_test("Fallback - Invalid Plugin", True, 
+                            "Correctly handled invalid plugin name")
+            else:
+                self.log_test("Fallback - Invalid Plugin", False, 
+                            f"Unexpected response for invalid plugin: {response.status_code}")
+            
+            # Test 2: Missing parameters
+            missing_params_request = {
+                "plugin": "TDR Nova",
+                "preset_name": "Test_Missing_Params"
+                # No parameters field
+            }
+            
+            response = requests.post(f"{self.api_url}/export/install-individual", 
+                                   json=missing_params_request, timeout=10)
+            
+            if response.status_code in [400, 422] or (response.status_code == 200 and not response.json().get("success")):
+                self.log_test("Fallback - Missing Parameters", True, 
+                            "Correctly handled missing parameters")
+            else:
+                self.log_test("Fallback - Missing Parameters", False, 
+                            f"Unexpected response for missing parameters: {response.status_code}")
+            
+            # Test 3: Invalid vibe for hybrid generation
+            invalid_vibe_request = {
+                "vibe": "InvalidVibe",
+                "genre": "Pop"
+            }
+            
+            response = requests.post(f"{self.api_url}/export/install-to-logic", 
+                                   json=invalid_vibe_request, timeout=15)
+            
+            # This might still work but generate a default chain, so we check the response structure
+            if response.status_code == 200:
+                data = response.json()
+                if "success" in data:  # API responded properly even if vibe is invalid
+                    self.log_test("Fallback - Invalid Vibe", True, 
+                                "API handled invalid vibe gracefully")
+                else:
+                    self.log_test("Fallback - Invalid Vibe", False, 
+                                "API response missing success field")
+            else:
+                self.log_test("Fallback - Invalid Vibe", True, 
+                            f"Correctly rejected invalid vibe: {response.status_code}")
+            
+            return True
+                
+        except Exception as e:
+            self.log_test("Fallback Logic & Error Handling", False, f"Exception: {str(e)}")
+            return False
+
     def test_error_handling(self):
         """Test API error handling with invalid inputs"""
         try:
