@@ -1,1 +1,76 @@
-ParamID,SeedValue,Type
+ParamID,SeedValue,Type,HumanName
+bandSelected_1,True,bool,Band_1_Selected
+bandActive_1,True,bool,Band_1_Active
+bandGain_1,0.0,float,Gain_1
+bandQ_1,0.4,float,Q_Factor_1
+bandFreq_1,80,int,Frequency_1
+bandType_1,Bell,str,Filter_Type_1
+bandDynActive_1,False,bool,Band_1_DynActive
+bandDynThreshold_1,0.0,float,Threshold_1
+bandDynRatio_1,2.0,float,Ratio_1
+bandDynSplit_1,True,bool,Band_1_DynSplit
+bandDynAttack_1,20,int,Attack_1
+bandDynRelease_1,200,int,Release_1
+bandSelected_2,False,bool,Band_2_Selected
+bandActive_2,True,bool,Band_2_Active
+bandGain_2,0.0,float,Gain_2
+bandQ_2,0.6,float,Q_Factor_2
+bandFreq_2,400,int,Frequency_2
+bandType_2,Bell,str,Filter_Type_2
+bandDynActive_2,False,bool,Band_2_DynActive
+bandDynThreshold_2,0.0,float,Threshold_2
+bandDynRatio_2,2.0,float,Ratio_2
+bandDynSplit_2,True,bool,Band_2_DynSplit
+bandDynAttack_2,10,int,Attack_2
+bandDynRelease_2,180,int,Release_2
+bandSelected_3,False,bool,Band_3_Selected
+bandActive_3,True,bool,Band_3_Active
+bandGain_3,0.0,float,Gain_3
+bandQ_3,0.5,float,Q_Factor_3
+bandFreq_3,2200,int,Frequency_3
+bandType_3,Bell,str,Filter_Type_3
+bandDynActive_3,False,bool,Band_3_DynActive
+bandDynThreshold_3,0.0,float,Threshold_3
+bandDynRatio_3,2.0,float,Ratio_3
+bandDynSplit_3,True,bool,Band_3_DynSplit
+bandDynAttack_3,5.0,float,Attack_3
+bandDynRelease_3,160,int,Release_3
+bandSelected_4,False,bool,Band_4_Selected
+bandActive_4,True,bool,Band_4_Active
+bandGain_4,0.0,float,Gain_4
+bandQ_4,0.6,float,Q_Factor_4
+bandFreq_4,6000,int,Frequency_4
+bandType_4,High S,str,Filter_Type_4
+bandDynActive_4,False,bool,Band_4_DynActive
+bandDynThreshold_4,0.0,float,Threshold_4
+bandDynRatio_4,2.0,float,Ratio_4
+bandDynSplit_4,True,bool,Band_4_DynSplit
+bandDynAttack_4,4.0,float,Attack_4
+bandDynRelease_4,23,int,Release_4
+hpSelected_master,False,bool,Hpselected Master_Enable
+hpActive_master,False,bool,Hpactive Master_Enable
+hpFreq_master,15,int,Frequency
+hpType_master,24dB/oct,str,Filter_Type
+lpSelected_master,False,bool,Lpselected Master_Enable
+lpActive_master,False,bool,Lpactive Master_Enable
+lpFreq_master,30000,int,Frequency
+lpType_master,24dB/oct,str,Filter_Type
+bandGain_wide,0.0,float,Gain
+bandDynActive_wide,False,bool,Banddynactive Wide_Enable
+bandDynThreshold_wide,0.0,float,Threshold
+bandDynRatio_wide,1.5,float,Ratio
+bandDynAttack_wide,8.0,float,Attack
+bandDynRelease_wide,200,int,Release
+bypass_master,False,bool,Bypass
+delta_master,False,bool,Delta Master_Enable
+dryMix_master,0.0,float,Mix
+gain_master,0.0,float,Gain
+eqAutoGainParam,True,bool,Gain
+qualityParam,Precise-,str,Q_Factor
+channelsParam,Stereo,str,Channelsparam
+analyzerModeParam,Analyzer: In,str,Analyzermodeparam
+displayEqRangeParam,-/+ 12 dB,str,Q_Factor
+displayFFTRangeParam,48 dB,str,Displayfftrangeparam
+sidechainModeParam,Int SC,str,Sidechainmodeparam
+analyzerSpeedParam,Normal,str,Speed
+solo,False,bool,Solo_Enable
