@@ -99,9 +99,13 @@ class AudioAnalyzer:
         """Detect BPM using librosa's beat tracking"""
         try:
             tempo, _ = librosa.beat.beat_track(y=audio, sr=sr)
-            return float(tempo)
+            if tempo > 0 and not np.isnan(tempo) and not np.isinf(tempo):
+                return float(tempo)
+            else:
+                # Fallback to autocorrelation method
+                return self._detect_bpm_autocorr(audio, sr)
         except:
-            # Fallback to autocorrelation method
+            # Final fallback to autocorrelation method
             return self._detect_bpm_autocorr(audio, sr)
     
     def _detect_bpm_autocorr(self, audio: np.ndarray, sr: int) -> float:
