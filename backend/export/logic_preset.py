@@ -267,7 +267,46 @@ class LogicPresetExporter:
         key_elem.text = key
     
     def _generate_user_plugin_preset(self, output_path, plugin_name, preset_name, params):
-        """Generate preset using CLI system for user's 9 plugins"""
+        """Generate preset using Swift CLI or Python fallback for user's 9 plugins"""
+        try:
+            # Try Swift AU Preset Generator first (if available)
+            from .au_preset_generator import au_preset_generator
+            import tempfile
+            import shutil
+            
+            if au_preset_generator.check_available():
+                logger.info(f"Using Swift AU generator for {plugin_name}")
+                
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    success, stdout, stderr = au_preset_generator.generate_preset(
+                        plugin_name=plugin_name,
+                        parameters=params,
+                        preset_name=preset_name,
+                        output_dir=temp_dir,
+                        verbose=True
+                    )
+                    
+                    if success:
+                        import glob
+                        generated_files = glob.glob(f"{temp_dir}/**/*.aupreset", recursive=True)
+                        
+                        if generated_files:
+                            shutil.move(generated_files[0], str(output_path))
+                            logger.info(f"Swift AU generator succeeded for {plugin_name}")
+                            return True
+                    else:
+                        logger.warning(f"Swift AU generator failed for {plugin_name}, using fallback")
+            
+            # Fallback to Python CLI approach
+            logger.info(f"Using Python CLI fallback for {plugin_name}")
+            return self._generate_user_plugin_preset_python_fallback(output_path, plugin_name, preset_name, params)
+            
+        except Exception as e:
+            logger.error(f"Failed to generate user plugin preset for {plugin_name}: {str(e)}")
+            return False
+    
+    def _generate_user_plugin_preset_python_fallback(self, output_path, plugin_name, preset_name, params):
+        """Python CLI fallback for user plugin preset generation"""
         try:
             import sys
             import subprocess
@@ -331,10 +370,10 @@ class LogicPresetExporter:
                     if generated_files:
                         import shutil
                         shutil.move(str(generated_files[0]), str(output_path))
-                        logger.info(f"Successfully generated preset for {plugin_name}")
+                        logger.info(f"Python fallback succeeded for {plugin_name}")
                         return True
                 else:
-                    logger.error(f"CLI tool failed for {plugin_name}: {result.stderr}")
+                    logger.error(f"Python CLI failed for {plugin_name}: {result.stderr}")
                     
             finally:
                 # Cleanup temp values file
@@ -344,7 +383,7 @@ class LogicPresetExporter:
             return False
             
         except Exception as e:
-            logger.error(f"Failed to generate user plugin preset for {plugin_name}: {str(e)}")
+            logger.error(f"Python fallback failed for {plugin_name}: {str(e)}")
             return False
     
     def _map_web_params_to_cli_params(self, plugin_name, web_params):
