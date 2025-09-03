@@ -287,32 +287,27 @@ async def install_individual_preset_to_logic(request: Dict[str, Any]) -> Dict[st
                 "message": "Missing plugin name or parameters"
             }
         
-        # Use Swift CLI to install directly to Logic Pro
-        if au_preset_generator.check_available():
-            success, stdout, stderr = au_preset_generator.generate_preset(
-                plugin_name=plugin_name,
-                parameters=parameters,
-                preset_name=preset_name,
-                output_dir=None,  # Use default Logic Pro directory  
-                verbose=True
-            )
-            
-            if success:
-                return {
-                    "success": True,
-                    "message": f"✅ Installed {plugin_name} preset '{preset_name}' to Logic Pro",
-                    "preset_name": preset_name,
-                    "plugin": plugin_name
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": f"Failed to install preset: {stderr}"
-                }
+        # Use AU Preset Generator (tries Swift CLI first, then Python fallback)
+        success, stdout, stderr = au_preset_generator.generate_preset(
+            plugin_name=plugin_name,
+            parameters=parameters,
+            preset_name=preset_name,
+            output_dir=None,  # Use default Logic Pro directory  
+            verbose=True
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"✅ Installed {plugin_name} preset '{preset_name}' to Logic Pro",
+                "preset_name": preset_name,
+                "plugin": plugin_name,
+                "output": stdout
+            }
         else:
             return {
                 "success": False,
-                "message": "Swift CLI not available"
+                "message": f"Failed to install preset: {stderr}"
             }
             
     except Exception as e:
