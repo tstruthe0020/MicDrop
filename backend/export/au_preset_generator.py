@@ -113,18 +113,18 @@ class AUPresetGenerator:
         plugin_name: str, 
         parameters: Dict[str, Any], 
         preset_name: str, 
-        output_dir: str,
+        output_dir: Optional[str] = None,
         parameter_map: Optional[Dict[str, str]] = None,
         verbose: bool = False
     ) -> Tuple[bool, str, str]:
         """
-        Generate .aupreset file using Audio Unit APIs
+        Generate .aupreset file using Audio Unit APIs or Python fallback
         
         Args:
             plugin_name: Name of the plugin (e.g., "TDR Nova", "MEqualizer")
             parameters: Dictionary of parameter name -> value
             preset_name: Name for the generated preset
-            output_dir: Directory to write the preset
+            output_dir: Directory to write the preset (uses Logic Pro dir if None)
             parameter_map: Optional mapping of human names to AU parameter IDs
             verbose: Enable verbose output
             
@@ -132,67 +132,176 @@ class AUPresetGenerator:
             Tuple of (success, stdout, stderr)
         """
         try:
+            # Determine output directory
+            if not output_dir:
+                output_dir = self.logic_preset_dirs['custom']
+                
+            # Ensure output directory exists
+            os.makedirs(output_dir, exist_ok=True)
+            
             # Find seed file
             seed_file = self._find_seed_file(plugin_name)
             if not seed_file:
                 return False, "", f"No seed file found for plugin: {plugin_name}"
             
-            # Create temporary values file
-            values_data = {"params": parameters}
-            
+            # Try Swift CLI first if available
+            if self.check_available():
+                return self._generate_with_swift_cli(
+                    plugin_name, parameters, preset_name, output_dir, 
+                    seed_file, parameter_map, verbose
+                )
+            else:
+                # Fall back to Python CLI
+                logger.info(f"Swift CLI not available, using Python fallback for {plugin_name}")
+                return self._generate_with_python_fallback(
+                    plugin_name, parameters, preset_name, output_dir, 
+                    seed_file, parameter_map, verbose
+                )
+                
+        except Exception as e:
+            logger.error(f"Exception in AU preset generation: {e}")
+            return False, "", str(e)
+    
+    def _generate_with_swift_cli(
+        self, plugin_name: str, parameters: Dict[str, Any], preset_name: str,
+        output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
+        verbose: bool
+    ) -> Tuple[bool, str, str]:
+        """Generate preset using Swift CLI"""
+        
+        # Create temporary values file
+        values_data = {"params": parameters}
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(values_data, f, indent=2)
+            values_path = f.name
+        
+        # Create temporary map file if provided
+        map_path = None
+        if parameter_map:
             with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-                json.dump(values_data, f, indent=2)
-                values_path = f.name
+                json.dump(parameter_map, f, indent=2)
+                map_path = f.name
+        
+        try:
+            # Build command
+            cmd = [
+                self.aupresetgen_path,
+                "--seed", str(seed_file),
+                "--values", values_path,
+                "--preset-name", preset_name,
+                "--out-dir", output_dir
+            ]
             
-            # Create temporary map file if provided
-            map_path = None
+            if map_path:
+                cmd.extend(["--map", map_path])
+            
+            if verbose:
+                cmd.append("--verbose")
+            
+            # Run the Swift CLI
+            result = subprocess.run(
+                cmd, 
+                capture_output=True, 
+                text=True, 
+                timeout=30
+            )
+            
+            success = result.returncode == 0
+            
+            if success and verbose:
+                logger.info(f"✅ Swift CLI: Successfully generated preset for {plugin_name}")
+            elif not success:
+                logger.error(f"❌ Swift CLI failed for {plugin_name}: {result.stderr}")
+            
+            return success, result.stdout, result.stderr
+            
+        finally:
+            # Cleanup temporary files
+            if os.path.exists(values_path):
+                os.unlink(values_path)
+            if map_path and os.path.exists(map_path):
+                os.unlink(map_path)
+    
+    def _generate_with_python_fallback(
+        self, plugin_name: str, parameters: Dict[str, Any], preset_name: str,
+        output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
+        verbose: bool
+    ) -> Tuple[bool, str, str]:
+        """Generate preset using Python CLI fallback"""
+        try:
+            import sys
+            from pathlib import Path as PathLib
+            
+            # Import the Python aupreset tools
+            aupreset_dir = Path("/app/aupreset")
+            sys.path.insert(0, str(aupreset_dir))
+            
+            # Create parameter mapping for Python CLI
+            values_data = {}
             if parameter_map:
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-                    json.dump(parameter_map, f, indent=2)
-                    map_path = f.name
+                # Use provided parameter mapping
+                for param_name, value in parameters.items():
+                    if param_name in parameter_map:
+                        mapped_name = parameter_map[param_name]
+                        values_data[mapped_name] = value
+                    else:
+                        values_data[param_name] = value
+            else:
+                # Use direct parameter mapping
+                values_data = parameters
+            
+            # Create temporary values file for Python CLI
+            temp_values_path = aupreset_dir / f"temp_values_{plugin_name.replace(' ', '_')}.json"
+            with open(temp_values_path, 'w') as f:
+                json.dump(values_data, f, indent=2)
+            
+            # Look for parameter map file
+            map_file = f"{plugin_name.replace(' ', '').replace('-', '')}.map.json"
+            map_path = aupreset_dir / "maps" / map_file
             
             try:
-                # Build command
+                # Run the Python CLI tool
                 cmd = [
-                    self.aupresetgen_path,
+                    sys.executable, "make_aupreset.py",
                     "--seed", str(seed_file),
-                    "--values", values_path,
+                    "--values", str(temp_values_path),
                     "--preset-name", preset_name,
-                    "--out-dir", output_dir
+                    "--out", output_dir
                 ]
                 
-                if map_path:
-                    cmd.extend(["--map", map_path])
+                if map_path.exists():
+                    cmd.extend(["--map", str(map_path)])
                 
-                if verbose:
-                    cmd.append("--verbose")
-                
-                # Run the Swift CLI
-                result = subprocess.run(
-                    cmd, 
-                    capture_output=True, 
-                    text=True, 
-                    timeout=30
-                )
+                result = subprocess.run(cmd, cwd=str(aupreset_dir), capture_output=True, text=True)
                 
                 success = result.returncode == 0
                 
-                if success and verbose:
-                    logger.info(f"Successfully generated preset for {plugin_name}")
-                elif not success:
-                    logger.error(f"Failed to generate preset for {plugin_name}: {result.stderr}")
-                
-                return success, result.stdout, result.stderr
-                
+                if success:
+                    # Move generated file to correct location
+                    generated_files = list(PathLib(output_dir).glob("**/*.aupreset"))
+                    if generated_files:
+                        final_path = PathLib(output_dir) / f"{preset_name}.aupreset"
+                        if generated_files[0] != final_path:
+                            import shutil
+                            shutil.move(str(generated_files[0]), str(final_path))
+                        
+                        if verbose:
+                            logger.info(f"✅ Python fallback: Successfully generated preset for {plugin_name}")
+                        
+                        return True, f"Generated with Python fallback: {final_path}", ""
+                    else:
+                        return False, "", "No .aupreset files generated"
+                else:
+                    logger.error(f"❌ Python fallback failed for {plugin_name}: {result.stderr}")
+                    return False, result.stdout, result.stderr
+                    
             finally:
-                # Cleanup temporary files
-                if os.path.exists(values_path):
-                    os.unlink(values_path)
-                if map_path and os.path.exists(map_path):
-                    os.unlink(map_path)
+                if temp_values_path.exists():
+                    temp_values_path.unlink()
                     
         except Exception as e:
-            logger.error(f"Exception in AU preset generation: {e}")
+            logger.error(f"Python fallback error for {plugin_name}: {str(e)}")
             return False, "", str(e)
     
     def discover_plugin_info(self, plugin_name: str) -> Optional[Dict[str, Any]]:
