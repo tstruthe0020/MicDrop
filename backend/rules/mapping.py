@@ -31,7 +31,7 @@ class ChainGenerator:
         try:
             # Ensure BPM is valid (avoid division by zero)
             bpm = features.get('bpm', 120.0)
-            if bpm <= 0:
+            if bpm <= 0 or bpm is None:
                 bpm = 120.0
                 features['bpm'] = bpm
             
