@@ -379,34 +379,29 @@ class LogicPresetExporter:
             
         elif plugin_name == "TDR Nova":
             param_mapping = {
-                # Web interface -> TDR Nova XML parameter names
-                "bypass": "bypass_master",  # Master bypass
-                "multiband_enabled": "bandActive_1",  # Enable multiband (use band 1 as proxy)
-                "crossover_1": "bandFreq_1",  # Band 1 frequency
-                "crossover_2": "bandFreq_2",  # Band 2 frequency  
-                "crossover_3": "bandFreq_3",  # Band 3 frequency
-                "band_1_threshold": "bandDynThreshold_1",  # Band 1 dynamics threshold
-                "band_1_ratio": "bandDynRatio_1",  # Band 1 dynamics ratio
-                "band_2_threshold": "bandDynThreshold_2",  # Band 2 dynamics threshold
-                "band_2_ratio": "bandDynRatio_2",  # Band 2 dynamics ratio
-                "band_3_threshold": "bandDynThreshold_3",  # Band 3 dynamics threshold 
-                "band_3_ratio": "bandDynRatio_3",  # Band 3 dynamics ratio
-                "band_4_threshold": "bandDynThreshold_4",  # Band 4 dynamics threshold
-                "band_4_ratio": "bandDynRatio_4",  # Band 4 dynamics ratio
-                # Enable dynamics processing for bands with thresholds
-                "band_1_dyn_active": "bandDynActive_1",
-                "band_2_dyn_active": "bandDynActive_2", 
-                "band_3_dyn_active": "bandDynActive_3",
-                "band_4_dyn_active": "bandDynActive_4"
+                # Web interface -> TDR Nova map file parameter names (not XML names!)
+                "bypass": "Bypass",  # Master bypass 
+                "multiband_enabled": "Band_1_Active",  # Enable processing
+                "crossover_1": "Frequency_1",  # Band 1 frequency
+                "crossover_2": "Frequency_2",  # Band 2 frequency  
+                "crossover_3": "Frequency_3",  # Band 3 frequency
+                "band_1_threshold": "Threshold_1",  # Band 1 dynamics threshold
+                "band_1_ratio": "Ratio_1",  # Band 1 dynamics ratio
+                "band_2_threshold": "Threshold_2",  # Band 2 dynamics threshold
+                "band_2_ratio": "Ratio_2",  # Band 2 dynamics ratio
+                "band_3_threshold": "Threshold_3",  # Band 3 dynamics threshold 
+                "band_3_ratio": "Ratio_3",  # Band 3 dynamics ratio
+                "band_4_threshold": "Threshold_4",  # Band 4 dynamics threshold
+                "band_4_ratio": "Ratio_4"  # Band 4 dynamics ratio
             }
             filter_type_mapping = {}
             
-            # Add dynamics activation for bands that have threshold settings
+            # Enable dynamics processing for bands that have threshold settings
             for web_param, value in web_params.items():
                 if "threshold" in web_param and value != 0:
                     # Enable dynamics for this band
                     band_num = web_param.split("_")[1]  # Extract band number
-                    values_data[f"bandDynActive_{band_num}"] = True
+                    values_data[f"Band_{band_num}_DynActive"] = True
             
         else:
             # Generic mapping for other plugins
