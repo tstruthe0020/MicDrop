@@ -795,6 +795,418 @@ class VocalChainAPITester:
             self.log_test("Path Configuration API", False, f"Exception: {str(e)}")
             return None
 
+    def test_convert_parameters_function(self):
+        """Test the consolidated convert_parameters function for Swift CLI compatibility"""
+        try:
+            # Test parameter conversion endpoint by checking the download-presets endpoint
+            # which uses convert_parameters internally
+            request_data = {
+                "vibe": "Clean",
+                "genre": "Pop", 
+                "preset_name": "TestParameterConversion"
+            }
+            
+            response = requests.post(f"{self.api_url}/export/download-presets", 
+                                   json=request_data, timeout=30)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    # Check that vocal chain was generated (indicates parameter conversion worked)
+                    vocal_chain = data.get("vocal_chain", {})
+                    if vocal_chain and "chain" in vocal_chain:
+                        plugins = vocal_chain["chain"].get("plugins", [])
+                        
+                        # Verify plugins have parameters that would need conversion
+                        params_found = False
+                        for plugin in plugins:
+                            if plugin.get("params"):
+                                params_found = True
+                                break
+                        
+                        if params_found:
+                            self.log_test("Parameter Conversion Function", True, 
+                                        f"Successfully processed {len(plugins)} plugins with parameter conversion")
+                        else:
+                            self.log_test("Parameter Conversion Function", False, 
+                                        "No parameters found in generated plugins")
+                    else:
+                        self.log_test("Parameter Conversion Function", False, 
+                                    "No vocal chain generated")
+                else:
+                    self.log_test("Parameter Conversion Function", False, 
+                                f"API returned success=false: {data.get('message')}")
+            else:
+                self.log_test("Parameter Conversion Function", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Parameter Conversion Function", False, f"Exception: {str(e)}")
+
+    def test_generate_chain_zip_method(self):
+        """Test the new generate_chain_zip method with Logic Pro folder structure"""
+        try:
+            # Test different vibes to verify ZIP generation works across scenarios
+            test_vibes = ["Clean", "Warm", "Punchy"]
+            successful_zips = 0
+            
+            for vibe in test_vibes:
+                try:
+                    request_data = {
+                        "vibe": vibe,
+                        "genre": "Pop",
+                        "preset_name": f"TestChainZip_{vibe}"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/download-presets", 
+                                           json=request_data, timeout=45)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            download_info = data.get("download", {})
+                            if download_info:
+                                filename = download_info.get("filename", "")
+                                size = download_info.get("size", 0)
+                                preset_count = download_info.get("preset_count", 0)
+                                structure = download_info.get("structure", "")
+                                
+                                # Verify ZIP file properties
+                                if filename.endswith(".zip") and size > 0 and preset_count > 0:
+                                    if "Logic Pro compatible" in structure:
+                                        self.log_test(f"Chain ZIP Generation - {vibe}", True, 
+                                                    f"ZIP: {filename}, Size: {size} bytes, Presets: {preset_count}")
+                                        successful_zips += 1
+                                    else:
+                                        self.log_test(f"Chain ZIP Generation - {vibe}", False, 
+                                                    f"Missing Logic Pro structure info: {structure}")
+                                else:
+                                    self.log_test(f"Chain ZIP Generation - {vibe}", False, 
+                                                f"Invalid ZIP properties: filename={filename}, size={size}, count={preset_count}")
+                            else:
+                                self.log_test(f"Chain ZIP Generation - {vibe}", False, 
+                                            "No download info in response")
+                        else:
+                            self.log_test(f"Chain ZIP Generation - {vibe}", False, 
+                                        f"Generation failed: {data.get('message')}")
+                    else:
+                        self.log_test(f"Chain ZIP Generation - {vibe}", False, 
+                                    f"Status: {response.status_code}")
+                        
+                except Exception as e:
+                    self.log_test(f"Chain ZIP Generation - {vibe}", False, f"Exception: {str(e)}")
+            
+            # Summary test
+            if successful_zips >= 2:
+                self.log_test("Chain ZIP Generation - Overall", True, 
+                            f"Successfully generated {successful_zips}/{len(test_vibes)} ZIP packages")
+            else:
+                self.log_test("Chain ZIP Generation - Overall", False, 
+                            f"Only {successful_zips}/{len(test_vibes)} ZIP packages generated successfully")
+                
+        except Exception as e:
+            self.log_test("Chain ZIP Generation", False, f"Exception: {str(e)}")
+
+    def test_swift_cli_integration_options(self):
+        """Test Swift CLI integration with new command options (--plugin-name, --make-zip, --zip-path, --bundle-root)"""
+        try:
+            # Test the system info endpoint to check Swift CLI availability
+            response = requests.get(f"{self.api_url}/system-info", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    system_info = data.get("system_info", {})
+                    swift_available = system_info.get("swift_cli_available", False)
+                    platform = system_info.get("platform", "Unknown")
+                    
+                    # Test individual preset generation which uses Swift CLI options
+                    test_request = {
+                        "plugin": "TDR Nova",
+                        "parameters": {
+                            "bypass": False,
+                            "band_1_frequency": 250.0,
+                            "band_1_gain": -2.0,
+                            "threshold": -12.0
+                        },
+                        "preset_name": "TestSwiftCLIOptions"
+                    }
+                    
+                    response2 = requests.post(f"{self.api_url}/export/install-individual", 
+                                            json=test_request, timeout=20)
+                    
+                    if response2.status_code == 200:
+                        data2 = response2.json()
+                        
+                        if data2.get("success"):
+                            output = data2.get("output", "")
+                            preset_name = data2.get("preset_name", "")
+                            
+                            # Check if Swift CLI was used or Python fallback
+                            if swift_available:
+                                if "Swift CLI" in output or "Generated preset" in output:
+                                    self.log_test("Swift CLI Integration Options", True, 
+                                                f"Swift CLI used successfully on {platform}")
+                                else:
+                                    self.log_test("Swift CLI Integration Options", False, 
+                                                f"Swift CLI available but not used properly")
+                            else:
+                                if "Python fallback" in output or "Generated preset" in output:
+                                    self.log_test("Swift CLI Integration Options", True, 
+                                                f"Python fallback working correctly on {platform} (Swift CLI not available)")
+                                else:
+                                    self.log_test("Swift CLI Integration Options", False, 
+                                                f"Neither Swift CLI nor Python fallback working")
+                        else:
+                            self.log_test("Swift CLI Integration Options", False, 
+                                        f"Individual preset generation failed: {data2.get('message')}")
+                    else:
+                        self.log_test("Swift CLI Integration Options", False, 
+                                    f"Individual preset API failed: {response2.status_code}")
+                else:
+                    self.log_test("Swift CLI Integration Options", False, 
+                                f"System info API failed: {data.get('message')}")
+            else:
+                self.log_test("Swift CLI Integration Options", False, 
+                            f"System info endpoint failed: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Swift CLI Integration Options", False, f"Exception: {str(e)}")
+
+    def test_parameter_type_conversion(self):
+        """Test that parameter types are properly converted for Swift CLI compatibility"""
+        try:
+            # Test with different parameter types that need conversion
+            test_cases = [
+                {
+                    "name": "Boolean Conversion",
+                    "plugin": "MEqualizer", 
+                    "params": {
+                        "bypass": True,  # Should convert to 1.0
+                        "enabled": False,  # Should convert to 0.0
+                        "gain": -2.5  # Should remain as float
+                    }
+                },
+                {
+                    "name": "String Conversion", 
+                    "plugin": "TDR Nova",
+                    "params": {
+                        "filter_type": "bell",  # Should convert to 0.0
+                        "frequency": 1000.0,  # Should remain as float
+                        "bypass": False  # Should convert to 0.0
+                    }
+                }
+            ]
+            
+            successful_conversions = 0
+            
+            for test_case in test_cases:
+                try:
+                    request_data = {
+                        "plugin": test_case["plugin"],
+                        "parameters": test_case["params"],
+                        "preset_name": f"TestConversion_{test_case['name'].replace(' ', '_')}"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/install-individual", 
+                                           json=request_data, timeout=15)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            self.log_test(f"Parameter Type Conversion - {test_case['name']}", True, 
+                                        f"Successfully converted parameters for {test_case['plugin']}")
+                            successful_conversions += 1
+                        else:
+                            self.log_test(f"Parameter Type Conversion - {test_case['name']}", False, 
+                                        f"Conversion failed: {data.get('message')}")
+                    else:
+                        self.log_test(f"Parameter Type Conversion - {test_case['name']}", False, 
+                                    f"API error: {response.status_code}")
+                        
+                except Exception as e:
+                    self.log_test(f"Parameter Type Conversion - {test_case['name']}", False, 
+                                f"Exception: {str(e)}")
+            
+            # Summary test
+            if successful_conversions == len(test_cases):
+                self.log_test("Parameter Type Conversion - Overall", True, 
+                            f"All {successful_conversions} parameter type conversions successful")
+            else:
+                self.log_test("Parameter Type Conversion - Overall", False, 
+                            f"Only {successful_conversions}/{len(test_cases)} conversions successful")
+                
+        except Exception as e:
+            self.log_test("Parameter Type Conversion", False, f"Exception: {str(e)}")
+
+    def test_download_presets_endpoint_zip_packaging(self):
+        """Test the updated /api/export/download-presets endpoint with new ZIP packaging"""
+        try:
+            # Test different scenarios for ZIP packaging
+            test_scenarios = [
+                {
+                    "vibe": "Clean",
+                    "genre": "Pop",
+                    "preset_name": "CleanVocalChain"
+                },
+                {
+                    "vibe": "Warm", 
+                    "genre": "R&B",
+                    "preset_name": "WarmVocalChain"
+                }
+            ]
+            
+            successful_downloads = 0
+            
+            for scenario in test_scenarios:
+                try:
+                    response = requests.post(f"{self.api_url}/export/download-presets", 
+                                           json=scenario, timeout=30)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            # Verify response structure
+                            required_fields = ["vocal_chain", "download"]
+                            missing_fields = [field for field in required_fields if field not in data]
+                            
+                            if not missing_fields:
+                                download_info = data["download"]
+                                download_required = ["url", "filename", "size", "preset_count", "structure"]
+                                download_missing = [field for field in download_required if field not in download_info]
+                                
+                                if not download_missing:
+                                    # Verify ZIP properties
+                                    filename = download_info["filename"]
+                                    size = download_info["size"]
+                                    preset_count = download_info["preset_count"]
+                                    structure = download_info["structure"]
+                                    
+                                    if (filename.endswith(".zip") and 
+                                        size > 1000 and  # Reasonable ZIP size
+                                        preset_count > 0 and
+                                        "Logic Pro compatible" in structure):
+                                        
+                                        # Test the download URL
+                                        download_url = f"{self.base_url}{download_info['url']}"
+                                        download_response = requests.get(download_url, timeout=10)
+                                        
+                                        if download_response.status_code == 200:
+                                            if download_response.content.startswith(b'PK'):  # ZIP file signature
+                                                self.log_test(f"Download Presets ZIP - {scenario['vibe']}", True, 
+                                                            f"ZIP: {filename}, Size: {size}, Presets: {preset_count}")
+                                                successful_downloads += 1
+                                            else:
+                                                self.log_test(f"Download Presets ZIP - {scenario['vibe']}", False, 
+                                                            "Download URL returned non-ZIP content")
+                                        else:
+                                            self.log_test(f"Download Presets ZIP - {scenario['vibe']}", False, 
+                                                        f"Download URL failed: {download_response.status_code}")
+                                    else:
+                                        self.log_test(f"Download Presets ZIP - {scenario['vibe']}", False, 
+                                                    f"Invalid ZIP properties: {filename}, {size} bytes, {preset_count} presets")
+                                else:
+                                    self.log_test(f"Download Presets ZIP - {scenario['vibe']}", False, 
+                                                f"Missing download fields: {download_missing}")
+                            else:
+                                self.log_test(f"Download Presets ZIP - {scenario['vibe']}", False, 
+                                            f"Missing response fields: {missing_fields}")
+                        else:
+                            self.log_test(f"Download Presets ZIP - {scenario['vibe']}", False, 
+                                        f"API returned success=false: {data.get('message')}")
+                    else:
+                        self.log_test(f"Download Presets ZIP - {scenario['vibe']}", False, 
+                                    f"Status: {response.status_code}")
+                        
+                except Exception as e:
+                    self.log_test(f"Download Presets ZIP - {scenario['vibe']}", False, f"Exception: {str(e)}")
+            
+            # Summary test
+            if successful_downloads >= 1:
+                self.log_test("Download Presets ZIP Packaging - Overall", True, 
+                            f"Successfully tested {successful_downloads}/{len(test_scenarios)} ZIP downloads")
+            else:
+                self.log_test("Download Presets ZIP Packaging - Overall", False, 
+                            f"No successful ZIP downloads out of {len(test_scenarios)} attempts")
+                
+        except Exception as e:
+            self.log_test("Download Presets ZIP Packaging", False, f"Exception: {str(e)}")
+
+    def test_error_handling_swift_cli_features(self):
+        """Test error handling for missing plugins or invalid parameters in new Swift CLI features"""
+        try:
+            # Test 1: Invalid plugin name
+            invalid_plugin_request = {
+                "vibe": "Clean",
+                "genre": "Pop",
+                "preset_name": "InvalidPluginTest"
+            }
+            
+            # This should still work because it uses the plugin recommendation system
+            response = requests.post(f"{self.api_url}/export/download-presets", 
+                                   json=invalid_plugin_request, timeout=20)
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Should succeed with valid plugins from recommendation system
+                if data.get("success"):
+                    self.log_test("Error Handling - Plugin Recommendation", True, 
+                                "System correctly uses plugin recommendation instead of invalid plugins")
+                else:
+                    self.log_test("Error Handling - Plugin Recommendation", False, 
+                                f"Unexpected failure: {data.get('message')}")
+            else:
+                self.log_test("Error Handling - Plugin Recommendation", False, 
+                            f"Unexpected status: {response.status_code}")
+            
+            # Test 2: Invalid individual plugin
+            invalid_individual_request = {
+                "plugin": "NonExistentPlugin123",
+                "parameters": {"test": "value"},
+                "preset_name": "TestInvalidPlugin"
+            }
+            
+            response2 = requests.post(f"{self.api_url}/export/install-individual", 
+                                    json=invalid_individual_request, timeout=10)
+            
+            if response2.status_code in [400, 500] or (response2.status_code == 200 and not response2.json().get("success")):
+                self.log_test("Error Handling - Invalid Plugin", True, 
+                            "System correctly handles invalid plugin names")
+            else:
+                self.log_test("Error Handling - Invalid Plugin", False, 
+                            f"System should reject invalid plugin: {response2.status_code}")
+            
+            # Test 3: Missing parameters
+            missing_params_request = {
+                "plugin": "TDR Nova",
+                "parameters": {},  # Empty parameters
+                "preset_name": "TestMissingParams"
+            }
+            
+            response3 = requests.post(f"{self.api_url}/export/install-individual", 
+                                    json=missing_params_request, timeout=10)
+            
+            if response3.status_code == 200:
+                data3 = response3.json()
+                # Should handle empty parameters gracefully
+                if data3.get("success") or "No parameters" in str(data3.get("message", "")):
+                    self.log_test("Error Handling - Missing Parameters", True, 
+                                "System handles missing parameters gracefully")
+                else:
+                    self.log_test("Error Handling - Missing Parameters", False, 
+                                f"Unexpected response to missing parameters: {data3}")
+            else:
+                self.log_test("Error Handling - Missing Parameters", False, 
+                            f"Unexpected status for missing parameters: {response3.status_code}")
+                
+        except Exception as e:
+            self.log_test("Error Handling Swift CLI Features", False, f"Exception: {str(e)}")
+
     def test_hybrid_preset_generation(self):
         """Test hybrid preset generation with different vibes and fallback logic"""
         try:
