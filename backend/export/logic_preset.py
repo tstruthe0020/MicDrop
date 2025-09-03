@@ -75,49 +75,27 @@ class LogicPresetExporter:
                     # Generate preset name for this plugin
                     plugin_preset_name = f"{preset_name}_{plugin_name.replace(' ', '_')}"
                     
-                    # Create .pst file using CORRECT format (exact seed copies)
-                    pst_file_path = plugin_dir / f"{plugin_preset_name}.pst"
-                    
-                    # For now, just copy the exact seed files (guaranteed to work)
-                    from .correct_pst_writer import CorrectPSTWriter
-                    correct_writer = CorrectPSTWriter()
-                    success = correct_writer.write_pst_file(
-                        str(pst_file_path),
+                    # Create .aupreset file (XML format - much easier than binary .pst!)
+                    aupreset_path = plugin_dir / f"{plugin_preset_name}.aupreset"
+                    success = self.aupreset_xml_writer.write_aupreset_file(
+                        str(aupreset_path),
                         plugin_name,
                         plugin_preset_name,
                         plugin_config["params"]
                     )
                     
                     if success:
-                        preset_paths.append(pst_file_path)
-                        plugin_references.append({
-                            "plugin": plugin_name,
-                            "preset_name": plugin_preset_name,
-                            "position": i,
-                            "file_path": f"Plug-In Settings/{plugin_name}/{plugin_preset_name}.pst"
-                        })
-                    else:
-                        logger.warning(f"Failed to create .pst file for {plugin_name}")
-                        # Fallback to .aupreset method
-                        aupreset_path = self.aupreset_writer.write_preset(
-                            plugin_name=plugin_name,
-                            preset_name=plugin_preset_name,
-                            params=plugin_config["params"],
-                            variant=plugin_config.get("variant"),
-                            model=plugin_config.get("model")
-                        )
-                        
-                        # Move to correct directory structure
-                        final_preset_path = plugin_dir / f"{plugin_preset_name}.aupreset"
-                        os.rename(aupreset_path, final_preset_path)
-                        
-                        preset_paths.append(final_preset_path)
+                        preset_paths.append(aupreset_path)
                         plugin_references.append({
                             "plugin": plugin_name,
                             "preset_name": plugin_preset_name,
                             "position": i,
                             "file_path": f"Plug-In Settings/{plugin_name}/{plugin_preset_name}.aupreset"
                         })
+                    else:
+                        logger.warning(f"Failed to create .aupreset file for {plugin_name}")
+                        # Skip this plugin rather than using fallback
+                        continue
                 
                 # Generate .cst file (Channel Strip Template) using binary format
                 cst_path = channel_strip_dir / f"{preset_name}.cst"
