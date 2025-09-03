@@ -251,7 +251,7 @@ class AUPresetGenerator {
     
     func setParameters(
         audioUnit: AVAudioUnit,
-        values: [String: Any],
+        values: [String: Double],
         map: [String: String]?,
         strict: Bool,
         verbose: Bool,
