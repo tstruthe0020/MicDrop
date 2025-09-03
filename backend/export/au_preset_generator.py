@@ -198,25 +198,6 @@ class AUPresetGenerator:
                     plugin_name, parameters, preset_name, output_dir, 
                     seed_file, parameter_map, verbose
                 )
-            
-            # Find seed file
-            seed_file = self._find_seed_file(plugin_name)
-            if not seed_file:
-                return False, "", f"No seed file found for plugin: {plugin_name}"
-            
-            # Try Swift CLI first if available
-            if self.check_available():
-                return self._generate_with_swift_cli(
-                    plugin_name, parameters, preset_name, output_dir, 
-                    seed_file, parameter_map, verbose
-                )
-            else:
-                # Fall back to Python CLI
-                logger.info(f"Swift CLI not available, using Python fallback for {plugin_name}")
-                return self._generate_with_python_fallback(
-                    plugin_name, parameters, preset_name, output_dir, 
-                    seed_file, parameter_map, verbose
-                )
                 
         except Exception as e:
             logger.error(f"Exception in AU preset generation: {e}")
@@ -305,17 +286,22 @@ class AUPresetGenerator:
                         except Exception as perm_error:
                             logger.warning(f"Permission fix warning: {perm_error}")
                     
-                    # Clean up any empty nested directories created by Swift CLI
+                    # Clean up any empty nested directories created by Swift CLI (but preserve existing files)
                     try:
-                        # Remove the nested structure if it's empty
+                        # Only remove nested structure if it's empty AND doesn't contain other preset files
                         nested_presets_dir = temp_output / "Presets"
                         if nested_presets_dir.exists():
-                            for empty_dir in nested_presets_dir.rglob("*"):
-                                if empty_dir.is_dir() and not list(empty_dir.iterdir()):
-                                    empty_dir.rmdir()
-                            # Remove Presets dir if empty
-                            if nested_presets_dir.exists() and not list(nested_presets_dir.iterdir()):
-                                nested_presets_dir.rmdir()
+                            # Check if there are any .aupreset files in the nested structure
+                            nested_presets = list(nested_presets_dir.rglob("*.aupreset"))
+                            if not nested_presets:  # Only clean up if no presets remain
+                                for empty_dir in reversed(list(nested_presets_dir.rglob("*"))):
+                                    if empty_dir.is_dir() and not list(empty_dir.iterdir()):
+                                        empty_dir.rmdir()
+                                # Remove Presets dir if empty
+                                if nested_presets_dir.exists() and not list(nested_presets_dir.iterdir()):
+                                    nested_presets_dir.rmdir()
+                            else:
+                                logger.info(f"Skipping cleanup - found {len(nested_presets)} other preset files")
                     except Exception as cleanup_error:
                         logger.warning(f"Cleanup warning: {cleanup_error}")
                     
@@ -414,12 +400,17 @@ class AUPresetGenerator:
                             except Exception as perm_error:
                                 logger.warning(f"Permission fix warning: {perm_error}")
                         
-                        # Clean up nested directories created by Python CLI
+                        # Clean up nested directories created by Python CLI (but preserve existing files)
                         try:
                             nested_presets_dir = PathLib(output_dir) / "Presets"
                             if nested_presets_dir.exists():
-                                import shutil
-                                shutil.rmtree(str(nested_presets_dir))
+                                # Check if there are any .aupreset files in the nested structure
+                                nested_presets = list(nested_presets_dir.rglob("*.aupreset"))
+                                if not nested_presets:  # Only clean up if no presets remain
+                                    import shutil
+                                    shutil.rmtree(str(nested_presets_dir))
+                                else:
+                                    logger.info(f"Skipping Python cleanup - found {len(nested_presets)} other preset files")
                         except Exception as cleanup_error:
                             logger.warning(f"Cleanup warning: {cleanup_error}")
                         

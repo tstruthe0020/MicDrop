@@ -227,49 +227,81 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
         errors = []
         
         for i, plugin in enumerate(plugins):
-            plugin_name = plugin['plugin']
-            converted_params = convert_parameters(plugin['params'])
-            
-            # Create consistent preset filename
-            preset_filename = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}.aupreset"
-            preset_name_only = preset_filename.replace('.aupreset', '')  # Remove extension for generation
-            
-            # Load parameter mapping if available
-            param_map = None
             try:
-                map_file = Path(f"/app/aupreset/maps/{plugin_name.replace(' ', '').replace('-', '')}.map.json")
-                if map_file.exists():
-                    with open(map_file, 'r') as f:
-                        param_map = json.load(f)
-            except Exception as e:
-                logger.warning(f"Could not load parameter map for {plugin_name}: {e}")
-            
-            # Generate preset to download directory
-            success, stdout, stderr = au_preset_generator.generate_preset(
-                plugin_name=plugin_name,
-                parameters=converted_params,
-                preset_name=preset_name_only,  # Use consistent name
-                output_dir=download_dir,  # Generate to download directory
-                parameter_map=param_map,
-                verbose=True
-            )
-            
-            if success:
-                preset_path = Path(download_dir) / preset_filename
+                plugin_name = plugin['plugin']
+                converted_params = convert_parameters(plugin['params'])
                 
-                if preset_path.exists():
-                    generated_files.append({
-                        "plugin": plugin_name,
-                        "filename": preset_filename,
-                        "path": str(preset_path),
-                        "size": preset_path.stat().st_size
-                    })
-                    logger.info(f"✅ Generated downloadable preset: {preset_filename}")
+                # Create consistent preset filename
+                preset_filename = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}.aupreset"
+                preset_name_only = preset_filename.replace('.aupreset', '')  # Remove extension for generation
+                
+                # Load parameter mapping if available
+                param_map = None
+                try:
+                    map_file = Path(f"/app/aupreset/maps/{plugin_name.replace(' ', '').replace('-', '')}.map.json")
+                    if map_file.exists():
+                        with open(map_file, 'r') as f:
+                            param_map = json.load(f)
+                except Exception as e:
+                    logger.warning(f"Could not load parameter map for {plugin_name}: {e}")
+                
+                # Generate preset to download directory
+                success, stdout, stderr = au_preset_generator.generate_preset(
+                    plugin_name=plugin_name,
+                    parameters=converted_params,
+                    preset_name=preset_name_only,  # Use consistent name
+                    output_dir=download_dir,  # Generate to download directory
+                    parameter_map=param_map,
+                    verbose=True
+                )
+                
+                if success:
+                    # Look for the file in multiple locations
+                    preset_path = None
+                    # First, check direct location
+                    direct_path = Path(download_dir) / preset_filename
+                    if direct_path.exists():
+                        preset_path = direct_path
+                    else:
+                        # Search recursively for the file
+                        matches = list(Path(download_dir).glob(f"**/{preset_filename}"))
+                        if matches:
+                            preset_path = matches[0]
+                    
+                    if preset_path and preset_path.exists():
+                        # Move file to direct location for ZIP packaging
+                        final_path = Path(download_dir) / preset_filename
+                        try:
+                            if preset_path != final_path:
+                                import shutil
+                                shutil.move(str(preset_path), str(final_path))
+                                preset_path = final_path
+                        except Exception as move_error:
+                            logger.error(f"Failed to move preset file: {move_error}")
+                            # Continue with original path if move fails
+                        
+                        generated_files.append({
+                            "plugin": plugin_name,
+                            "filename": preset_filename,
+                            "path": str(preset_path),
+                            "size": preset_path.stat().st_size
+                        })
+                        logger.info(f"✅ Generated downloadable preset: {preset_filename}")
+                    else:
+                        # Debug: list all files in the directory
+                        all_files = list(Path(download_dir).rglob("*.aupreset"))
+                        error_msg = f"Generated {plugin_name} but file not found. Available files: {[f.name for f in all_files]}"
+                        errors.append(error_msg)
+                        logger.warning(error_msg)
                 else:
-                    errors.append(f"Generated {plugin_name} but file not found at expected location: {preset_path}")
-            else:
-                errors.append(f"Failed to generate {plugin_name}: {stderr}")
-                logger.error(f"❌ {plugin_name} generation failed: {stderr}")
+                    error_msg = f"Failed to generate {plugin_name}: {stderr}"
+                    errors.append(error_msg)
+                    logger.error(f"❌ {plugin_name} generation failed: {stderr}")
+                    
+            except Exception as e:
+                error_msg = f"Exception processing {plugin_name}: {str(e)}"
+                errors.append(error_msg)
+                logger.error(error_msg)
         
         if generated_files:
             # Create ZIP file containing all presets
@@ -309,7 +341,15 @@ PRESET FILES INCLUDED:
                 
                 # Add all preset files
                 for file_info in generated_files:
-                    zipf.write(file_info['path'], file_info['filename'])
+                    try:
+                        if Path(file_info['path']).exists():
+                            zipf.write(file_info['path'], file_info['filename'])
+                        else:
+                            logger.error(f"Preset file disappeared: {file_info['path']}")
+                            errors.append(f"File disappeared before ZIP creation: {file_info['filename']}")
+                    except Exception as zip_error:
+                        logger.error(f"Failed to add {file_info['filename']} to ZIP: {zip_error}")
+                        errors.append(f"Failed to add {file_info['filename']} to ZIP: {zip_error}")
             
             # Generate download URL (relative to /tmp for the container)
             download_url = f"/api/download/{timestamp}/{zip_filename}"
