@@ -332,7 +332,7 @@ class AUPresetGenerator:
     def _generate_with_python_fallback(
         self, plugin_name: str, parameters: Dict[str, Any], preset_name: str,
         output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
-        verbose: bool
+        verbose: bool, skip_cleanup: bool = False
     ) -> Tuple[bool, str, str]:
         """Generate preset using Python CLI fallback"""
         try:
