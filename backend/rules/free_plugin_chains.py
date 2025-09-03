@@ -285,97 +285,119 @@ class FreePluginChainGenerator:
             "params": params
         }
     
-    def _generate_deesser(self, vocal_features: Dict[str, Any], genre: str) -> Dict[str, Any]:
-        """Generate de-esser using TDR De-esser"""
-        sibilance_freq = vocal_features.get('sibilance_hz', 6500)
+    def _generate_dynamic_eq(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
+        """Generate dynamic EQ using TDR Nova"""
+        spectral = features['spectral']
         
-        # Genre-specific de-essing from PDF
-        if genre == "Pop":
-            # Pop vocals are bright, need more de-essing
-            reduction = 4.0
-            sensitivity = 0.7
-        elif genre == "R&B":
-            # R&B is smoother, less aggressive de-essing
-            reduction = 3.0
-            sensitivity = 0.6
-        elif genre == "Hip-Hop":
-            # Hip-hop needs articulate consonants, gentler de-essing
-            reduction = 3.5
-            sensitivity = 0.65
-            
         params = {
             "bypass": False,
-            "frequency": sibilance_freq,
-            "reduction": reduction,
-            "sensitivity": sensitivity,
-            "detector_mode": "RMS",  # Smoother than peak
-            "listen_mode": False
+            "multiband_enabled": True,
+            "crossover_1": 200.0,   # Low/Low-mid
+            "crossover_2": 2000.0,  # Low-mid/High-mid
+            "crossover_3": 8000.0   # High-mid/High
         }
         
+        # Dynamic frequency control
+        if genre == "Pop":
+            # Pop: consistent brightness and clarity
+            params.update({
+                "band_2_threshold": -12.0,  # Control low-mid mud
+                "band_2_ratio": 2.5,
+                "band_3_threshold": -8.0,   # Control harsh mids
+                "band_3_ratio": 3.0,
+                "band_4_threshold": -6.0,   # Sibilance safety
+                "band_4_ratio": 4.0
+            })
+            
+        elif genre == "R&B":
+            # R&B: smooth dynamic control
+            params.update({
+                "band_2_threshold": -15.0,  # Gentle low-mid control
+                "band_2_ratio": 2.0,
+                "band_3_threshold": -10.0,  # Preserve mid dynamics
+                "band_3_ratio": 2.5,
+                "band_4_threshold": -8.0,   # Gentle high control
+                "band_4_ratio": 3.0
+            })
+            
+        elif genre == "Hip-Hop":
+            # Hip-hop: tight control for busy mixes
+            params.update({
+                "band_1_threshold": -10.0,  # Plosive control
+                "band_1_ratio": 4.0,
+                "band_2_threshold": -8.0,   # Mud control
+                "band_2_ratio": 3.0,
+                "band_3_threshold": -6.0,   # Harshness control
+                "band_3_ratio": 3.5
+            })
+        
         return {
-            "plugin": "TDR De-esser",
-            "role": "Sibilance Control",
+            "plugin": "TDR Nova",
+            "role": "Dynamic EQ",
             "params": params
         }
     
     def _generate_compressor(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
-        """Generate compressor using TDR Kotelnikov"""
+        """Generate compressor using MCompressor or 1176 based on genre"""
         bpm = features.get('bpm', 120.0)
         spectral = features['spectral']
         
-        # Genre-specific compression from PDF
-        if genre == "Pop":
-            # Pop: consistent, upfront vocal
-            ratio = 4.0
-            attack = 8.0   # Medium attack for energy
-            release = 60.0  # Fast release for pop energy
-            threshold = -15.0
+        # Choose compressor based on genre
+        if genre == "R&B" or genre == "Hip-Hop":
+            # Use 1176 for character and punch
+            plugin_name = "1176 Compressor"
             
-        elif genre == "R&B":
-            # R&B: preserve dynamics and warmth
-            ratio = 3.0
-            attack = 12.0  # Slower to preserve phrasing
-            release = 100.0  # Medium release for natural feel
-            threshold = -18.0
+            # Genre-specific 1176 settings
+            if genre == "R&B":
+                ratio = "4:1"
+                attack = "Slow"
+                release = "Medium"
+                input_gain = 3.0
+            else:  # Hip-Hop
+                ratio = "8:1"
+                attack = "Fast"
+                release = "Fast"
+                input_gain = 4.0
+                
+            params = {
+                "bypass": False,
+                "ratio": ratio,
+                "attack": attack,
+                "release": release,
+                "input_gain": input_gain,
+                "output_gain": 0.0,
+                "all_buttons": False  # Classic 1176 setting
+            }
             
-        elif genre == "Hip-Hop":
-            # Hip-hop: controlled and punchy
-            ratio = 5.0
-            attack = 10.0  # Preserve consonant attacks
-            release = 40.0  # Fast for tight control
-            threshold = -12.0
-        
-        # Tempo-aware release adjustment
-        tempo_factor = max(0.7, min(1.3, 120.0 / bpm))
-        release *= tempo_factor
-        
-        params = {
-            "bypass": False,
-            "threshold": threshold,
-            "ratio": ratio,
-            "attack": attack,
-            "release": release,
-            "knee": 2.0,
-            "makeup_gain": ratio * 0.7,  # Approximate compensation
-            "lookahead": True,
-            "delta": False  # Full range compression
-        }
+        else:  # Pop - use MCompressor for transparency
+            plugin_name = "MCompressor"
+            
+            params = {
+                "bypass": False,
+                "threshold": -15.0,
+                "ratio": 4.0,
+                "attack": 8.0,
+                "release": 60.0,
+                "knee": 2.0,
+                "makeup_gain": 3.0,
+                "lookahead": True
+            }
         
         return {
-            "plugin": "TDR Kotelnikov",
+            "plugin": plugin_name,
             "role": "Primary Compression",
             "params": params
         }
     
     def _generate_additive_eq(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
-        """Generate additive EQ using TDR Nova"""
+        """Generate additive EQ using MEqualizer (second instance)"""
         spectral = features['spectral']
         
         params = {
             "bypass": False
         }
         
-        # Genre-specific additive EQ from PDF
+        # Genre-specific additive EQ
         if genre == "Pop":
             # Pop: bright and glossy
             params.update({
@@ -428,105 +450,122 @@ class FreePluginChainGenerator:
             })
         
         return {
-            "plugin": "TDR Nova",
+            "plugin": "MEqualizer",
             "role": "Additive EQ",
             "params": params
         }
     
-    def _generate_multiband(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
-        """Generate multiband compression using TDR Nova"""
-        spectral = features['spectral']
+    def _generate_enhancer(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
+        """Generate high frequency enhancement using Fresh Air"""
+        
+        # Genre-specific enhancement settings
+        if genre == "Pop":
+            presence = 60  # Strong presence for pop
+            brilliance = 70  # High brilliance
+        elif genre == "R&B":
+            presence = 40  # Medium presence for smooth R&B
+            brilliance = 50  # Medium brilliance
+        else:  # Hip-Hop
+            presence = 50  # Medium presence
+            brilliance = 60  # Medium-high brilliance
         
         params = {
             "bypass": False,
-            "multiband_enabled": True,
-            "crossover_1": 200.0,   # Low/Low-mid
-            "crossover_2": 2000.0,  # Low-mid/High-mid
-            "crossover_3": 8000.0   # High-mid/High
+            "presence": presence,
+            "brilliance": brilliance,
+            "mix": 50  # 50% wet/dry mix
         }
         
-        # Dynamic frequency control from PDF
-        if genre == "Pop":
-            # Pop: consistent brightness and clarity
-            params.update({
-                "band_2_threshold": -12.0,  # Control low-mid mud
-                "band_2_ratio": 2.5,
-                "band_3_threshold": -8.0,   # Control harsh mids
-                "band_3_ratio": 3.0,
-                "band_4_threshold": -6.0,   # Sibilance safety
-                "band_4_ratio": 4.0
-            })
-            
-        elif genre == "R&B":
-            # R&B: smooth dynamic control
-            params.update({
-                "band_2_threshold": -15.0,  # Gentle low-mid control
-                "band_2_ratio": 2.0,
-                "band_3_threshold": -10.0,  # Preserve mid dynamics
-                "band_3_ratio": 2.5,
-                "band_4_threshold": -8.0,   # Gentle high control
-                "band_4_ratio": 3.0
-            })
-            
-        elif genre == "Hip-Hop":
-            # Hip-hop: tight control for busy mixes
-            params.update({
-                "band_1_threshold": -10.0,  # Plosive control
-                "band_1_ratio": 4.0,
-                "band_2_threshold": -8.0,   # Mud control
-                "band_2_ratio": 3.0,
-                "band_3_threshold": -6.0,   # Harshness control
-                "band_3_ratio": 3.5
-            })
-        
         return {
-            "plugin": "TDR Nova",
-            "role": "Multiband Dynamics",
+            "plugin": "Fresh Air",
+            "role": "High Frequency Enhancement",
             "params": params
         }
     
-    def _generate_saturation(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
-        """Generate saturation using Softube Saturation Knob"""
+    def _generate_vocal_effects(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
+        """Generate creative vocal effects using Graillon 3"""
         
-        # Subtle warmth for R&B and character for Hip-hop
-        if genre == "R&B":
-            drive = 25.0   # Gentle warmth
-        elif genre == "Hip-Hop":
-            drive = 35.0   # More character
-        else:
-            drive = 20.0   # Minimal
-            
+        # Genre-specific creative processing
+        if genre == "Hip-Hop":
+            # Hip-hop might want subtle formant shifting or harmonies
+            pitch_shift = 0  # No pitch shift by default
+            formant_shift = 5  # Slight formant character
+            octave_mix = 10  # Subtle octave harmonic
+        elif genre == "R&B":
+            # R&B might want warmth and character
+            pitch_shift = 0
+            formant_shift = -5  # Slight darker formants
+            octave_mix = 15  # More octave blend
+        else:  # Pop
+            # Pop might want brightness and harmonies
+            pitch_shift = 0
+            formant_shift = 10  # Brighter formants
+            octave_mix = 20  # More harmonic content
+        
         params = {
             "bypass": False,
-            "drive": drive,     # 0-100 scale
-            "mix": 30.0        # Parallel saturation
+            "pitch_shift": pitch_shift,
+            "formant_shift": formant_shift,
+            "octave_mix": octave_mix,
+            "bitcrusher": 0,  # No bitcrushing by default
+            "mix": 20  # Subtle effect
         }
         
         return {
-            "plugin": "Softube Saturation Knob",
-            "role": "Harmonic Enhancement",
+            "plugin": "Graillon 3",
+            "role": "Creative Vocal Effects",
+            "params": params
+        }
+    
+    def _generate_level_control(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
+        """Generate level control using LA-LA"""
+        
+        # Genre-specific level management
+        if genre == "Pop":
+            target_level = 0.0  # Full level for pop
+            dynamics = 50  # Medium dynamics preservation
+        elif genre == "R&B":
+            target_level = -1.0  # Slightly lower for dynamics
+            dynamics = 70  # More dynamics preserved
+        else:  # Hip-Hop
+            target_level = 1.0  # Slightly hot for punch
+            dynamics = 40  # Less dynamics for consistency
+        
+        params = {
+            "bypass": False,
+            "target_level": target_level,
+            "dynamics": dynamics,
+            "fast_release": genre == "Hip-Hop"  # Faster release for hip-hop
+        }
+        
+        return {
+            "plugin": "LA-LA",
+            "role": "Level Control",
             "params": params
         }
     
     def _generate_reverb(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
-        """Generate reverb using Valhalla Supermassive"""
+        """Generate reverb using MConvolutionEZ"""
         bpm = features.get('bpm', 120.0)
         
-        # Genre-specific reverb from PDF
+        # Genre-specific reverb settings
         if genre == "Pop":
             # Pop: short, tight reverb
+            reverb_type = "Plate"
             decay = 1.5
             pre_delay = 30.0
             mix = 12.0  # Subtle
             
         elif genre == "R&B":
             # R&B: lush, longer reverb
+            reverb_type = "Hall"
             decay = 2.5
             pre_delay = 40.0
             mix = 20.0  # More noticeable
             
         elif genre == "Hip-Hop":
             # Hip-hop: minimal reverb for clarity
+            reverb_type = "Room"
             decay = 0.8
             pre_delay = 20.0
             mix = 8.0   # Very subtle
@@ -537,7 +576,7 @@ class FreePluginChainGenerator:
         
         params = {
             "bypass": False,
-            "mode": "Plate" if genre == "Pop" else "Hall",
+            "impulse_type": reverb_type,
             "decay": decay,
             "pre_delay": pre_delay,
             "low_cut": 250.0,   # Remove reverb mud
@@ -547,116 +586,97 @@ class FreePluginChainGenerator:
         }
         
         return {
-            "plugin": "Valhalla Supermassive",
+            "plugin": "MConvolutionEZ",
             "role": "Spatial Enhancement",
             "params": params
         }
     
-    def _generate_limiter(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
-        """Generate limiter using TDR Limiter 6 GE"""
-        
-        # Genre-specific limiting from PDF
-        if genre == "Pop":
-            # Pop: consistent level, can be more limited
-            ceiling = -0.1
-            release = 50.0
-            target_reduction = 2.0
-            
-        elif genre == "R&B":
-            # R&B: preserve dynamics
-            ceiling = -0.3
-            release = 80.0
-            target_reduction = 1.0
-            
-        elif genre == "Hip-Hop":
-            # Hip-hop: controlled and punchy
-            ceiling = -0.1
-            release = 40.0
-            target_reduction = 3.0
-        
-        params = {
-            "bypass": False,
-            "ceiling": ceiling,
-            "release": release,
-            "lookahead": 5.0,
-            "isr": True,  # Inter-sample peak detection
-            "auto_release": True,
-            "transparent": True  # Clean limiting
-        }
-        
-        return {
-            "plugin": "TDR Limiter 6 GE",
-            "role": "Peak Control",
-            "params": params
-        }
-    
     def _get_required_plugin_list(self) -> List[Dict[str, str]]:
-        """Get list of required free plugins with download links"""
+        """Get list of required plugins with their purposes"""
         return [
             {
+                "name": "MEqualizer",
+                "purpose": "Subtractive and Additive EQ",
+                "manufacturer": "MeldaProduction",
+                "note": "Free professional EQ - used for both subtractive and additive processing"
+            },
+            {
+                "name": "MCompressor", 
+                "purpose": "Transparent Compression",
+                "manufacturer": "MeldaProduction",
+                "note": "Free professional compressor for Pop vocals"
+            },
+            {
+                "name": "1176 Compressor",
+                "purpose": "Character Compression",
+                "manufacturer": "Various",
+                "note": "Classic 1176-style compressor for R&B and Hip-Hop"
+            },
+            {
                 "name": "TDR Nova",
-                "purpose": "EQ and Multiband Compression",
-                "download": "https://www.tokyodawnrecords.com/tdr-nova/",
-                "note": "Free dynamic EQ - essential for this chain"
+                "purpose": "Dynamic EQ and Multiband",
+                "manufacturer": "Tokyo Dawn Records",
+                "note": "Free dynamic EQ for frequency-specific control"
             },
             {
-                "name": "TDR Kotelnikov", 
-                "purpose": "Primary Compression",
-                "download": "https://www.tokyodawnrecords.com/tdr-kotelnikov/",
-                "note": "Free transparent compressor"
+                "name": "MAutoPitch",
+                "purpose": "Pitch Correction",
+                "manufacturer": "MeldaProduction",
+                "note": "Free auto-pitch correction for clean vocals"
             },
             {
-                "name": "TDR De-esser",
-                "purpose": "Sibilance Control", 
-                "download": "https://www.tokyodawnrecords.com/tdr-de-esser/",
-                "note": "Free de-esser plugin"
+                "name": "Graillon 3",
+                "purpose": "Creative Vocal Effects",
+                "manufacturer": "Auburn Sounds",
+                "note": "Creative vocal processing and formant control"
             },
             {
-                "name": "Softube Saturation Knob",
-                "purpose": "Harmonic Enhancement",
-                "download": "https://www.softube.com/saturation-knob",
-                "note": "Free saturation for warmth"
+                "name": "Fresh Air",
+                "purpose": "High Frequency Enhancement",
+                "manufacturer": "Slate Digital",
+                "note": "High frequency enhancer for air and presence"
             },
             {
-                "name": "Valhalla Supermassive",
+                "name": "LA-LA",
+                "purpose": "Level Control",
+                "manufacturer": "Various",
+                "note": "Level management and dynamics control"
+            },
+            {
+                "name": "MConvolutionEZ",
                 "purpose": "Reverb and Space",
-                "download": "https://valhalladsp.com/shop/reverb/valhalla-supermassive/",
-                "note": "Free reverb - industry standard quality"
-            },
-            {
-                "name": "TDR Limiter 6 GE",
-                "purpose": "Peak Control",
-                "download": "https://www.tokyodawnrecords.com/tdr-limiter-6-ge/",
-                "note": "Free transparent limiter"
+                "manufacturer": "MeldaProduction",
+                "note": "Convolution reverb for spatial enhancement"
             }
         ]
 
 # Store plugin information in system for future sessions
 PROFESSIONAL_VOCAL_CHAIN_GUIDE = {
-    "overview": "Professional vocal processing using free third-party AU plugins",
+    "overview": "Professional vocal processing using user's installed AU plugins",
     "benefits": [
-        "Higher quality than Logic stock plugins",
-        "Standard .aupreset format - no proprietary issues", 
-        "Industry-standard tools used by professionals",
+        "Uses only plugins you have installed",
+        "Standard .aupreset format - no compatibility issues", 
+        "Professional-grade processing chain",
         "Genre-specific processing chains",
-        "All plugins are completely free"
+        "All plugins already available to you"
     ],
     "chain_order": [
-        "1. Subtractive EQ (TDR Nova) - Clean up problem frequencies",
-        "2. De-esser (TDR De-esser) - Control sibilance", 
-        "3. Compressor (TDR Kotelnikov) - Even out dynamics",
-        "4. Additive EQ (TDR Nova) - Enhance desirable frequencies",
-        "5. Multiband (TDR Nova) - Dynamic frequency control",
-        "6. Saturation (Softube) - Add warmth/character (optional)",
-        "7. Reverb (Valhalla Supermassive) - Spatial enhancement",
-        "8. Limiter (TDR Limiter 6 GE) - Final peak control"
+        "1. Pitch Correction (MAutoPitch) - Auto-tune vocals",
+        "2. Subtractive EQ (MEqualizer) - Clean up problem frequencies", 
+        "3. Dynamic EQ (TDR Nova) - Dynamic frequency control",
+        "4. Compressor (MCompressor/1176) - Even out dynamics",
+        "5. Additive EQ (MEqualizer) - Enhance desirable frequencies",
+        "6. Enhancer (Fresh Air) - High frequency enhancement",
+        "7. Vocal Effects (Graillon 3) - Creative processing",
+        "8. Level Control (LA-LA) - Final level management",
+        "9. Reverb (MConvolutionEZ) - Spatial enhancement"
     ],
     "genre_differences": {
         "Pop": "Bright, consistent, radio-ready sound with tight reverb",
         "R&B": "Warm, smooth, dynamic with lush reverb tails", 
         "Hip-Hop": "Clear, punchy, minimal reverb for busy mixes"
     },
-    "installation_note": "All plugins are free and use standard AU .aupreset format"
+    "installation_note": "All plugins are already installed and use standard AU .aupreset format"
 }
 
 if __name__ == '__main__':
