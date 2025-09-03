@@ -1498,10 +1498,31 @@ class VocalChainAPITester:
         print("\n🔍 NEW TEST: Testing individual preset installation for different plugins...")
         individual_installation_ok = self.test_individual_preset_installation()
         
-        # Test 9: Logic export (legacy)
+        # Test 9: NEW - Swift CLI Enhancement Tests (from review request)
+        print("\n🔧 SWIFT CLI ENHANCEMENT TESTS (Review Request)")
+        print("=" * 50)
+        print("🔍 Testing consolidated convert_parameters function...")
+        self.test_convert_parameters_function()
+        
+        print("🔍 Testing new generate_chain_zip method...")
+        self.test_generate_chain_zip_method()
+        
+        print("🔍 Testing Swift CLI integration with new command options...")
+        self.test_swift_cli_integration_options()
+        
+        print("🔍 Testing parameter type conversion for Swift CLI compatibility...")
+        self.test_parameter_type_conversion()
+        
+        print("🔍 Testing updated /api/export/download-presets endpoint with ZIP packaging...")
+        self.test_download_presets_endpoint_zip_packaging()
+        
+        print("🔍 Testing error handling for Swift CLI features...")
+        self.test_error_handling_swift_cli_features()
+        
+        # Test 10: Logic export (legacy)
         self.test_export_endpoint(chain)
         
-        # Test 10: NEW - Fallback Logic & Error Handling
+        # Test 11: NEW - Fallback Logic & Error Handling
         print("\n🔍 NEW TEST: Testing fallback logic and comprehensive error handling...")
         self.test_fallback_logic_and_error_handling()
         
