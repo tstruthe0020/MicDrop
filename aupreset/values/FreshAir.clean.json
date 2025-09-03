@@ -1,7 +1,11 @@
 {
-  "Mid_Air": 0.3,
-  "High_Air": 0.6,
-  "Output_Trim": 0.0,
-  "Mix": 1.0,
-  "Bypass": false
+  "Bypass": false,
+  "Presence": 50.0,
+  "Brilliance": 60.0,
+  "Mix": 50.0,
+  "Output_Gain": 0.0,
+  "Stereo_Width": 1.0,
+  "High_Cut": 20000.0,
+  "Drive": 0.0,
+  "Character": 0.0
 }

@@ -1,8 +1,14 @@
 {
-  "Peak_Reduction": 3.0,
-  "Gain_Makeup": 2.5,
-  "Attack": 0.5,
-  "Release": 0.5,
-  "Limit": false,
-  "Bypass": false
+  "Bypass": false,
+  "Target_Level": 0.0,
+  "Dynamics": 50.0,
+  "Speed": 1.0,
+  "Release": 100.0,
+  "Mix": 1.0,
+  "Output_Gain": 0.0,
+  "Limiter_Enable": true,
+  "Compressor_Enable": true,
+  "Gate_Enable": false,
+  "Stereo_Link": true,
+  "Auto_Release": true
 }

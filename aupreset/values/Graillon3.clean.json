@@ -1,8 +1,15 @@
 {
-  "Pitch_Correction_Amount": 0.8,
-  "Correction_Speed": 0.6,
-  "Key": "C",
-  "Scale": "Major",
-  "Formant_Correction": 0.0,
-  "Bypass": false
+  "Bypass": false,
+  "Pitch_Shift": 0.0,
+  "Formant_Shift": 5.0,
+  "Octave_Mix": 15.0,
+  "Correction": 0.0,
+  "Correction_Speed": 50.0,
+  "Bitcrusher": 0.0,
+  "Drive": 0.0,
+  "Mix": 25.0,
+  "Output_Gain": 0.0,
+  "Smooth": 0.5,
+  "Preserve_Formants": true,
+  "Inertia": 0.3
 }

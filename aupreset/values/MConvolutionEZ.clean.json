@@ -1,10 +1,15 @@
 {
-  "Decay": 1.4,
-  "Predelay": 25.0,
-  "Damping_HF": 0.7,
-  "Damping_LF": 0.1,
-  "Mix": 0.25,
-  "Size": 0.6,
+  "Bypass": false,
+  "Pre_Delay": 30.0,
+  "Decay": 1.5,
+  "Low_Cut": 250.0,
+  "High_Cut": 8000.0,
+  "Mix": 12.0,
+  "Output_Gain": 0.0,
   "Width": 1.0,
-  "Bypass": false
+  "Size": 0.6,
+  "Early_Reflections": 0.3,
+  "Diffusion": 0.7,
+  "Modulation": 0.1,
+  "Reverse": false
 }
