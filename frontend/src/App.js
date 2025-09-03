@@ -221,6 +221,72 @@ function App() {
     }
   };
 
+  const fetchSystemInfo = async () => {
+    setConfigLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/system-info`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setSystemInfo(result.system_info);
+      } else {
+        toast({
+          title: "System Info Error",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('System info error:', error);
+      toast({
+        title: "System Info Error", 
+        description: "Failed to fetch system information",
+        variant: "destructive"
+      });
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
+  const configurePaths = async (pathConfig) => {
+    setConfigLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/configure-paths`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pathConfig)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "✅ Paths Configured!",
+          description: result.message,
+          className: "border-green-200 bg-green-50"
+        });
+        
+        // Refresh system info
+        await fetchSystemInfo();
+      } else {
+        toast({
+          title: "Configuration Failed",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Configuration error:', error);
+      toast({
+        title: "Configuration Error",
+        description: "Failed to configure paths",
+        variant: "destructive"
+      });
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setBeatFile(null);
     setVocalFile(null);
