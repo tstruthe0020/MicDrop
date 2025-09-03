@@ -39,8 +39,8 @@ class ChainGenerator:
             plugins.append(pre_eq_config)
             
             # 2. DeEsser (if vocal features available)
-            if features.vocal:
-                deesser_config = self._generate_deesser(features.vocal)
+            if features.get('vocal'):
+                deesser_config = self._generate_deesser(features['vocal'])
                 plugins.append(deesser_config)
             
             # 3. Primary Compressor
