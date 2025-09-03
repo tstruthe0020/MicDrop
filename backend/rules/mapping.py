@@ -54,7 +54,7 @@ class ChainGenerator:
         bpm = features.get('bpm', 120.0)
         if bpm <= 0 or bpm is None:
             bpm = 120.0
-            features['bmp'] = bpm
+            features['bpm'] = bpm
         
         chain_name = f"Legacy_{vibe}_Chain_BPM{int(bpm)}"
         
