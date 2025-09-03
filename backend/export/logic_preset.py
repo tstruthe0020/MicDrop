@@ -51,7 +51,7 @@ class LogicPresetExporter:
                 preset_paths = []
                 plugin_references = []
                 
-                for i, plugin_config in enumerate(chain.plugins):
+                for i, plugin_config in enumerate(chain["plugins"]):
                     plugin_name = plugin_config["plugin"]
                     
                     # Handle special cases
