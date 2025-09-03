@@ -1,12 +1,14 @@
 """
 Vocal chain generation rules based on audio analysis
 Maps audio features to Logic Pro plugin configurations
+Updated to use professional free third-party AU plugins
 """
 
 import logging
 from typing import Dict, Any, List, Optional
 import json
 import math
+from .free_plugin_chains import FreePluginChainGenerator, PROFESSIONAL_VOCAL_CHAIN_GUIDE
 
 logger = logging.getLogger(__name__)
 
