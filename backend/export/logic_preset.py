@@ -397,11 +397,14 @@ class LogicPresetExporter:
             filter_type_mapping = {}
             
             # Enable dynamics processing for bands that have threshold settings
+            # Also enable band selection and add some EQ gain to make changes audible
             for web_param, value in web_params.items():
                 if "threshold" in web_param and value != 0:
                     # Enable dynamics for this band
                     band_num = web_param.split("_")[1]  # Extract band number
                     values_data[f"Band_{band_num}_DynActive"] = True
+                    values_data[f"Band_{band_num}_Selected"] = True  # Select the band
+                    values_data[f"Gain_{band_num}"] = -2.0  # Add slight cut to make dynamics audible
             
         else:
             # Generic mapping for other plugins
