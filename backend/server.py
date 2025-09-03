@@ -617,6 +617,7 @@ async def reset_plugin_path(request: Dict[str, Any]) -> Dict[str, Any]:
             "message": f"Error: {str(e)}"
         }
 
+@api_router.post("/all-in-one")
 async def all_in_one_processing(
     beat_file: UploadFile = File(..., description="Beat audio file (WAV/MP3)"),
     vocal_file: Optional[UploadFile] = File(None, description="Optional vocal audio file"),
@@ -637,51 +638,116 @@ async def all_in_one_processing(
                 vocal_content = await vocal_file.read()
                 vocal_temp.write(vocal_content)
                 vocal_path = vocal_temp.name
-        
-        # Analyze
-        features = audio_analyzer.analyze(beat_path, vocal_path)
-        
-        # Step 2: Generate chain
-        chain = chain_generator.generate_chain(features, vibe)
-        
-        # Step 3: Export presets
-        zip_path = preset_exporter.export_chain(chain, preset_name)
-        
-        # Read ZIP file and encode as base64
-        with open(zip_path, 'rb') as zip_file:
-            zip_data = zip_file.read()
-            zip_base64 = base64.b64encode(zip_data).decode('utf-8')
-        
-        # Cleanup
-        os.unlink(beat_path)
-        if vocal_path:
-            os.unlink(vocal_path)
-        os.unlink(zip_path)
-        
-        return {
-            "features": features,
-            "chain": chain,
-            "preset_zip_base64": zip_base64,
-            "preset_name": preset_name
-        }
-        
-    except Exception as e:
-        # Cleanup on error
-        cleanup_paths = []
-        if 'beat_path' in locals() and beat_path:
-            cleanup_paths.append(beat_path)
-        if 'vocal_path' in locals() and vocal_path:
-            cleanup_paths.append(vocal_path)
-        if 'zip_path' in locals() and zip_path:
-            cleanup_paths.append(zip_path)
+
+        try:
+            # Step 2: Audio analysis (basic implementation)
+            import librosa
+            import numpy as np
             
-        for path in cleanup_paths:
-            if os.path.exists(path):
+            # Load and analyze beat
+            y, sr = librosa.load(beat_path, sr=None)
+            
+            # Basic audio features
+            tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+            spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))
+            rms_energy = np.mean(librosa.feature.rms(y=y))
+            
+            # Determine genre based on tempo and features (simplified)
+            if tempo < 80:
+                genre = "R&B"
+            elif tempo > 130:
+                genre = "Hip-Hop"
+            else:
+                genre = "Pop"
+            
+            features = {
+                "tempo": float(tempo),
+                "spectral_centroid": float(spectral_centroid),
+                "rms_energy": float(rms_energy),
+                "detected_genre": genre
+            }
+            
+            # Step 3: Get vocal chain recommendation
+            chain_result = recommend_vocal_chain(vibe, genre, "vocal")
+            
+            # Step 4: Generate presets using our improved system
+            def convert_parameters(backend_params):
+                converted = {}
+                for key, value in backend_params.items():
+                    if isinstance(value, bool):
+                        converted[key] = 1.0 if value else 0.0
+                    elif isinstance(value, str):
+                        string_mappings = {
+                            'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
+                            'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
+                            'notch': 6.0
+                        }
+                        converted[key] = string_mappings.get(value, 0.0)
+                    else:
+                        converted[key] = float(value)
+                return converted
+            
+            # Generate presets for each plugin
+            plugins = chain_result['chain']['plugins']
+            generated_presets = []
+            errors = []
+            
+            for i, plugin in enumerate(plugins):
+                plugin_name = plugin['plugin']
+                converted_params = convert_parameters(plugin['params'])
+                
+                # Load parameter mapping if available
+                param_map = None
                 try:
-                    os.unlink(path)
-                except:
-                    pass
-        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+                    import json
+                    from pathlib import Path
+                    map_file = Path(f"/app/aupreset/maps/{plugin_name.replace(' ', '').replace('-', '')}.map.json")
+                    if map_file.exists():
+                        with open(map_file, 'r') as f:
+                            param_map = json.load(f)
+                except Exception as e:
+                    logger.warning(f"Could not load parameter map for {plugin_name}: {e}")
+                
+                # Generate preset
+                success, stdout, stderr = au_preset_generator.generate_preset(
+                    plugin_name=plugin_name,
+                    parameters=converted_params,
+                    preset_name=f"{preset_name}_{i+1}_{plugin_name.replace(' ', '_')}",
+                    parameter_map=param_map,
+                    verbose=True
+                )
+                
+                if success:
+                    generated_presets.append({
+                        "plugin": plugin_name,
+                        "preset_name": f"{preset_name}_{i+1}_{plugin_name.replace(' ', '_')}",
+                        "status": "success"
+                    })
+                else:
+                    errors.append(f"Failed to generate {plugin_name}: {stderr}")
+            
+            return {
+                "success": True,
+                "message": f"Generated {len(generated_presets)} presets from audio analysis",
+                "audio_features": features,
+                "vocal_chain": chain_result,
+                "generated_presets": generated_presets,
+                "errors": errors if errors else None
+            }
+            
+        finally:
+            # Cleanup temporary files
+            if os.path.exists(beat_path):
+                os.unlink(beat_path)
+            if vocal_path and os.path.exists(vocal_path):
+                os.unlink(vocal_path)
+                
+    except Exception as e:
+        logger.error(f"Error in all-in-one processing: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Processing failed: {str(e)}"
+        }
 
 # Health check endpoint
 @api_router.get("/health")
