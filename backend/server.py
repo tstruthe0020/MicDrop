@@ -133,8 +133,10 @@ async def recommend_chain(request: RecommendationRequest):
 async def export_logic_presets(request: ExportRequest):
     """Export Logic Pro presets as ZIP file"""
     try:
+        # Convert Pydantic model to dict for exporter
+        chain_dict = request.chain.dict()
         # Generate ZIP file with presets
-        zip_path = preset_exporter.export_chain(request.chain, request.preset_name)
+        zip_path = preset_exporter.export_chain(chain_dict, request.preset_name)
         
         # Return ZIP file
         return FileResponse(
