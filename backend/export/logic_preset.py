@@ -25,6 +25,7 @@ class LogicPresetExporter:
         self.aupreset_writer = AUPresetWriter()
         self.pst_writer = LogicPSTWriter()
         self.simple_pst_writer = SimplePSTWriter()
+        self.aupreset_xml_writer = AUPresetXMLWriter()
         self.cst_writer = LogicCSTWriter()
         
         # Initialize default files
