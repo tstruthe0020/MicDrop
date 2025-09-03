@@ -142,39 +142,47 @@ function App() {
     
     setLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/export/install-to-logic`, {
+      const response = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vibe: vibe,
-          genre: null, // Can be extended later
-          audio_type: null // Can be extended later
+          genre: chain.genre,
+          audio_type: 'vocal',
+          preset_name: presetName || 'VocalChain'
         })
       });
       
       const result = await response.json();
       
       if (result.success) {
+        // Trigger download
+        const downloadUrl = `${BACKEND_URL}${result.download.url}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = result.download.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setInstallationResult(result);
         toast({
-          title: "🎵 Presets Installed!",
-          description: result.message,
+          title: "✅ Presets Ready for Download!",
+          description: `${result.download.preset_count} presets packaged. Check your downloads folder and follow the README instructions.`,
           className: "border-green-200 bg-green-50"
         });
-        
-        // Show detailed instructions
-        setInstallationResult(result);
       } else {
         toast({
-          title: "Installation Failed",
+          title: "Generation Failed",
           description: result.message,
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Installation error:', error);
+      console.error('Download error:', error);
       toast({
-        title: "Installation Error",
-        description: "Failed to install presets to Logic Pro",
+        title: "Download Error",
+        description: "Failed to generate preset download",
         variant: "destructive"
       });
     } finally {
