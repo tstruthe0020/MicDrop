@@ -92,8 +92,41 @@ class AUPresetGenerator:
             if path and os.path.isdir(path):
                 return Path(path)
                 
-        # Return container path as fallback
+        # Container path as fallback
         return Path('/app/aupreset/seeds')
+    
+    def _load_plugin_paths(self) -> Dict[str, str]:
+        """Load per-plugin path configuration"""
+        config_file = Path('/tmp/plugin_paths_config.json')
+        try:
+            if config_file.exists():
+                with open(config_file, 'r') as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.warning(f"Failed to load plugin paths config: {e}")
+        
+        # Default plugin paths (can be customized)
+        return {
+            "TDR Nova": "/Library/Audio",
+            "MEqualizer": "/Library/Audio", 
+            "MCompressor": "/Library/Audio",
+            "1176 Compressor": "/Library/Audio",
+            "MAutoPitch": "/Library/Audio",
+            "Graillon 3": "/Library/Audio",
+            "Fresh Air": "/Library/Audio",
+            "LA-LA": "/Library/Audio",
+            "MConvolutionEZ": "/Library/Audio"
+        }
+    
+    def _save_plugin_paths(self):
+        """Save per-plugin path configuration"""
+        config_file = Path('/tmp/plugin_paths_config.json')
+        try:
+            with open(config_file, 'w') as f:
+                json.dump(self.plugin_paths, f, indent=2)
+            logger.info(f"Plugin paths saved to {config_file}")
+        except Exception as e:
+            logger.warning(f"Failed to save plugin paths: {e}")
     
     def _get_logic_preset_dirs(self) -> Dict[str, str]:
         """Get Logic Pro preset directories based on environment"""
