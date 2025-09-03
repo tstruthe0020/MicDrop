@@ -149,8 +149,19 @@ def recommend_vocal_chain(vibe: str, genre: Optional[str] = None, audio_type: Op
         }
         
         # Generate chain using existing chain generator
-        chain = chain_generator.generate_chain(mock_features, vibe)
-        return {"chain": chain.plugins if hasattr(chain, 'plugins') else chain}
+        chain_result = chain_generator.generate_chain(mock_features, vibe)
+        
+        # Handle different return types from chain generator
+        if isinstance(chain_result, dict):
+            return chain_result
+        elif hasattr(chain_result, 'plugins'):
+            return {"chain": chain_result.plugins}
+        elif isinstance(chain_result, list):
+            return {"chain": chain_result}
+        else:
+            logger.warning(f"Unexpected chain result type: {type(chain_result)}")
+            return {"chain": []}
+            
     except Exception as e:
         logger.error(f"Error in recommend_vocal_chain: {str(e)}")
         return {"chain": []}
