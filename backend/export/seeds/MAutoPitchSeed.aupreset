@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>data</key>
+	<data>
+	eNpVjlFLAzEQhFf8Bf4Doa/CES1SH9NrhYLBgxO91zS35oJrVjZ7IH3wryuxIHUeZ4aZ
+	D9x6GJydlbukYSqomnIsYBdgzuxig4pBWVom8h8Fx+o+o5TEGZZwfgHW7Ta7TjiKf28n
+	nyNus98TggH7z269YmRJB5SabcekLH06IJS729XVcnUDtuWswkQo5bgy1qpDRSl/CL2i
+	IFeQjuaY8hMz7f0p4rd1/vPh/nFNHN5+L8yl7YMnhGJOBMNx+hqGlzTq5GDoeZaAFR1f
+	EylKyhEMNE3z9QOf9WHt
+	</data>
+	<key>manufacturer</key>
+	<integer>1298492516</integer>
+	<key>name</key>
+	<string>MAutoPitchSeed</string>
+	<key>subtype</key>
+	<integer>1298232660</integer>
+	<key>type</key>
+	<integer>1635085670</integer>
+	<key>version</key>
+	<integer>1114880</integer>
+</dict>
+</plist>
