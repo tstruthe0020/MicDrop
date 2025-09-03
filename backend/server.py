@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, File, UploadFile, HTTPException, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -180,6 +180,191 @@ async def export_logic_presets(request: ExportRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+@api_router.post("/export/download-presets")
+async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate vocal chain presets and return download URLs
+    """
+    try:
+        vibe = request.get("vibe", "Balanced")
+        genre = request.get("genre", "Pop")
+        audio_type = request.get("audio_type", "vocal")
+        preset_name = request.get("preset_name", "VocalChain")
+        
+        # Get vocal chain recommendation
+        chain_result = recommend_vocal_chain(vibe, genre, audio_type)
+        chain_name = f"{preset_name}_{vibe}_{genre}"
+        
+        # Create temporary directory for downloads
+        import tempfile
+        import zipfile
+        from datetime import datetime
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        download_dir = f"/tmp/vocal_chain_downloads/{timestamp}"
+        os.makedirs(download_dir, exist_ok=True)
+        
+        def convert_parameters(backend_params):
+            converted = {}
+            for key, value in backend_params.items():
+                if isinstance(value, bool):
+                    converted[key] = 1.0 if value else 0.0
+                elif isinstance(value, str):
+                    string_mappings = {
+                        'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
+                        'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
+                        'notch': 6.0
+                    }
+                    converted[key] = string_mappings.get(value, 0.0)
+                else:
+                    converted[key] = float(value)
+            return converted
+        
+        # Generate presets for each plugin
+        plugins = chain_result['chain']['plugins']
+        generated_files = []
+        errors = []
+        
+        for i, plugin in enumerate(plugins):
+            plugin_name = plugin['plugin']
+            converted_params = convert_parameters(plugin['params'])
+            
+            # Create consistent preset filename
+            preset_filename = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}.aupreset"
+            preset_name_only = preset_filename.replace('.aupreset', '')  # Remove extension for generation
+            
+            # Load parameter mapping if available
+            param_map = None
+            try:
+                map_file = Path(f"/app/aupreset/maps/{plugin_name.replace(' ', '').replace('-', '')}.map.json")
+                if map_file.exists():
+                    with open(map_file, 'r') as f:
+                        param_map = json.load(f)
+            except Exception as e:
+                logger.warning(f"Could not load parameter map for {plugin_name}: {e}")
+            
+            # Generate preset to download directory
+            success, stdout, stderr = au_preset_generator.generate_preset(
+                plugin_name=plugin_name,
+                parameters=converted_params,
+                preset_name=preset_name_only,  # Use consistent name
+                output_dir=download_dir,  # Generate to download directory
+                parameter_map=param_map,
+                verbose=True
+            )
+            
+            if success:
+                preset_path = Path(download_dir) / preset_filename
+                
+                if preset_path.exists():
+                    generated_files.append({
+                        "plugin": plugin_name,
+                        "filename": preset_filename,
+                        "path": str(preset_path),
+                        "size": preset_path.stat().st_size
+                    })
+                    logger.info(f"✅ Generated downloadable preset: {preset_filename}")
+                else:
+                    errors.append(f"Generated {plugin_name} but file not found at expected location: {preset_path}")
+            else:
+                errors.append(f"Failed to generate {plugin_name}: {stderr}")
+                logger.error(f"❌ {plugin_name} generation failed: {stderr}")
+        
+        if generated_files:
+            # Create ZIP file containing all presets
+            zip_filename = f"{chain_name}_Presets.zip"
+            zip_path = Path(download_dir) / zip_filename
+            
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                # Add README with installation instructions
+                readme_content = f"""Vocal Chain Presets - {chain_name}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Vibe: {vibe}
+Genre: {genre}
+
+INSTALLATION INSTRUCTIONS:
+1. Extract all .aupreset files from this ZIP
+2. Copy each preset to its corresponding Logic Pro directory:
+
+MEqualizer → /Users/[username]/Library/Audio/Presets/MeldaProduction/MEqualizer/
+MCompressor → /Users/[username]/Library/Audio/Presets/MeldaProduction/MCompressor/
+MConvolutionEZ → /Users/[username]/Library/Audio/Presets/MeldaProduction/MConvolutionEZ/
+MAutoPitch → /Users/[username]/Library/Audio/Presets/MeldaProduction/MAutoPitch/
+TDR Nova → /Users/[username]/Library/Audio/Presets/Tokyo Dawn Labs/TDR Nova/
+Fresh Air → /Users/[username]/Library/Audio/Presets/Slate Digital/Fresh Air/
+Graillon 3 → /Users/[username]/Library/Audio/Presets/Auburn Sounds/Graillon 3/
+1176 Compressor → /Users/[username]/Library/Audio/Presets/Universal Audio (UADx)/UADx 1176 FET Compressor/
+LA-LA → /Users/[username]/Library/Audio/Presets/AnalogObsession/LALA/
+
+3. Restart Logic Pro
+4. The presets will appear in each plugin's preset menu
+
+PRESET FILES INCLUDED:
+"""
+                for file_info in generated_files:
+                    readme_content += f"- {file_info['filename']} ({file_info['plugin']})\n"
+                    
+                zipf.writestr("README.txt", readme_content)
+                
+                # Add all preset files
+                for file_info in generated_files:
+                    zipf.write(file_info['path'], file_info['filename'])
+            
+            # Generate download URL (relative to /tmp for the container)
+            download_url = f"/api/download/{timestamp}/{zip_filename}"
+            
+            return {
+                "success": True,
+                "message": f"Generated {len(generated_files)} presets for download",
+                "vocal_chain": chain_result,
+                "download": {
+                    "url": download_url,
+                    "filename": zip_filename,
+                    "size": zip_path.stat().st_size,
+                    "preset_count": len(generated_files)
+                },
+                "generated_files": generated_files,
+                "errors": errors if errors else None
+            }
+        else:
+            return {
+                "success": False,
+                "message": "No presets were generated",
+                "errors": errors
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in download presets: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Processing failed: {str(e)}"
+        }
+
+@api_router.get("/download/{timestamp}/{filename}")
+async def download_file(timestamp: str, filename: str):
+    """
+    Serve generated preset files for download
+    """
+    try:
+        file_path = Path(f"/tmp/vocal_chain_downloads/{timestamp}/{filename}")
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        def iterfile():
+            with open(file_path, "rb") as f:
+                yield from f
+        
+        return StreamingResponse(
+            iterfile(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error serving download: {str(e)}")
+        raise HTTPException(status_code=500, detail="Download failed")
 
 @api_router.post("/export/install-to-logic")
 async def install_presets_to_logic(request: RecommendRequest) -> Dict[str, Any]:

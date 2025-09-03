@@ -142,39 +142,47 @@ function App() {
     
     setLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/export/install-to-logic`, {
+      const response = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vibe: vibe,
-          genre: null, // Can be extended later
-          audio_type: null // Can be extended later
+          genre: chain.genre,
+          audio_type: 'vocal',
+          preset_name: presetName || 'VocalChain'
         })
       });
       
       const result = await response.json();
       
       if (result.success) {
+        // Trigger download
+        const downloadUrl = `${BACKEND_URL}${result.download.url}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = result.download.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setInstallationResult(result);
         toast({
-          title: "🎵 Presets Installed!",
-          description: result.message,
+          title: "✅ Presets Ready for Download!",
+          description: `${result.download.preset_count} presets packaged. Check your downloads folder and follow the README instructions.`,
           className: "border-green-200 bg-green-50"
         });
-        
-        // Show detailed instructions
-        setInstallationResult(result);
       } else {
         toast({
-          title: "Installation Failed",
+          title: "Generation Failed",
           description: result.message,
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Installation error:', error);
+      console.error('Download error:', error);
       toast({
-        title: "Installation Error",
-        description: "Failed to install presets to Logic Pro",
+        title: "Download Error",
+        description: "Failed to generate preset download",
         variant: "destructive"
       });
     } finally {
@@ -829,7 +837,7 @@ function App() {
                   <div className="flex justify-center gap-4">
                     <Button onClick={installToLogic} size="lg" className="bg-green-600 hover:bg-green-700">
                       <Download className="w-4 h-4 mr-2" />
-                      Install to Logic Pro
+                      Download Preset Package
                     </Button>
                     <Button onClick={resetForm} variant="outline" size="lg">
                       Process Another
@@ -901,6 +909,37 @@ function App() {
                       </div>
                     </AlertDescription>
                   </Alert>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Installation Result Display */}
+            {installationResult && (
+              <Card>
+                <CardContent className="pt-6">
+                  {installationResult && (
+                    <Alert className="border-green-200 bg-green-50">
+                      <AlertDescription>
+                        <div className="space-y-2">
+                          <strong>✅ Preset Package Downloaded!</strong>
+                          <p className="text-sm">
+                            File: <code className="bg-slate-100 px-1 rounded">{installationResult.download?.filename}</code>
+                          </p>
+                          <p className="text-sm">
+                            Generated {installationResult.download?.preset_count} presets. 
+                            Check your downloads folder and follow the README.txt instructions to install in Logic Pro.
+                          </p>
+                          <div className="text-xs text-slate-600 mt-2">
+                            <strong>Quick Install Guide:</strong>
+                            <br />1. Extract the ZIP file
+                            <br />2. Copy each .aupreset file to its plugin's directory in ~/Library/Audio/Presets/
+                            <br />3. Restart Logic Pro
+                            <br />4. Presets will appear in each plugin's menu
+                          </div>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
             )}

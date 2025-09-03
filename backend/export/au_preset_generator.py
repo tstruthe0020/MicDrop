@@ -198,6 +198,25 @@ class AUPresetGenerator:
                     plugin_name, parameters, preset_name, output_dir, 
                     seed_file, parameter_map, verbose
                 )
+            
+            # Find seed file
+            seed_file = self._find_seed_file(plugin_name)
+            if not seed_file:
+                return False, "", f"No seed file found for plugin: {plugin_name}"
+            
+            # Try Swift CLI first if available
+            if self.check_available():
+                return self._generate_with_swift_cli(
+                    plugin_name, parameters, preset_name, output_dir, 
+                    seed_file, parameter_map, verbose
+                )
+            else:
+                # Fall back to Python CLI
+                logger.info(f"Swift CLI not available, using Python fallback for {plugin_name}")
+                return self._generate_with_python_fallback(
+                    plugin_name, parameters, preset_name, output_dir, 
+                    seed_file, parameter_map, verbose
+                )
                 
         except Exception as e:
             logger.error(f"Exception in AU preset generation: {e}")
@@ -251,26 +270,32 @@ class AUPresetGenerator:
             success = result.returncode == 0
             
             if success:
-                # Find the generated .aupreset file
+                # Find the generated .aupreset file with more flexible search
                 generated_files = []
                 temp_output = Path(output_dir)
                 
-                # Swift CLI creates nested structure, find the actual file
+                # Search for any .aupreset files in the output directory and subdirectories
                 for preset_file in temp_output.rglob("*.aupreset"):
-                    if preset_name in preset_file.name:
-                        generated_files.append(preset_file)
+                    generated_files.append(preset_file)
                 
                 if generated_files:
-                    # Move the file directly to the target directory (no nesting)
+                    # Use the first found file, or find one matching the preset name
                     source_file = generated_files[0]
+                    for file in generated_files:
+                        if preset_name in file.name:
+                            source_file = file
+                            break
+                    
+                    # Target file location
                     target_file = Path(output_dir) / f"{preset_name}.aupreset"
                     
                     # Ensure target directory exists
                     target_file.parent.mkdir(parents=True, exist_ok=True)
                     
-                    # Move file to exact location
-                    import shutil
-                    shutil.move(str(source_file), str(target_file))
+                    # Move file to exact location if it's not already there
+                    if source_file != target_file:
+                        import shutil
+                        shutil.move(str(source_file), str(target_file))
                     
                     # Fix file permissions for macOS user
                     if self.is_macos:
