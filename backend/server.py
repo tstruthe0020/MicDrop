@@ -230,6 +230,10 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
             plugin_name = plugin['plugin']
             converted_params = convert_parameters(plugin['params'])
             
+            # Create consistent preset filename
+            preset_filename = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}.aupreset"
+            preset_name_only = preset_filename.replace('.aupreset', '')  # Remove extension for generation
+            
             # Load parameter mapping if available
             param_map = None
             try:
@@ -244,14 +248,13 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
             success, stdout, stderr = au_preset_generator.generate_preset(
                 plugin_name=plugin_name,
                 parameters=converted_params,
-                preset_name=f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}",
+                preset_name=preset_name_only,  # Use consistent name
                 output_dir=download_dir,  # Generate to download directory
                 parameter_map=param_map,
                 verbose=True
             )
             
             if success:
-                preset_filename = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}.aupreset"
                 preset_path = Path(download_dir) / preset_filename
                 
                 if preset_path.exists():
@@ -263,7 +266,7 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
                     })
                     logger.info(f"✅ Generated downloadable preset: {preset_filename}")
                 else:
-                    errors.append(f"Generated {plugin_name} but file not found at expected location")
+                    errors.append(f"Generated {plugin_name} but file not found at expected location: {preset_path}")
             else:
                 errors.append(f"Failed to generate {plugin_name}: {stderr}")
                 logger.error(f"❌ {plugin_name} generation failed: {stderr}")
