@@ -107,9 +107,12 @@ function App() {
       if (result.success) {
         // Create mock audio features for display
         const mockFeatures = {
-          tempo: 120,
-          spectral_centroid: 2000,
-          rms_energy: 0.1,
+          bpm: 120,
+          lufs: -14.5,
+          crest: 12.3,
+          spectral: {
+            tilt: 0.5
+          },
           detected_genre: result.vocal_chain.chain.genre || 'Pop'
         };
         
