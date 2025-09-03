@@ -272,6 +272,15 @@ class AUPresetGenerator:
                     import shutil
                     shutil.move(str(source_file), str(target_file))
                     
+                    # Fix file permissions for macOS user
+                    if self.is_macos:
+                        try:
+                            import subprocess
+                            subprocess.run(['chown', 'theostruthers:staff', str(target_file)], capture_output=True)
+                            subprocess.run(['chmod', '644', str(target_file)], capture_output=True)
+                        except Exception as perm_error:
+                            logger.warning(f"Permission fix warning: {perm_error}")
+                    
                     # Clean up any empty nested directories created by Swift CLI
                     try:
                         # Remove the nested structure if it's empty
