@@ -40,12 +40,16 @@ class AUPresetGenerator:
         # Configure Logic Pro preset directories
         self.logic_preset_dirs = self._get_logic_preset_dirs()
         
+        # Per-plugin path configuration
+        self.plugin_paths = self._load_plugin_paths()
+        
         logger.info(f"AU Preset Generator initialized:")
         logger.info(f"  Platform: {'macOS' if self.is_macos else 'Linux'}")
         logger.info(f"  Container: {self.is_container}")
         logger.info(f"  Swift CLI: {self.aupresetgen_path}")
         logger.info(f"  Seeds dir: {self.seeds_dir}")
         logger.info(f"  Logic dirs: {self.logic_preset_dirs}")
+        logger.info(f"  Plugin paths: {len(self.plugin_paths)} configured")
         
     def _detect_swift_cli_path(self) -> str:
         """Auto-detect Swift CLI path based on environment"""
