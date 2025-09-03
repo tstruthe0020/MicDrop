@@ -359,18 +359,33 @@ class AUPresetGenerator:
                 success = result.returncode == 0
                 
                 if success:
-                    # Move generated file to correct location
+                    # Find generated file and move to exact location
                     generated_files = list(PathLib(output_dir).glob("**/*.aupreset"))
                     if generated_files:
-                        final_path = PathLib(output_dir) / f"{preset_name}.aupreset"
-                        if generated_files[0] != final_path:
+                        # Move to direct location (no nesting)
+                        source_file = generated_files[0]
+                        target_file = PathLib(output_dir) / f"{preset_name}.aupreset"
+                        
+                        # Ensure target directory exists
+                        target_file.parent.mkdir(parents=True, exist_ok=True)
+                        
+                        if source_file != target_file:
                             import shutil
-                            shutil.move(str(generated_files[0]), str(final_path))
+                            shutil.move(str(source_file), str(target_file))
+                        
+                        # Clean up nested directories created by Python CLI
+                        try:
+                            nested_presets_dir = PathLib(output_dir) / "Presets"
+                            if nested_presets_dir.exists():
+                                import shutil
+                                shutil.rmtree(str(nested_presets_dir))
+                        except Exception as cleanup_error:
+                            logger.warning(f"Cleanup warning: {cleanup_error}")
                         
                         if verbose:
                             logger.info(f"✅ Python fallback: Successfully generated preset for {plugin_name}")
                         
-                        return True, f"Generated with Python fallback: {final_path}", ""
+                        return True, f"✅ Generated preset: {target_file}", ""
                     else:
                         return False, "", "No .aupreset files generated"
                 else:
