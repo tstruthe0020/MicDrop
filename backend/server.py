@@ -900,22 +900,7 @@ async def all_in_one_processing(
             # Step 3: Get vocal chain recommendation
             chain_result = recommend_vocal_chain(vibe, genre, "vocal")
             
-            # Step 4: Generate presets using our improved system
-            def convert_parameters(backend_params):
-                converted = {}
-                for key, value in backend_params.items():
-                    if isinstance(value, bool):
-                        converted[key] = 1.0 if value else 0.0
-                    elif isinstance(value, str):
-                        string_mappings = {
-                            'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
-                            'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
-                            'notch': 6.0
-                        }
-                        converted[key] = string_mappings.get(value, 0.0)
-                    else:
-                        converted[key] = float(value)
-                return converted
+            # Step 4: Generate presets using our improved system with parameter conversion
             
             # Generate presets for each plugin
             plugins = chain_result['chain']['plugins']
