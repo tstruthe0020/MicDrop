@@ -113,7 +113,7 @@ class LogicPresetExporter:
                 
                 # Generate .cst file (Channel Strip Template) using binary format
                 cst_path = channel_strip_dir / f"{preset_name}.cst"
-                cst_success = self.cst_writer.create_cst_file(str(cst_path), plugin_references, preset_name)
+                cst_success = self.cst_writer.create_cst_file(str(cst_path), preset_name, plugin_references)
                 
                 if not cst_success:
                     logger.warning("Failed to create binary .cst file, falling back to XML")
