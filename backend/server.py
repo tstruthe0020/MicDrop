@@ -255,8 +255,6 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
             )
             
             if success:
-                preset_filename = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}.aupreset"
-                
                 # Look for the file in multiple possible locations
                 possible_paths = [
                     Path(download_dir) / preset_filename,  # Direct location
