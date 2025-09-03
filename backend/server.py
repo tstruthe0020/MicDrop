@@ -192,44 +192,160 @@ async def export_individual_plugin(request: dict):
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
 async def generate_individual_aupreset(plugin_config: Dict[str, Any], preset_name: str, output_path: str) -> bool:
-    """Generate individual .aupreset file using Swift AU Preset Generator"""
+    """Generate individual .aupreset file with fallback approaches"""
     try:
-        from export.au_preset_generator import generate_au_preset
+        from export.au_preset_generator import au_preset_generator
         import tempfile
         import shutil
         
         plugin_name = plugin_config["plugin"]
         parameters = plugin_config.get("params", {})
         
-        # Create temporary output directory
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Generate preset using Swift CLI
-            success, stdout, stderr = generate_au_preset(
-                plugin_name=plugin_name,
-                parameters=parameters,
-                preset_name=preset_name,
-                output_dir=temp_dir
-            )
+        # Try Swift AU Preset Generator first (if available)
+        if au_preset_generator.check_available():
+            logger.info(f"Using Swift AU Preset Generator for {plugin_name}")
             
-            if success:
-                # Find the generated file
-                import glob
-                generated_files = glob.glob(f"{temp_dir}/**/*.aupreset", recursive=True)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                success, stdout, stderr = au_preset_generator.generate_preset(
+                    plugin_name=plugin_name,
+                    parameters=parameters,
+                    preset_name=preset_name,
+                    output_dir=temp_dir,
+                    verbose=True
+                )
                 
-                if generated_files:
-                    # Move to target location
-                    shutil.move(generated_files[0], output_path)
-                    logger.info(f"Successfully generated AU preset for {plugin_name}")
-                    return True
+                if success:
+                    import glob
+                    generated_files = glob.glob(f"{temp_dir}/**/*.aupreset", recursive=True)
+                    
+                    if generated_files:
+                        shutil.move(generated_files[0], output_path)
+                        logger.info(f"Successfully generated AU preset for {plugin_name}")
+                        return True
                 else:
-                    logger.error(f"No .aupreset file generated for {plugin_name}")
+                    logger.warning(f"Swift AU generator failed for {plugin_name}: {stderr}")
+        
+        # Fallback to Python CLI approach
+        logger.info(f"Using Python CLI fallback for {plugin_name}")
+        return await generate_individual_aupreset_python_fallback(plugin_config, preset_name, output_path)
+        
+    except Exception as e:
+        logger.error(f"Failed to generate individual preset for {plugin_name}: {str(e)}")
+        return False
+
+async def generate_individual_aupreset_python_fallback(plugin_config: Dict[str, Any], preset_name: str, output_path: str) -> bool:
+    """Fallback Python CLI approach for individual .aupreset generation"""
+    try:
+        import sys
+        import subprocess
+        import json
+        
+        plugin_name = plugin_config["plugin"]
+        
+        # Map plugin names to our seed files
+        plugin_mapping = {
+            "MEqualizer": "MEqualizerSeed.aupreset",
+            "MCompressor": "MCompressorSeed.aupreset", 
+            "1176 Compressor": "1176CompressorSeed.aupreset",
+            "TDR Nova": "TDRNovaSeed.aupreset",
+            "MAutoPitch": "MAutoPitchSeed.aupreset",
+            "Graillon 3": "Graillon3Seed.aupreset",
+            "Fresh Air": "FreshAirSeed.aupreset",
+            "LA-LA": "LALASeed.aupreset",
+            "MConvolutionEZ": "MConvolutionEZSeed.aupreset"
+        }
+        
+        seed_file = plugin_mapping.get(plugin_name)
+        if not seed_file:
+            logger.error(f"No seed file found for plugin: {plugin_name}")
+            return False
+        
+        # Create paths
+        aupreset_dir = Path("/app/aupreset")
+        seed_path = aupreset_dir / "seeds" / seed_file
+        map_file = f"{plugin_name.replace(' ', '')}.map.json"
+        map_path = aupreset_dir / "maps" / map_file
+        
+        # Create values mapping from web interface parameters to CLI parameter names
+        values_data = {}
+        web_params = plugin_config.get("params", {})
+        
+        # Plugin-specific parameter mapping (including TDR Nova boolean fix)
+        if plugin_name == "TDR Nova":
+            param_mapping = {
+                "bypass": "Bypass",
+                "multiband_enabled": "Band_1_Active",
+                "crossover_1": "Frequency_1",
+                "crossover_2": "Frequency_2",  
+                "crossover_3": "Frequency_3",
+                "band_1_threshold": "Threshold_1",
+                "band_1_ratio": "Ratio_1",
+                "band_2_threshold": "Threshold_2",
+                "band_2_ratio": "Ratio_2",
+                "band_3_threshold": "Threshold_3", 
+                "band_3_ratio": "Ratio_3",
+                "band_4_threshold": "Threshold_4",
+                "band_4_ratio": "Ratio_4"
+            }
+            
+            # Enable dynamics processing for bands with thresholds
+            for web_param, value in web_params.items():
+                if "threshold" in web_param and value != 0:
+                    band_num = web_param.split("_")[1]
+                    values_data[f"Band_{band_num}_DynActive"] = True
+                    values_data[f"Band_{band_num}_Selected"] = True
+                    values_data[f"Gain_{band_num}"] = -2.0  # Make audible
+                    
+        else:
+            # For other plugins, create basic parameter mapping
+            param_mapping = {}
+            for param_name in web_params.keys():
+                formatted_name = param_name.replace("_", " ").title().replace(" ", "_")
+                param_mapping[param_name] = formatted_name
+        
+        # Apply parameter mapping
+        for web_param, value in web_params.items():
+            if web_param in param_mapping:
+                cli_param = param_mapping[web_param]
+                values_data[cli_param] = value
             else:
-                logger.error(f"AU preset generation failed for {plugin_name}: {stderr}")
+                formatted_name = web_param.replace("_", " ").title().replace(" ", "_")
+                values_data[formatted_name] = value
+        
+        # Create temporary values file
+        temp_values_path = aupreset_dir / f"temp_values_{plugin_name.replace(' ', '_')}.json"
+        with open(temp_values_path, 'w') as f:
+            json.dump(values_data, f, indent=2)
+        
+        try:
+            # Run the Python CLI tool
+            cmd = [
+                sys.executable, "make_aupreset.py",
+                "--seed", str(seed_path),
+                "--map", str(map_path),
+                "--values", str(temp_values_path),
+                "--preset-name", preset_name,
+                "--out", str(Path(output_path).parent)
+            ]
+            
+            result = subprocess.run(cmd, cwd=str(aupreset_dir), capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                generated_files = list(Path(output_path).parent.glob("**/*.aupreset"))
+                if generated_files:
+                    import shutil
+                    shutil.move(str(generated_files[0]), output_path)
+                    logger.info(f"Generated preset using Python fallback for {plugin_name}")
+                    return True
+                    
+        finally:
+            if temp_values_path.exists():
+                temp_values_path.unlink()
         
         return False
         
     except Exception as e:
-        logger.error(f"Failed to generate AU preset for {plugin_name}: {str(e)}")
+        logger.error(f"Python fallback failed for {plugin_name}: {str(e)}")
         return False
 
 @api_router.post("/all-in-one")
