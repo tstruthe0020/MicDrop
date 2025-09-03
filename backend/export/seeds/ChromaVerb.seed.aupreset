@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>data</key>
+	<dict>
+		<key>0</key>
+		<false/>
+		<key>1</key>
+		<real>0.5</real>
+		<key>2</key>
+		<real>0.5</real>
+	</dict>
+	<key>manufacturer</key>
+	<string>appl</string>
+	<key>name</key>
+	<string>ChromaVerb Default</string>
+	<key>subtype</key>
+	<string>crvb</string>
+	<key>type</key>
+	<string>aufx</string>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>

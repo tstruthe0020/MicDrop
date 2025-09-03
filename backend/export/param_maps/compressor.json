@@ -1,0 +1,9 @@
+{
+  "bypass": "0",
+  "threshold": "1",
+  "ratio": "2",
+  "attack": "3",
+  "release": "4",
+  "makeup_gain": "5",
+  "model": "6"
+}
