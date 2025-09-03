@@ -837,7 +837,7 @@ function App() {
                   <div className="flex justify-center gap-4">
                     <Button onClick={installToLogic} size="lg" className="bg-green-600 hover:bg-green-700">
                       <Download className="w-4 h-4 mr-2" />
-                      Install to Logic Pro
+                      Download Preset Package
                     </Button>
                     <Button onClick={resetForm} variant="outline" size="lg">
                       Process Another
