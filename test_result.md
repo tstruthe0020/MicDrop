@@ -180,6 +180,18 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+  - task: "Swift CLI Tool Compilation"
+    implemented: true
+    working: false
+    file: "/app/aupresetgen/Sources/aupresetgen/main.swift"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "User reports Swift compilation failing with 'generic parameter T could not be inferred' and 'nil requires a contextual type' errors. Need to fix Swift code compilation issues on macOS."
+
 agent_communication:
     - agent: "main"
     - message: "Found critical issue: free_plugin_chains.py is using wrong plugins. User has 9 specific plugins with seed files but system recommends different plugins they don't have. Need to completely rewrite chain generation to use only user's 9 plugins."
@@ -191,3 +203,5 @@ agent_communication:
     - message: "Added new /api/export/individual-plugin endpoint for individual plugin downloads. Need testing to verify it works with MEqualizer, TDR Nova, and other plugins, returns valid base64 data, and handles both XML and binary formats correctly."
     - agent: "testing"
     - message: "✅ INDIVIDUAL PLUGIN ENDPOINT TESTING COMPLETE: The new /api/export/individual-plugin endpoint is working excellently! Successfully tested with MEqualizer (binary), TDR Nova (XML), and MCompressor. All generate valid .aupreset files with correct base64 encoding. Filenames are properly formatted. Both XML and binary plugin formats work correctly. Error handling is functional. The endpoint is ready for production use and will enable individual download buttons for each plugin in vocal chains as requested by the user."
+    - agent: "main"
+    - message: "Working on Swift CLI compilation issues. User has Swift package structure but compilation failing with type inference errors. Need to fix parameter setting and type annotations in main.swift."
