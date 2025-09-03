@@ -246,6 +246,21 @@ test_plan:
         - agent: "testing"
         - comment: "✅ COMPREHENSIVE TESTING SUCCESS! Thoroughly tested the complete Swift CLI path configuration and hybrid preset generation system. ALL KEY FEATURES WORKING PERFECTLY: 1) System Info API (/api/system-info) correctly detects Linux container environment, Swift CLI unavailable, 9 seed files present, 2) Path Configuration API (/api/configure-paths) successfully handles custom path setup for user configuration, 3) Hybrid Preset Generation (/api/export/install-to-logic) works flawlessly across all 6 vibes (Clean, Warm, Punchy, Bright, Vintage, Balanced) with Python fallback generating 7-8 presets per vibe, 4) Individual Preset Installation (/api/export/install-individual) successfully installs presets for TDR Nova, MEqualizer, MCompressor, Fresh Air with proper parameter application, 5) Error handling and fallback logic correctly handles invalid plugins, missing parameters, and gracefully falls back from Swift CLI to Python CLI, 6) File system integration creates presets in correct directories with proper naming. The system perfectly solves the 'No presets were installed' issue with environment detection, configurable paths, and hybrid approach. Python fallback is working excellently in container environment. All 31/31 tests passed including critical plugin restriction compliance."
 
+  - task: "Enhance Swift CLI with New ZIP Packaging Features"
+    implemented: true
+    working: false
+    file: "/app/backend/export/au_preset_generator.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "PARAMETER ISSUE IDENTIFIED: Presets load in Logic Pro but parameters don't change. User has updated main.swift with new CLI options: --plugin-name, --make-zip, --zip-path, --bundle-root. Need to integrate parameter conversion logic directly into server.py and update au_preset_generator.py to use these new features. Also need Logic Pro-mirroring folder structure with ditto command for macOS-native ZIP creation."
+        - working: true
+        - agent: "main"
+        - comment: "✅ BACKEND INTEGRATION COMPLETE! 1) Consolidated convert_parameters function directly in server.py to ensure consistent parameter type conversion (bool->float, string->float mappings), 2) Updated au_preset_generator.py Swift CLI calls to use new options: --plugin-name, --make-zip, --zip-path, --bundle-root, 3) Added generate_chain_zip method for bulk preset generation with Logic Pro folder structure, 4) Implemented both Swift CLI with ditto and Python fallback ZIP creation methods, 5) Updated /api/export/download-presets endpoint to use new chain ZIP generation. System now generates presets with proper Logic Pro structure: 'Audio Music Apps/Plug-In Settings/<PluginName>/<PresetName>.aupreset' and creates user-friendly ZIP packages."
+
 agent_communication:
     - agent: "main"
     - message: "Found critical issue: free_plugin_chains.py is using wrong plugins. User has 9 specific plugins with seed files but system recommends different plugins they don't have. Need to completely rewrite chain generation to use only user's 9 plugins."
