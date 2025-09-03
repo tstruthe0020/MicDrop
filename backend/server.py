@@ -122,7 +122,9 @@ async def analyze_audio(
 async def recommend_chain(request: RecommendationRequest):
     """Generate vocal chain recommendations based on audio features"""
     try:
-        chain = chain_generator.generate_chain(request.features, request.vibe)
+        # Convert Pydantic model to dict for chain generator
+        features_dict = request.features.dict()
+        chain = chain_generator.generate_chain(features_dict, request.vibe)
         return chain
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chain generation failed: {str(e)}")
