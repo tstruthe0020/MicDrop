@@ -248,11 +248,11 @@ test_plan:
 
   - task: "Enhance Swift CLI with New ZIP Packaging Features"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/export/au_preset_generator.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
@@ -260,6 +260,9 @@ test_plan:
         - working: true
         - agent: "main"
         - comment: "✅ BACKEND INTEGRATION COMPLETE! 1) Consolidated convert_parameters function directly in server.py to ensure consistent parameter type conversion (bool->float, string->float mappings), 2) Updated au_preset_generator.py Swift CLI calls to use new options: --plugin-name, --make-zip, --zip-path, --bundle-root, 3) Added generate_chain_zip method for bulk preset generation with Logic Pro folder structure, 4) Implemented both Swift CLI with ditto and Python fallback ZIP creation methods, 5) Updated /api/export/download-presets endpoint to use new chain ZIP generation. System now generates presets with proper Logic Pro structure: 'Audio Music Apps/Plug-In Settings/<PluginName>/<PresetName>.aupreset' and creates user-friendly ZIP packages."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ COMPREHENSIVE TESTING SUCCESS! Enhanced ZIP packaging features are working correctly with CRITICAL ISSUE RESOLVED: 1) Multiple presets (7-8) are now properly included in ZIP files - generating average of 7.3 presets per vocal chain across all vibes (Clean, Warm, Punchy), 2) Parameter conversion is working perfectly across all plugins (TDR Nova, MEqualizer, MCompressor, Fresh Air) with proper boolean->float and string->float mappings, 3) File path resolution logic is working - seed directory found with all 9 required files, 4) Both individual preset generation and bulk ZIP generation are functional, 5) Hybrid system (Swift CLI + Python fallback) working correctly in container environment. MINOR: Logic Pro folder structure detection needs refinement in response messages, but actual ZIP generation and preset creation is working. The critical issue where only 1 preset was making it into ZIP files has been RESOLVED - system now consistently generates 7-8 presets per vocal chain as expected."
 
 agent_communication:
     - agent: "main"
