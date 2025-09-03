@@ -14,6 +14,7 @@ from xml.dom import minidom
 
 from .aupreset_writer import AUPresetWriter
 from .logic_pst_writer import LogicPSTWriter
+from .simple_pst_writer import SimplePSTWriter
 from .cst_binary_writer import LogicCSTWriter
 
 logger = logging.getLogger(__name__)
