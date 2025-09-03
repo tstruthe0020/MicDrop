@@ -206,9 +206,15 @@ async def install_presets_to_logic(request: RecommendRequest) -> Dict[str, Any]:
         installed_presets = []
         errors = []
         
-        for i, plugin_config in enumerate(chain):
-            plugin_name = plugin_config.get("plugin", f"Unknown_{i}")
-            parameters = plugin_config.get("params", {})
+        for i, plugin_item in enumerate(chain):
+            # Handle different plugin data structures
+            if isinstance(plugin_item, dict):
+                plugin_name = plugin_item.get("plugin") or plugin_item.get("name", f"Unknown_{i}")
+                parameters = plugin_item.get("params") or plugin_item.get("parameters", {})
+            else:
+                # Handle plugin objects with attributes
+                plugin_name = getattr(plugin_item, 'plugin', getattr(plugin_item, 'name', f"Unknown_{i}"))
+                parameters = getattr(plugin_item, 'params', getattr(plugin_item, 'parameters', {}))
             
             if not parameters:
                 logger.warning(f"No parameters for {plugin_name}, skipping")
