@@ -270,7 +270,7 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
             return {
                 "success": False,
                 "message": "No presets were generated",
-                "errors": errors
+                "errors": [stderr]
             }
             
     except Exception as e:
