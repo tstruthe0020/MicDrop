@@ -228,6 +228,18 @@ test_plan:
         - agent: "main"
         - comment: "✅ FULL SYSTEM INTEGRATION COMPLETE! 1) Updated all 9 plugin parameter maps with correct numeric IDs, 2) Fixed backend chain processing and API endpoints, 3) Updated frontend to use 'Install to Logic Pro' instead of downloads, 4) Created complete vocal chain system with Swift CLI integration (+ Python fallback), 5) System tested and functional - ready for Swift CLI binary deployment."
 
+  - task: "Fix Swift CLI Path Configuration and Environment"
+    implemented: false
+    working: false
+    file: "/app/backend/export/au_preset_generator.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "CRITICAL ISSUE IDENTIFIED: Swift CLI can only run on macOS but backend is in Linux container. Current paths hardcoded to container locations. Need configurable paths, environment detection, and hybrid approach (Swift CLI for Mac, Python fallback for container). Also need first-time user setup for Logic Pro preset directories."
+
 agent_communication:
     - agent: "main"
     - message: "Found critical issue: free_plugin_chains.py is using wrong plugins. User has 9 specific plugins with seed files but system recommends different plugins they don't have. Need to completely rewrite chain generation to use only user's 9 plugins."
