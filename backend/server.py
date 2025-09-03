@@ -192,195 +192,44 @@ async def export_individual_plugin(request: dict):
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
 async def generate_individual_aupreset(plugin_config: Dict[str, Any], preset_name: str, output_path: str) -> bool:
-    """Generate individual .aupreset file using our working CLI system"""
+    """Generate individual .aupreset file using Swift AU Preset Generator"""
     try:
-        import sys
-        import subprocess
-        import json
+        from export.au_preset_generator import generate_au_preset
+        import tempfile
+        import shutil
         
         plugin_name = plugin_config["plugin"]
+        parameters = plugin_config.get("params", {})
         
-        # Map plugin names to our seed files
-        plugin_mapping = {
-            "MEqualizer": "MEqualizerSeed.aupreset",
-            "MCompressor": "MCompressorSeed.aupreset", 
-            "1176 Compressor": "1176CompressorSeed.aupreset",
-            "TDR Nova": "TDRNovaSeed.aupreset",
-            "MAutoPitch": "MAutoPitchSeed.aupreset",
-            "Graillon 3": "Graillon3Seed.aupreset",
-            "Fresh Air": "FreshAirSeed.aupreset",
-            "LA-LA": "LALASeed.aupreset",
-            "MConvolutionEZ": "MConvolutionEZSeed.aupreset"
-        }
-        
-        seed_file = plugin_mapping.get(plugin_name)
-        if not seed_file:
-            logger.error(f"No seed file found for plugin: {plugin_name}")
-            return False
-        
-        # Create paths
-        aupreset_dir = Path("/app/aupreset")
-        seed_path = aupreset_dir / "seeds" / seed_file
-        map_file = f"{plugin_name.replace(' ', '')}.map.json"
-        map_path = aupreset_dir / "maps" / map_file
-        
-        # Create values mapping from web interface parameters to CLI parameter names
-        values_data = {}
-        web_params = plugin_config.get("params", {})
-        
-        # Plugin-specific parameter mapping
-        if plugin_name == "MEqualizer":
-            param_mapping = {
-                "bypass": "Bypass",
-                "high_pass_enabled": "High_Pass_Enable", 
-                "high_pass_freq": "High_Pass_Frequency",
-                "high_pass_q": "High_Pass_Q",
-                "band_1_enabled": "Band_1_Enable",
-                "band_1_freq": "Band_1_Frequency",
-                "band_1_gain": "Band_1_Gain",
-                "band_1_q": "Band_1_Q",
-                "band_1_type": "Band_1_Type",
-                "band_2_enabled": "Band_2_Enable",
-                "band_2_freq": "Band_2_Frequency", 
-                "band_2_gain": "Band_2_Gain",
-                "band_2_q": "Band_2_Q",
-                "band_2_type": "Band_2_Type",
-                "band_3_enabled": "Band_3_Enable",
-                "band_3_freq": "Band_3_Frequency",
-                "band_3_gain": "Band_3_Gain",
-                "band_3_q": "Band_3_Q",
-                "band_3_type": "Band_3_Type"
-            }
+        # Create temporary output directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Generate preset using Swift CLI
+            success, stdout, stderr = generate_au_preset(
+                plugin_name=plugin_name,
+                parameters=parameters,
+                preset_name=preset_name,
+                output_dir=temp_dir
+            )
             
-            # Convert filter type strings to numbers
-            filter_type_mapping = {
-                "bell": 0,
-                "high_shelf": 1, 
-                "low_shelf": 2,
-                "high_pass": 6,
-                "low_pass": 7
-            }
-            
-        elif plugin_name == "TDR Nova":
-            param_mapping = {
-                # Web interface -> TDR Nova map file parameter names (not XML names!)
-                "bypass": "Bypass",  # Master bypass 
-                "multiband_enabled": "Band_1_Active",  # Enable processing
-                "crossover_1": "Frequency_1",  # Band 1 frequency
-                "crossover_2": "Frequency_2",  # Band 2 frequency  
-                "crossover_3": "Frequency_3",  # Band 3 frequency
-                "band_1_threshold": "Threshold_1",  # Band 1 dynamics threshold
-                "band_1_ratio": "Ratio_1",  # Band 1 dynamics ratio
-                "band_2_threshold": "Threshold_2",  # Band 2 dynamics threshold
-                "band_2_ratio": "Ratio_2",  # Band 2 dynamics ratio
-                "band_3_threshold": "Threshold_3",  # Band 3 dynamics threshold 
-                "band_3_ratio": "Ratio_3",  # Band 3 dynamics ratio
-                "band_4_threshold": "Threshold_4",  # Band 4 dynamics threshold
-                "band_4_ratio": "Ratio_4"  # Band 4 dynamics ratio
-            }
-            filter_type_mapping = {}
-            
-            # Enable dynamics processing for bands that have threshold settings
-            # Also enable band selection and add some EQ gain to make changes audible
-            for web_param, value in web_params.items():
-                if "threshold" in web_param and value != 0:
-                    # Enable dynamics for this band
-                    band_num = web_param.split("_")[1]  # Extract band number
-                    values_data[f"Band_{band_num}_DynActive"] = True
-                    values_data[f"Band_{band_num}_Selected"] = True  # Select the band
-                    values_data[f"Gain_{band_num}"] = -2.0  # Add slight cut to make dynamics audible
-            
-        elif plugin_name == "MCompressor":
-            param_mapping = {
-                "bypass": "Bypass",
-                "threshold": "Threshold",
-                "ratio": "Ratio", 
-                "attack": "Attack",
-                "release": "Release",
-                "knee": "Knee",
-                "makeup_gain": "Makeup_Gain",
-                "mix": "Mix"
-            }
-            filter_type_mapping = {}
-            
-        elif plugin_name == "1176 Compressor":
-            param_mapping = {
-                "bypass": "Bypass",
-                "input_gain": "Input_Gain",
-                "output_gain": "Output_Gain",
-                "attack": "Attack",
-                "release": "Release",
-                "ratio_4to1": "Ratio_4to1",
-                "vintage_mode": "Vintage_Mode",
-                "mix": "Mix"
-            }
-            filter_type_mapping = {}
-            
-        else:
-            # Generic mapping for other plugins
-            param_mapping = {}
-            filter_type_mapping = {}
-            for param_name in web_params.keys():
-                formatted_name = param_name.replace("_", " ").title().replace(" ", "_")
-                param_mapping[param_name] = formatted_name
-        
-        # Apply parameter mapping
-        for web_param, value in web_params.items():
-            if web_param in param_mapping:
-                cli_param = param_mapping[web_param]
+            if success:
+                # Find the generated file
+                import glob
+                generated_files = glob.glob(f"{temp_dir}/**/*.aupreset", recursive=True)
                 
-                # Handle special value conversions
-                if isinstance(value, str) and value in filter_type_mapping:
-                    values_data[cli_param] = filter_type_mapping[value]
-                else:
-                    values_data[cli_param] = value
-            else:
-                # Fallback generic mapping
-                formatted_name = web_param.replace("_", " ").title().replace(" ", "_")
-                values_data[formatted_name] = value
-        
-        # Create temporary values file
-        temp_values_path = aupreset_dir / f"temp_values_{plugin_name.replace(' ', '_')}.json"
-        with open(temp_values_path, 'w') as f:
-            json.dump(values_data, f, indent=2)
-        
-        logger.info(f"Created temp values for {plugin_name}: {values_data}")
-        
-        try:
-            # Run the CLI tool
-            cmd = [
-                sys.executable, "make_aupreset.py",
-                "--seed", str(seed_path),
-                "--map", str(map_path),
-                "--values", str(temp_values_path),
-                "--preset-name", preset_name,
-                "--out", str(Path(output_path).parent)
-            ]
-            
-            result = subprocess.run(cmd, cwd=str(aupreset_dir), capture_output=True, text=True)
-            
-            if result.returncode == 0:
-                # Find the generated file and move it to the expected output path
-                generated_files = list(Path(output_path).parent.glob("**/*.aupreset"))
                 if generated_files:
-                    import shutil
-                    shutil.move(str(generated_files[0]), output_path)
-                    logger.info(f"Successfully generated individual preset for {plugin_name}")
+                    # Move to target location
+                    shutil.move(generated_files[0], output_path)
+                    logger.info(f"Successfully generated AU preset for {plugin_name}")
                     return True
                 else:
-                    logger.error(f"No .aupreset files found after CLI generation for {plugin_name}")
+                    logger.error(f"No .aupreset file generated for {plugin_name}")
             else:
-                logger.error(f"CLI tool failed for {plugin_name}: {result.stderr}")
-                
-        finally:
-            # Cleanup temp values file
-            if temp_values_path.exists():
-                temp_values_path.unlink()
+                logger.error(f"AU preset generation failed for {plugin_name}: {stderr}")
         
         return False
         
     except Exception as e:
-        logger.error(f"Failed to generate individual preset for {plugin_name}: {str(e)}")
+        logger.error(f"Failed to generate AU preset for {plugin_name}: {str(e)}")
         return False
 
 @api_router.post("/all-in-one")
