@@ -410,33 +410,97 @@ class AUPresetGenerator {
             print("✓ Applied \(appliedCount) parameters")
         }
         
-        // Export Audio Unit state
-        var propertySize: UInt32 = 0
-        let sizeStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, nil, &propertySize)
-        guard sizeStatus == noErr else {
-            throw RuntimeError("Failed to get ClassInfo size: \(sizeStatus)")
+        // Export Audio Unit state - Try FullState first, fallback to ClassInfo
+        var preset: [String: Any] = [:]
+        var success = false
+        
+        // Method 1: Try kAudioUnitProperty_FullState (more comprehensive for JUCE plugins)
+        if verbose {
+            print("🔄 Attempting to capture FullState...")
         }
         
-        let classInfoData = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(propertySize))
-        defer { classInfoData.deallocate() }
+        var fullStateSize: UInt32 = 0
+        let fullStateSizeStatus = AudioUnitGetProperty(au, kAudioUnitProperty_FullState, kAudioUnitScope_Global, 0, nil, &fullStateSize)
         
-        let getStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, classInfoData, &propertySize)
-        guard getStatus == noErr else {
-            throw RuntimeError("Failed to get ClassInfo: \(getStatus)")
+        if fullStateSizeStatus == noErr && fullStateSize > 0 {
+            let fullStateData = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(fullStateSize))
+            defer { fullStateData.deallocate() }
+            
+            let fullStateGetStatus = AudioUnitGetProperty(au, kAudioUnitProperty_FullState, kAudioUnitScope_Global, 0, fullStateData, &fullStateSize)
+            if fullStateGetStatus == noErr {
+                // Try to parse as plist data
+                let rawData = Data(bytes: fullStateData, count: Int(fullStateSize))
+                
+                do {
+                    if let plistDict = try PropertyListSerialization.propertyList(from: rawData, format: nil) as? [String: Any] {
+                        preset = plistDict
+                        success = true
+                        if verbose {
+                            print("✓ Successfully captured FullState as plist (\(fullStateSize) bytes)")
+                        }
+                    }
+                } catch {
+                    if verbose {
+                        print("⚠️ FullState is not a plist, trying as raw data...")
+                    }
+                    // If not a plist, use raw data
+                    let cfData = CFDataCreate(nil, fullStateData, Int(fullStateSize))!
+                    preset = [
+                        "data": cfData,
+                        "manufacturer": Int(manufacturer),
+                        "subtype": Int(subtype),
+                        "type": Int(type),
+                        "version": 0
+                    ]
+                    success = true
+                    if verbose {
+                        print("✓ Successfully captured FullState as raw data (\(fullStateSize) bytes)")
+                    }
+                }
+            }
         }
         
-        // Create CFData from the raw data
-        let cfData = CFDataCreate(nil, classInfoData, Int(propertySize))!
+        // Method 2: Fallback to kAudioUnitProperty_ClassInfo if FullState failed
+        if !success {
+            if verbose {
+                print("🔄 FullState failed, falling back to ClassInfo...")
+            }
+            
+            var classInfoSize: UInt32 = 0
+            let classInfoSizeStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, nil, &classInfoSize)
+            guard classInfoSizeStatus == noErr else {
+                throw RuntimeError("Failed to get ClassInfo size: \(classInfoSizeStatus)")
+            }
+            
+            let classInfoData = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(classInfoSize))
+            defer { classInfoData.deallocate() }
+            
+            let classInfoGetStatus = AudioUnitGetProperty(au, kAudioUnitProperty_ClassInfo, kAudioUnitScope_Global, 0, classInfoData, &classInfoSize)
+            guard classInfoGetStatus == noErr else {
+                throw RuntimeError("Failed to get ClassInfo: \(classInfoGetStatus)")
+            }
+            
+            // Create CFData from the raw data
+            let cfData = CFDataCreate(nil, classInfoData, Int(classInfoSize))!
+            
+            preset = [
+                "data": cfData,
+                "manufacturer": Int(manufacturer),
+                "name": name,
+                "subtype": Int(subtype),
+                "type": Int(type),
+                "version": 0
+            ]
+            
+            if verbose {
+                print("✓ Successfully captured ClassInfo (\(classInfoSize) bytes)")
+            }
+        }
         
-        // Create preset dictionary
-        let preset: [String: Any] = [
-            "data": cfData,
-            "manufacturer": Int(manufacturer),
-            "name": name,
-            "subtype": Int(subtype),
-            "type": Int(type),
-            "version": 0
-        ]
+        // Ensure we have the required preset name
+        if preset["name"] == nil {
+            preset["name"] = outputURL.deletingPathExtension().lastPathComponent
+        }
         
         // Write to .aupreset file
         let plistData = try PropertyListSerialization.data(fromPropertyList: preset, format: .xml, options: 0)
