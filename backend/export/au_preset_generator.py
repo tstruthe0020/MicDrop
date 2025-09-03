@@ -384,7 +384,6 @@ class AUPresetGenerator:
                         # Fix file permissions for macOS user  
                         if self.is_macos:
                             try:
-                                import subprocess
                                 subprocess.run(['chown', 'theostruthers:staff', str(target_file)], capture_output=True)
                                 subprocess.run(['chmod', '644', str(target_file)], capture_output=True)
                             except Exception as perm_error:
