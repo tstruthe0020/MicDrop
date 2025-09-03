@@ -746,10 +746,14 @@ class VocalChainAPITester:
         # Test 5: Logic export
         self.test_export_endpoint(chain)
         
-        # Test 6: All-in-one pipeline
+        # Test 6: NEW - Individual plugin export
+        print("\n🔍 NEW TEST: Testing individual plugin download endpoint...")
+        self.test_individual_plugin_export()
+        
+        # Test 7: All-in-one pipeline
         self.test_all_in_one_endpoint()
         
-        # Test 7: Error handling
+        # Test 8: Error handling
         self.test_error_handling()
         
         # Print summary
