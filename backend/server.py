@@ -818,7 +818,7 @@ async def all_in_one_processing(
             
             for i, plugin in enumerate(plugins):
                 plugin_name = plugin['plugin']
-                converted_params = convert_parameters(plugin['params'])
+                converted_params = convert_parameters(plugin['params'], plugin_name)
                 
                 # Load parameter mapping if available
                 param_map = None
