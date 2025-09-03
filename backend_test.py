@@ -1697,6 +1697,9 @@ class VocalChainAPITester:
         print("🔍 Testing consolidated convert_parameters function...")
         self.test_convert_parameters_function()
         
+        print("🔍 COMPREHENSIVE ENHANCED ZIP PACKAGING FEATURES TEST...")
+        self.test_enhanced_zip_packaging_features()
+        
         print("🔍 Testing new generate_chain_zip method...")
         self.test_generate_chain_zip_method()
         
