@@ -826,7 +826,7 @@ function App() {
                           ))}
                         </div>
                       </div>
-                    ))}
+                    )) : <div className="text-center text-slate-500 py-4">No plugins available</div>}
                   </div>
                 </CardContent>
               </Card>
