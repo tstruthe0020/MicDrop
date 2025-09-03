@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Alert, AlertDescription } from './components/ui/alert';
 import { toast } from './hooks/use-toast';
 import { Toaster } from './components/ui/toaster';
-import { Upload, Music, Settings, Download, Waveform, Zap, Volume2, Play, Pause } from 'lucide-react';
+import { Upload, Music, Settings, Download, AudioWaveform, Zap, Volume2, Play, Pause } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
