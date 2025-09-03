@@ -1,0 +1,16 @@
+{
+  "HPF_Frequency": 80.0,
+  "HPF_Enabled": true,
+  "Band1_Frequency": 280.0,
+  "Band1_Gain": -3.0,
+  "Band1_Q": 2.0,
+  "Band1_Enabled": true,
+  "Band2_Frequency": 6500.0,
+  "Band2_Gain": -4.0,
+  "Band2_Q": 3.0,
+  "Band2_Enabled": true,
+  "Band2_Type": "Dynamic",
+  "Band2_Threshold": -15.0,
+  "Band2_Ratio": 3.0,
+  "Bypass": false
+}

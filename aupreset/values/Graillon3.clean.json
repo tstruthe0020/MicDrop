@@ -1,0 +1,8 @@
+{
+  "Pitch_Correction_Amount": 0.8,
+  "Correction_Speed": 0.6,
+  "Key": "C",
+  "Scale": "Major",
+  "Formant_Correction": 0.0,
+  "Bypass": false
+}

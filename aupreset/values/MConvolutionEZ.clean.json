@@ -1,0 +1,10 @@
+{
+  "Decay": 1.4,
+  "Predelay": 25.0,
+  "Damping_HF": 0.7,
+  "Damping_LF": 0.1,
+  "Mix": 0.25,
+  "Size": 0.6,
+  "Width": 1.0,
+  "Bypass": false
+}

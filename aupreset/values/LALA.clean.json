@@ -1,0 +1,8 @@
+{
+  "Peak_Reduction": 3.0,
+  "Gain_Makeup": 2.5,
+  "Attack": 0.5,
+  "Release": 0.5,
+  "Limit": false,
+  "Bypass": false
+}
