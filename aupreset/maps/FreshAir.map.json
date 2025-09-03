@@ -1,12 +1,6 @@
 {
-  "Bypass": "param_0",
-  "Presence": "param_1",
-  "Brilliance": "param_2",
-  "Mix": "param_3",
-  "Output_Gain": "param_4",
-  "Stereo_Width": "param_5",
-  "High_Cut": "param_6",
-  "Low_Cut": "param_7",
-  "Drive": "param_8",
-  "Character": "param_9"
+  "Mid_Air": "0",
+  "High_Air": "1",
+  "Bypass": "2",
+  "Trim": "3"
 }
