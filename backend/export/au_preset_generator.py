@@ -169,10 +169,14 @@ class AUPresetGenerator:
             Tuple of (success, stdout, stderr)
         """
         try:
-            # Determine output directory
+            # Determine output directory - check for plugin-specific path first
             if not output_dir:
-                output_dir = self.logic_preset_dirs['custom']
-                
+                plugin_path = self.plugin_paths.get(plugin_name)
+                if plugin_path:
+                    output_dir = plugin_path
+                else:
+                    output_dir = self.logic_preset_dirs['custom']
+                    
             # Ensure output directory exists
             os.makedirs(output_dir, exist_ok=True)
             
