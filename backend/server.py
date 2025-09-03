@@ -22,6 +22,7 @@ sys.path.append('/app/backend')
 from analysis.features import AudioAnalyzer
 from rules.mapping import ChainGenerator  
 from export.logic_preset import LogicPresetExporter
+from export.au_preset_generator import au_preset_generator
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
