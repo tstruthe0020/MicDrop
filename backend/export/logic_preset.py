@@ -73,9 +73,13 @@ class LogicPresetExporter:
                     # Generate preset name for this plugin
                     plugin_preset_name = f"{preset_name}_{plugin_name.replace(' ', '_')}"
                     
-                    # Create .pst file using SIMPLE copy method (no parameter modification)
+                    # Create .pst file using CORRECT format (exact seed copies)
                     pst_file_path = plugin_dir / f"{plugin_preset_name}.pst"
-                    success = self.simple_pst_writer.write_pst_file(
+                    
+                    # For now, just copy the exact seed files (guaranteed to work)
+                    from .correct_pst_writer import CorrectPSTWriter
+                    correct_writer = CorrectPSTWriter()
+                    success = correct_writer.write_pst_file(
                         str(pst_file_path),
                         plugin_name,
                         plugin_preset_name,
