@@ -250,12 +250,52 @@ class AUPresetGenerator:
             
             success = result.returncode == 0
             
-            if success and verbose:
-                logger.info(f"✅ Swift CLI: Successfully generated preset for {plugin_name}")
-            elif not success:
-                logger.error(f"❌ Swift CLI failed for {plugin_name}: {result.stderr}")
-            
-            return success, result.stdout, result.stderr
+            if success:
+                # Find the generated .aupreset file
+                generated_files = []
+                temp_output = Path(output_dir)
+                
+                # Swift CLI creates nested structure, find the actual file
+                for preset_file in temp_output.rglob("*.aupreset"):
+                    if preset_name in preset_file.name:
+                        generated_files.append(preset_file)
+                
+                if generated_files:
+                    # Move the file directly to the target directory (no nesting)
+                    source_file = generated_files[0]
+                    target_file = Path(output_dir) / f"{preset_name}.aupreset"
+                    
+                    # Ensure target directory exists
+                    target_file.parent.mkdir(parents=True, exist_ok=True)
+                    
+                    # Move file to exact location
+                    import shutil
+                    shutil.move(str(source_file), str(target_file))
+                    
+                    # Clean up any empty nested directories created by Swift CLI
+                    try:
+                        # Remove the nested structure if it's empty
+                        nested_presets_dir = temp_output / "Presets"
+                        if nested_presets_dir.exists():
+                            for empty_dir in nested_presets_dir.rglob("*"):
+                                if empty_dir.is_dir() and not list(empty_dir.iterdir()):
+                                    empty_dir.rmdir()
+                            # Remove Presets dir if empty
+                            if nested_presets_dir.exists() and not list(nested_presets_dir.iterdir()):
+                                nested_presets_dir.rmdir()
+                    except Exception as cleanup_error:
+                        logger.warning(f"Cleanup warning: {cleanup_error}")
+                    
+                    if verbose:
+                        logger.info(f"✅ Swift CLI: Successfully generated preset for {plugin_name}")
+                    
+                    return True, f"✅ Generated preset: {target_file}", ""
+                else:
+                    return False, result.stdout, "No .aupreset file was generated"
+            else:
+                if verbose:
+                    logger.error(f"❌ Swift CLI failed for {plugin_name}: {result.stderr}")
+                return False, result.stdout, result.stderr
             
         finally:
             # Cleanup temporary files
