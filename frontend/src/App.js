@@ -912,6 +912,37 @@ function App() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Installation Result Display */}
+            {installationResult && (
+              <Card>
+                <CardContent className="pt-6">
+                  {installationResult && (
+                    <Alert className="border-green-200 bg-green-50">
+                      <AlertDescription>
+                        <div className="space-y-2">
+                          <strong>✅ Preset Package Downloaded!</strong>
+                          <p className="text-sm">
+                            File: <code className="bg-slate-100 px-1 rounded">{installationResult.download?.filename}</code>
+                          </p>
+                          <p className="text-sm">
+                            Generated {installationResult.download?.preset_count} presets. 
+                            Check your downloads folder and follow the README.txt instructions to install in Logic Pro.
+                          </p>
+                          <div className="text-xs text-slate-600 mt-2">
+                            <strong>Quick Install Guide:</strong>
+                            <br />1. Extract the ZIP file
+                            <br />2. Copy each .aupreset file to its plugin's directory in ~/Library/Audio/Presets/
+                            <br />3. Restart Logic Pro
+                            <br />4. Presets will appear in each plugin's menu
+                          </div>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="config" className="space-y-6">
