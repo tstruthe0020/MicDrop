@@ -1,3 +1,22 @@
 {
-  "Detected_Param_Names": "detected_param_names"
+  "Bypass": "param_0",
+  "Threshold": "param_1",
+  "Ratio": "param_2",
+  "Attack": "param_3",
+  "Release": "param_4",
+  "Knee": "param_5",
+  "Makeup_Gain": "param_6",
+  "Mix": "param_7",
+  "Lookahead": "param_8",
+  "Output_Gain": "param_9",
+  "Input_Gain": "param_10",
+  "RMS_Peak": "param_11",
+  "Sidechain_Enable": "param_12",
+  "Sidechain_High_Pass": "param_13",
+  "Sidechain_Low_Pass": "param_14",
+  "Auto_Release": "param_15",
+  "Vintage_Mode": "param_16",
+  "Upward_Compression": "param_17",
+  "Saturation": "param_18",
+  "Limiter_Enable": "param_19"
 }

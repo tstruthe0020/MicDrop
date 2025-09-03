@@ -1,3 +1,18 @@
 {
-  "Detected_Param_Names": "detected_param_names"
+  "Bypass": "param_0",
+  "Correction_Amount": "param_1",
+  "Correction_Speed": "param_2",
+  "Formant_Correction": "param_3",
+  "Scale": "param_4",
+  "Key": "param_5",
+  "Reference_Pitch": "param_6",
+  "Mix": "param_7",
+  "Output_Gain": "param_8",
+  "Input_Gain": "param_9",
+  "Preserve_Formants": "param_10",
+  "Natural_Mode": "param_11",
+  "Pitch_Shift": "param_12",
+  "Depth": "param_13",
+  "Rate": "param_14",
+  "Humanize": "param_15"
 }
