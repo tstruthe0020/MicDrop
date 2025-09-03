@@ -226,29 +226,27 @@ async def install_presets_to_logic(request: RecommendRequest) -> Dict[str, Any]:
             
             preset_name = f"{chain_name}_{plugin_name.replace(' ', '_')}"
             
-            # Use Swift CLI to install directly to Logic Pro
-            if au_preset_generator.check_available():
-                success, stdout, stderr = au_preset_generator.generate_preset(
-                    plugin_name=plugin_name,
-                    parameters=parameters,
-                    preset_name=preset_name,
-                    output_dir=None,  # Use default Logic Pro directory
-                    verbose=True
-                )
-                
-                if success:
-                    installed_presets.append({
-                        "plugin": plugin_name,
-                        "preset_name": preset_name,
-                        "status": "installed"
-                    })
-                    logger.info(f"✅ Installed {plugin_name} preset to Logic Pro")
-                else:
-                    error_msg = f"Failed to install {plugin_name}: {stderr}"
-                    errors.append(error_msg)
-                    logger.error(f"❌ {error_msg}")
+            # Use AU Preset Generator (tries Swift CLI first, then Python fallback)
+            success, stdout, stderr = au_preset_generator.generate_preset(
+                plugin_name=plugin_name,
+                parameters=parameters,
+                preset_name=preset_name,
+                output_dir=None,  # Use default Logic Pro directory
+                verbose=True
+            )
+            
+            if success:
+                installed_presets.append({
+                    "plugin": plugin_name,
+                    "preset_name": preset_name,
+                    "status": "installed",
+                    "output": stdout
+                })
+                logger.info(f"✅ Installed {plugin_name} preset to Logic Pro")
             else:
-                errors.append(f"Swift CLI not available for {plugin_name}")
+                error_msg = f"Failed to install {plugin_name}: {stderr}"
+                errors.append(error_msg)
+                logger.error(f"❌ {error_msg}")
         
         if installed_presets:
             return {
