@@ -273,6 +273,124 @@ def _extract_binary_params(data: bytes) -> Dict[str, Any]:
     
     return params
 
+def _update_juce_xml_params(preset: Dict[str, Any], new_params: Dict[str, Any]) -> Dict[str, Any]:
+    """Update JUCE XML parameters in jucePluginState"""
+    import xml.etree.ElementTree as ET
+    
+    new_preset = preset.copy()
+    
+    try:
+        juce_state = preset['jucePluginState']
+        
+        # Find XML start
+        xml_start = juce_state.find(b'<?xml')
+        if xml_start < 0:
+            logger.warning("No XML found in jucePluginState")
+            return new_preset
+        
+        # Extract XML portion
+        xml_data = juce_state[xml_start:]
+        
+        # Find the end of the first XML element
+        root_start = xml_data.find(b'<', 5)  # Skip <?xml declaration
+        if root_start < 0:
+            return new_preset
+        
+        # Find root element name
+        root_name_end = xml_data.find(b' ', root_start)
+        if root_name_end < 0:
+            root_name_end = xml_data.find(b'>', root_start)
+        
+        root_name = xml_data[root_start+1:root_name_end].decode('utf-8')
+        
+        # Find the end of the root element
+        if b'/>' in xml_data[:1000]:  # Self-closing
+            xml_end = xml_data.find(b'/>') + 2
+        else:  # Find matching end tag
+            end_tag = f'</{root_name}>'.encode('utf-8')
+            xml_end = xml_data.find(end_tag)
+            if xml_end > 0:
+                xml_end += len(end_tag)
+            else:
+                xml_end = min(len(xml_data), 2000)
+        
+        xml_chunk = xml_data[:xml_end].decode('utf-8', errors='ignore')
+        
+        # Parse and update XML
+        root = ET.fromstring(xml_chunk)
+        
+        # Update attributes with new parameter values
+        for param_id, value in new_params.items():
+            if param_id in root.attrib:
+                # Convert value to string for XML
+                if isinstance(value, bool):
+                    root.attrib[param_id] = 'true' if value else 'false'
+                else:
+                    root.attrib[param_id] = str(value)
+        
+        # Convert back to bytes
+        updated_xml = ET.tostring(root, encoding='utf-8')
+        
+        # Replace the XML portion in the original juce state
+        new_juce_state = juce_state[:xml_start] + updated_xml + juce_state[xml_start + xml_end:]
+        new_preset['jucePluginState'] = new_juce_state
+        
+        logger.debug("Updated JUCE XML parameters")
+        
+    except Exception as e:
+        logger.warning(f"Failed to update JUCE XML parameters: {e}")
+    
+    return new_preset
+
+def _update_binary_params(preset: Dict[str, Any], new_params: Dict[str, Any]) -> Dict[str, Any]:
+    """Update binary parameter data (limited support)"""
+    new_preset = preset.copy()
+    
+    try:
+        data = preset['data']
+        
+        # For now, we can only handle simple cases
+        # This is a placeholder for more sophisticated binary parameter updating
+        
+        # If the binary data looks like it might be a simple float array
+        if len(data) % 4 == 0:
+            import struct
+            num_floats = len(data) // 4
+            
+            if num_floats <= 200:  # Reasonable number of parameters
+                try:
+                    floats = list(struct.unpack(f'<{num_floats}f', data))
+                    
+                    # Try to update known parameter positions
+                    updated = False
+                    for param_id, value in new_params.items():
+                        # If param_id looks like "param_N", try to update position N
+                        if param_id.startswith('param_'):
+                            try:
+                                index = int(param_id.split('_')[1])
+                                if 0 <= index < len(floats):
+                                    floats[index] = float(value)
+                                    updated = True
+                            except (ValueError, IndexError):
+                                continue
+                    
+                    if updated:
+                        # Pack back to binary
+                        new_data = struct.pack(f'<{len(floats)}f', *floats)
+                        new_preset['data'] = new_data
+                        logger.debug("Updated binary float array parameters")
+                    
+                except Exception as e:
+                    logger.debug(f"Binary float update failed: {e}")
+        
+        if not updated:
+            logger.warning("Cannot update binary parameter data - format not supported")
+            
+    except Exception as e:
+        logger.warning(f"Failed to update binary parameters: {e}")
+    
+    return new_preset
+
 def apply_values(seed_preset: Dict[str, Any], 
                 id_map: Dict[str, str], 
                 values: Dict[str, Any]) -> Dict[str, Any]:
