@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 class AUPresetGenerator:
-    def __init__(self, aupresetgen_path: str = "/app/swift_cli_integration/aupresetgen"):
+    def __init__(self, aupresetgen_path: str = "/Users/theostruthers/MicDrop/aupresetgen/.build/release/aupresetgen"):
         """
         Initialize AU Preset Generator
         
@@ -22,7 +22,7 @@ class AUPresetGenerator:
             aupresetgen_path: Path to the aupresetgen Swift CLI executable
         """
         self.aupresetgen_path = aupresetgen_path
-        self.seeds_dir = Path("/app/aupreset/seeds")
+        self.seeds_dir = Path("/Users/theostruthers/Desktop/Plugin Seeds")
         
     def generate_preset(
         self, 
@@ -213,15 +213,15 @@ class AUPresetGenerator:
         
         # Plugin name to seed file mapping
         seed_mapping = {
-            "TDR Nova": "TDRNovaSeed.aupreset",
-            "MEqualizer": "MEqualizerSeed.aupreset",
-            "MCompressor": "MCompressorSeed.aupreset",
-            "1176 Compressor": "1176CompressorSeed.aupreset",
-            "MAutoPitch": "MAutoPitchSeed.aupreset",
-            "Graillon 3": "Graillon3Seed.aupreset",
-            "Fresh Air": "FreshAirSeed.aupreset",
-            "LA-LA": "LALASeed.aupreset",
-            "MConvolutionEZ": "MConvolutionEZSeed.aupreset"
+            "TDR Nova": "TDRNova.aupreset",
+            "MEqualizer": "MEqualizer.aupreset",
+            "MCompressor": "MCompressor.aupreset",
+            "1176 Compressor": "1176Compressor.aupreset",
+            "MAutoPitch": "MAutoPitch.aupreset",
+            "Graillon 3": "Graillon3.aupreset",
+            "Fresh Air": "FreshAir.aupreset",
+            "LA-LA": "LALA.aupreset",
+            "MConvolutionEZ": "MConvolutionEZ.aupreset"
         }
         
         seed_filename = seed_mapping.get(plugin_name)
