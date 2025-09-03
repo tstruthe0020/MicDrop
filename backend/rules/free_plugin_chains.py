@@ -1,7 +1,7 @@
 """
-Professional vocal chain generation using free third-party AU plugins
+Professional vocal chain generation using user's installed AU plugins
 Based on vocal processing guide for Pop, R&B, and Hip-Hop
-Uses high-quality free plugins instead of Logic's proprietary format
+Uses ONLY the 9 plugins the user has provided seed files for
 """
 
 import logging
@@ -13,55 +13,62 @@ logger = logging.getLogger(__name__)
 
 class FreePluginChainGenerator:
     def __init__(self):
-        # Free third-party AU plugins that work with .aupreset files
-        self.recommended_plugins = {
+        # ONLY use the 9 plugins the user has seed files for
+        # These are the ONLY plugins that should EVER be recommended
+        self.available_plugins = {
             "EQ": {
+                "name": "MEqualizer",
+                "manufacturer": "MeldaProduction",
+                "description": "Free professional EQ plugin",
+                "purpose": "Primary EQ processing"
+            },
+            "Compressor_Primary": {
+                "name": "MCompressor", 
+                "manufacturer": "MeldaProduction",
+                "description": "Free professional compressor",
+                "purpose": "Primary compression"
+            },
+            "Compressor_Vintage": {
+                "name": "1176 Compressor",
+                "manufacturer": "Various",
+                "description": "Classic 1176-style compressor",
+                "purpose": "Vintage-style compression"
+            },
+            "Dynamic_EQ": {
                 "name": "TDR Nova",
-                "manufacturer": "Tokyo Dawn Records", 
-                "description": "Free dynamic EQ - superior to Channel EQ",
-                "download_url": "https://www.tokyodawnrecords.com/tdr-nova/"
-            },
-            "Compressor": {
-                "name": "TDR Kotelnikov", 
                 "manufacturer": "Tokyo Dawn Records",
-                "description": "Free professional compressor - transparent and musical",
-                "download_url": "https://www.tokyodawnrecords.com/tdr-kotelnikov/"
+                "description": "Free dynamic EQ",
+                "purpose": "Dynamic EQ and multiband processing"
             },
-            "DeEsser": {
-                "name": "TDR De-esser",
-                "manufacturer": "Tokyo Dawn Records", 
-                "description": "Free de-esser plugin",
-                "download_url": "https://www.tokyodawnrecords.com/tdr-de-esser/"
+            "Pitch": {
+                "name": "MAutoPitch",
+                "manufacturer": "MeldaProduction", 
+                "description": "Auto pitch correction",
+                "purpose": "Pitch correction and vocal tuning"
             },
-            "Multiband": {
-                "name": "TDR Nova",
-                "manufacturer": "Tokyo Dawn Records",
-                "description": "Same as EQ - can do multiband compression", 
-                "download_url": "https://www.tokyodawnrecords.com/tdr-nova/"
+            "Vocal_Effect": {
+                "name": "Graillon 3",
+                "manufacturer": "Auburn Sounds",
+                "description": "Vocal effect processor",
+                "purpose": "Creative vocal processing"
             },
-            "Saturation": {
-                "name": "Softube Saturation Knob",
-                "manufacturer": "Softube",
-                "description": "Free saturation plugin",
-                "download_url": "https://www.softube.com/saturation-knob"
+            "Enhancer": {
+                "name": "Fresh Air",
+                "manufacturer": "Slate Digital",
+                "description": "High frequency enhancer",
+                "purpose": "High frequency enhancement"
             },
-            "Delay": {
-                "name": "Valhalla Freq Echo", 
-                "manufacturer": "Valhalla DSP",
-                "description": "Free frequency shifter and delay",
-                "download_url": "https://valhalladsp.com/shop/reverb/valhalla-freq-echo/"
+            "Level": {
+                "name": "LA-LA",
+                "manufacturer": "Various",
+                "description": "Level control and dynamics",
+                "purpose": "Level management"
             },
-            "Reverb": {
-                "name": "Valhalla Supermassive",
-                "manufacturer": "Valhalla DSP", 
-                "description": "Free reverb and delay - amazing quality",
-                "download_url": "https://valhalladsp.com/shop/reverb/valhalla-supermassive/"
-            },
-            "Limiter": {
-                "name": "TDR Limiter 6 GE",
-                "manufacturer": "Tokyo Dawn Records",
-                "description": "Free transparent limiter",
-                "download_url": "https://www.tokyodawnrecords.com/tdr-limiter-6-ge/"
+            "Convolution": {
+                "name": "MConvolutionEZ",
+                "manufacturer": "MeldaProduction",
+                "description": "Convolution reverb",
+                "purpose": "Reverb and spatial effects"
             }
         }
         
