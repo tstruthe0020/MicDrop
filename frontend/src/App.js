@@ -581,49 +581,64 @@ function App() {
                   <Alert>
                     <Download className="h-4 w-4" />
                     <AlertDescription>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <div>
-                          <strong>Installation Instructions:</strong>
+                          <strong className="text-green-600">🎉 Professional Free Plugin System!</strong>
+                          <br />
+                          This vocal chain uses high-quality free third-party AU plugins instead of Logic's stock plugins.
                         </div>
                         
                         <div>
-                          <strong>Step 1: Extract the ZIP file</strong>
+                          <strong>Step 1: Install Required Free Plugins</strong>
+                          <br />
+                          Download and install these free plugins first (links provided above in the chain details).
+                          All plugins are professional-grade and completely free.
+                        </div>
+                        
+                        <div>
+                          <strong>Step 2: Extract the ZIP file</strong>
                           <br />
                           Double-click the downloaded ZIP to extract it.
                         </div>
                         
                         <div>
-                          <strong>Step 2: Copy Individual Plugin Presets</strong>
+                          <strong>Step 3: Install .aupreset Files</strong>
                           <br />
-                          Copy .aupreset files to: <code>~/Library/Audio/Presets/Apple/[Plugin Name]/</code>
+                          Copy .aupreset files to: <code>~/Library/Audio/Presets/[Manufacturer]/[Plugin Name]/</code>
                           <br />
-                          <em>Example:</em> Copy Channel EQ presets to <code>~/Library/Audio/Presets/Apple/Channel EQ/</code>
-                        </div>
-                        
-                        <div>
-                          <strong>Step 3: Copy Channel Strip Template</strong>
-                          <br />
-                          Copy .cst file to: <code>~/Library/Application Support/Logic/Channel Strip Settings/Audio/</code>
-                        </div>
-                        
-                        <div>
-                          <strong>Terminal Commands (Easiest Method):</strong>
-                          <br />
-                          <code className="text-xs block mt-1 p-2 bg-slate-100 rounded">
-                            cd ~/Downloads/[extracted-folder]/<br />
-                            cp "Plug-In Settings"/*/*.aupreset ~/Library/Audio/Presets/Apple/*/  <br />
-                            cp "Channel Strip Settings/Audio"/*.cst ~/Library/Application\ Support/Logic/Channel\ Strip\ Settings/Audio/
-                          </code>
+                          <em>Example:</em> TDR Nova presets go to <code>~/Library/Audio/Presets/Tokyo Dawn Records/TDR Nova/</code>
                         </div>
                         
                         <div>
                           <strong>Step 4: Restart Logic Pro</strong>
                           <br />
-                          The presets will appear in Logic's preset menus and channel strip library.
+                          The presets will appear in each plugin's preset menu.
+                        </div>
+                        
+                        <div>
+                          <strong>Quick Install Commands:</strong>
+                          <br />
+                          <code className="text-xs block mt-1 p-2 bg-slate-100 rounded">
+                            cd ~/Downloads/[extracted-folder]/<br />
+                            cp "Plug-In Settings"/*/*.aupreset ~/Library/Audio/Presets/*/  <br />
+                            # Then restart Logic Pro
+                          </code>
+                        </div>
+                        
+                        <div className="bg-green-50 p-3 rounded border border-green-200">
+                          <strong className="text-green-700">✨ Benefits of This System:</strong>
+                          <ul className="text-green-600 text-sm mt-1 space-y-1">
+                            <li>• Higher audio quality than Logic's stock plugins</li>
+                            <li>• Professional tools used in commercial productions</li>
+                            <li>• Standard .aupreset format - no proprietary issues</li>
+                            <li>• Genre-specific processing optimized for Pop, R&B, Hip-Hop</li>
+                            <li>• All plugins are completely free forever</li>
+                          </ul>
                         </div>
                         
                         <div className="text-amber-600">
-                          <strong>Note:</strong> If folders don't exist, create them first or Logic Pro will create them when you save your first preset manually.
+                          <strong>Note:</strong> You must install the required free plugins first. 
+                          The presets won't work with Logic's stock plugins due to different parameter structures.
                         </div>
                       </div>
                     </AlertDescription>
