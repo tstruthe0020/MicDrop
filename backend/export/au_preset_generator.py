@@ -745,11 +745,25 @@ class AUPresetGenerator:
                             logger.info(f"🔍 Matching preset files: {len(preset_files)}: {[str(f) for f in preset_files]}")
                         
                         if preset_files:
-                            generated_presets.append({
-                                'plugin': plugin_name,
-                                'preset_name': preset_name,
-                                'file_path': preset_files[0]
-                            })
+                            # Choose the file that actually exists and is accessible
+                            # Prefer files in the root temp directory over nested ones
+                            valid_file = None
+                            for file_path in preset_files:
+                                if file_path.exists() and file_path.is_file():
+                                    # Prefer files in the root directory (shorter path)
+                                    if valid_file is None or len(str(file_path)) < len(str(valid_file)):
+                                        valid_file = file_path
+                            
+                            if valid_file:
+                                generated_presets.append({
+                                    'plugin': plugin_name,
+                                    'preset_name': preset_name,
+                                    'file_path': valid_file
+                                })
+                                logger.info(f"✅ Selected preset file: {valid_file}")
+                            else:
+                                logger.error(f"❌ No valid preset files found for {plugin_name}")
+                                errors.append(f"No valid preset files found for {plugin_name}")
                         else:
                             # Enhanced debugging: list all files in temp_dir to understand the issue
                             all_files = list(Path(temp_dir).rglob("*"))
