@@ -1089,18 +1089,11 @@ class VocalChainAPITester:
         # Test 9: Logic export (legacy)
         self.test_export_endpoint(chain)
         
-        # Test 10: Individual plugin export (legacy)
-        print("\n🔍 LEGACY TEST: Testing individual plugin download endpoint...")
-        self.test_individual_plugin_export()
-        
-        # Test 11: All-in-one pipeline
-        self.test_all_in_one_endpoint()
-        
-        # Test 12: NEW - Fallback Logic & Error Handling
+        # Test 10: NEW - Fallback Logic & Error Handling
         print("\n🔍 NEW TEST: Testing fallback logic and comprehensive error handling...")
         self.test_fallback_logic_and_error_handling()
         
-        # Test 13: Error handling (legacy)
+        # Test 11: Error handling (legacy)
         self.test_error_handling()
         
         # Print summary
