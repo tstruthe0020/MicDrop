@@ -714,8 +714,13 @@ class AUPresetGenerator:
                     )
                     
                     if success:
-                        # Look for the generated preset file
+                        # Look for the generated preset file (search recursively)
                         preset_files = list(Path(temp_dir).glob(f"**/{preset_name}.aupreset"))
+                        if not preset_files:
+                            # Also try looking for any .aupreset files that might have been generated
+                            all_presets = list(Path(temp_dir).glob(f"**/*.aupreset"))
+                            preset_files = [f for f in all_presets if preset_name in f.name]
+                        
                         if preset_files:
                             generated_presets.append({
                                 'plugin': plugin_name,
