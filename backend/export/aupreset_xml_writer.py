@@ -65,6 +65,55 @@ class AUPresetXMLWriter:
             }
         }
         
+        # Free third-party AU plugin identifiers (these will need to be updated with real IDs)
+        self.free_plugin_au_info = {
+            'TDR Nova': {
+                'type': 1635083896,  # 'aufx'
+                'subtype': 1852796517,  # 'nova' (placeholder)
+                'manufacturer': 1413828164,  # 'TDR ' (placeholder)
+                'version': 1
+            },
+            'TDR Kotelnikov': {
+                'type': 1635083896,  # 'aufx'
+                'subtype': 1801410662,  # 'kotl' (placeholder)
+                'manufacturer': 1413828164,  # 'TDR '
+                'version': 1
+            },
+            'TDR De-esser': {
+                'type': 1635083896,  # 'aufx'
+                'subtype': 1684107619,  # 'dees' (placeholder)
+                'manufacturer': 1413828164,  # 'TDR '
+                'version': 1
+            },
+            'Softube Saturation Knob': {
+                'type': 1635083896,  # 'aufx'
+                'subtype': 1935897715,  # 'satu' (placeholder)
+                'manufacturer': 1936680821,  # 'Soft' (placeholder)
+                'version': 1
+            },
+            'Valhalla Supermassive': {
+                'type': 1635083896,  # 'aufx'
+                'subtype': 1937075315,  # 'supr' (placeholder)
+                'manufacturer': 1986359121,  # 'Valh' (placeholder)
+                'version': 1
+            },
+            'Valhalla Freq Echo': {
+                'type': 1635083896,  # 'aufx'
+                'subtype': 1718509915,  # 'freq' (placeholder) 
+                'manufacturer': 1986359121,  # 'Valh'
+                'version': 1
+            },
+            'TDR Limiter 6 GE': {
+                'type': 1635083896,  # 'aufx'
+                'subtype': 1819178866,  # 'lmtr' (placeholder)
+                'manufacturer': 1413828164,  # 'TDR '
+                'version': 1
+            }
+        }
+        
+        # Combine both plugin sets
+        self.all_plugin_au_info = {**self.plugin_au_info, **self.free_plugin_au_info}
+        
     def write_aupreset_file(self, output_path: str, plugin_name: str, 
                           preset_name: str, params: Dict[str, Any]) -> bool:
         """Write an .aupreset XML file"""
