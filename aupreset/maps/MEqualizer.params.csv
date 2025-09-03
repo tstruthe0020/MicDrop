@@ -1,1 +1,83 @@
-ParamID,SeedValue,Type
+ParamID,SeedValue,Type,HumanName
+param_0,-1.9394413059120845e-28,float,Param_0
+param_1,9.276291847229004,float,Param_1
+param_2,3.8818556472687083e-16,float,Param 2_Amount
+param_3,5.810252303521115e-34,float,Param 3_Amount
+param_4,-1.2813601291128407e-09,float,Param_4
+param_5,8.715639213792913e-16,float,Param 5_Amount
+param_6,-0.4322730302810669,float,Param_6
+param_7,-3.6384546547196805e-05,float,Param_7
+param_8,243502.203125,float,Param_8
+param_10,-253335.84375,float,Param_10
+param_11,4.3259987592136895e-08,float,Param 11_Amount
+param_12,-6.474376306021975e-34,float,Param_12
+param_14,-9.600447119323469e-38,float,Param_14
+param_15,2.0185604339574565e-28,float,Param 15_Amount
+param_17,5.2533777667514e-29,float,Param 17_Amount
+param_20,-1.9643881362511633e-23,float,Param_20
+param_21,-1.3135215769350191e-36,float,Param_21
+param_22,1.9707068550818552e-14,float,Param 22_Amount
+param_25,3.007170809898257e-37,float,Param 25_Amount
+param_26,-2.8067721254500592e-37,float,Param_26
+param_29,-0.2130739986896515,float,Param_29
+param_30,-2.052893249552731e-21,float,Param_30
+param_32,1.318020670902642e-13,float,Param 32_Amount
+param_33,0.12948176264762878,float,Param 33_Amount
+param_34,-7.246954241271207e-37,float,Param_34
+param_35,8.028687171470969e-14,float,Param 35_Amount
+param_36,-2.793955605245118e-24,float,Param_36
+param_37,2.7871110413326033e-18,float,Param 37_Amount
+param_39,-3.747103164641885e-06,float,Param_39
+param_41,1.5014095741445902e-16,float,Param 41_Amount
+param_42,4.3755077724174946e-16,float,Param 42_Amount
+param_47,2.0876134154690362e-10,float,Param 47_Amount
+param_49,-5.428474022831151e-36,float,Param_49
+param_50,8.239833113313265e-18,float,Param 50_Amount
+param_51,-0.013478217646479607,float,Param_51
+param_53,1.0366809368133545,float,Param_53
+param_55,0.0007086184923537076,float,Param 55_Amount
+param_56,-7.61519879663885e-36,float,Param_56
+param_57,4.1952388930108213e-35,float,Param 57_Amount
+param_58,981.1390991210938,float,Param_58
+param_59,1.0731287625747035e-22,float,Param 59_Amount
+param_60,-1.4704310685731414e-11,float,Param_60
+param_61,3.626081917687741e-28,float,Param 61_Amount
+param_64,-2.196558366404167e-31,float,Param_64
+param_66,1.2754406419901443e-08,float,Param 66_Amount
+param_68,1.3267121410404454e-19,float,Param 68_Amount
+param_69,0.000332746742060408,float,Param 69_Amount
+param_71,3.7441829693098116e-13,float,Param 71_Amount
+param_74,1.3693252261248734e-12,float,Param 74_Amount
+param_76,-2.4031641002804534e-14,float,Param_76
+param_77,2.8131132978614914e-08,float,Param 77_Amount
+param_79,-3.273968866152988e-33,float,Param_79
+param_80,-1.480768006002589e-36,float,Param_80
+param_81,9.264683285437059e-06,float,Param 81_Amount
+param_83,-1.7912573370033586e-29,float,Param_83
+param_86,-0.001932090031914413,float,Param_86
+param_88,-3.830450770030177e-28,float,Param_88
+param_89,1.0947703353890585e-18,float,Param 89_Amount
+param_92,-3.518588198581085e-10,float,Param_92
+param_93,-4.81602343650596e-25,float,Param_93
+param_95,2.9807330648862207e-12,float,Param 95_Amount
+param_96,2.198283772751172e-21,float,Param 96_Amount
+param_97,-357101.40625,float,Param_97
+param_98,-0.8721977472305298,float,Param_98
+param_99,3.148774881092122e-21,float,Param 99_Amount
+param_100,-5.017541752749821e-06,float,Param_100
+param_105,-1.0264649290547823e-06,float,Param_105
+param_106,1.680704322460161e-13,float,Param 106_Amount
+param_108,2.1876233192563016e-13,float,Param 108_Amount
+param_109,-6.581328558458686e-39,float,Param_109
+param_111,4.8583607384725564e-26,float,Param 111_Amount
+param_112,-3.790346746283977e-21,float,Param_112
+param_113,0.0007554921903647482,float,Param 113_Amount
+param_115,1.072107822735471e-25,float,Param 115_Amount
+param_116,-8.204218552842579e-38,float,Param_116
+param_121,2.4935141482274048e-05,float,Param 121_Amount
+param_124,5.80494046128152e-31,float,Param 124_Amount
+param_125,7.759361486670002e-10,float,Param 125_Amount
+param_126,2.606573703367995e-36,float,Param 126_Amount
+param_128,-0.00010257731628371403,float,Param_128
+param_130,2.3489702713365615e-38,float,Param 130_Amount
+param_131,1.1701309970390336e-28,float,Param 131_Amount
