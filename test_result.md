@@ -282,6 +282,21 @@ test_plan:
         - agent: "testing"
         - comment: "🎯 TDR NOVA PARAMETER FIXES VERIFIED! Comprehensive testing of the parameter application fixes confirms ALL CRITICAL ISSUES RESOLVED: 1) ✅ TDR Nova parameter map now uses correct XML parameter names (bandGain_1, bandFreq_1, etc.) - tested successfully with XML parameter mapping, 2) ✅ Enhanced convert_parameters function properly handles TDR Nova's special 'On'/'Off' string format for booleans instead of standard numeric conversion, 3) ✅ Parameter name mapping from chain generator names (bypass, multiband_enabled) to TDR Nova XML names (bypass_master, bandActive_1) working correctly, 4) ✅ Other plugins (MEqualizer, MCompressor, etc.) still work perfectly with standard numeric parameter conversion, 5) ✅ ZIP files contain presets with properly applied parameter values - tested 7-8 presets per chain consistently. The core issue 'presets load but parameters don't change' has been COMPLETELY RESOLVED for TDR Nova. All 10/10 TDR Nova parameter tests passed. System ready for production with TDR Nova presets now actually changing plugin parameters in Logic Pro as expected."
 
+  - task: "Fix Swift CLI JUCE Plugin State Capture"
+    implemented: true
+    working: "NA"
+    file: "/app/aupresetgen/Sources/aupresetgen/main.swift"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "CRITICAL ISSUE IDENTIFIED: Swift CLI only captures 8 bytes from kAudioUnitProperty_ClassInfo instead of complete JUCE plugin state. Manual TDR Nova preset shows jucePluginState XML field with actual parameter values is missing from generated presets. This causes presets to load in Logic Pro but parameters don't actually change."
+        - working: "NA"
+        - agent: "main"
+        - comment: "SOLUTION IMPLEMENTED: Updated Swift CLI to use kAudioUnitProperty_FullState first (more comprehensive for JUCE plugins) with fallback to kAudioUnitProperty_ClassInfo. Added proper plist parsing for FullState data. This should capture the complete plugin state including jucePluginState XML that contains actual parameter values."
+
 agent_communication:
     - agent: "main"
     - message: "Found critical issue: free_plugin_chains.py is using wrong plugins. User has 9 specific plugins with seed files but system recommends different plugins they don't have. Need to completely rewrite chain generation to use only user's 9 plugins."
