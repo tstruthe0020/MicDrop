@@ -1,0 +1,9 @@
+{
+  "Input_Gain": 0.0,
+  "Output_Gain": 0.0,
+  "Attack": 0.3,
+  "Release": 0.4,
+  "Ratio": 0.5,
+  "All_Buttons_Mode": false,
+  "Bypass": false
+}

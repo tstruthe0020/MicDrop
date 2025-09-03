@@ -1,0 +1,11 @@
+{
+  "Threshold": -18.0,
+  "Ratio": 3.5,
+  "Attack": 8.0,
+  "Release": 80.0,
+  "Knee": 2.0,
+  "Makeup_Gain": 2.5,
+  "Lookahead": true,
+  "Detector": "RMS",
+  "Bypass": false
+}
