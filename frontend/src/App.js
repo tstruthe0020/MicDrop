@@ -28,6 +28,8 @@ function App() {
   const [chain, setChain] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [activeTab, setActiveTab] = useState('upload');
+  const [loading, setLoading] = useState(false);
+  const [installationResult, setInstallationResult] = useState(null);
   
   const beatInputRef = useRef(null);
   const vocalInputRef = useRef(null);
