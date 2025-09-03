@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Please populate the parameter maps for the CLI tool"
+user_problem_statement: "Test the new individual plugin download endpoint that was just added"
 
 backend:
   - task: "Fix Plugin Recommendation System"
@@ -135,6 +135,21 @@ backend:
         - agent: "main"
         - comment: "✅ FULLY COMPLETED AND WORKING! Enhanced parameter extraction system to handle XML (TDR Nova) and binary formats. Fixed critical apply_values function to properly update both XML and binary parameter data. Created intelligent parameter mapping with human-readable names. Generated complete parameter maps for all 9 plugins with meaningful names like Band_1_Frequency, Threshold, Attack, etc. Created example value sets for clean vocal processing. Full vocal chain generation script working perfectly - generates 8 .aupreset files with ACTUAL parameter changes applied. VERIFICATION: TDR Nova XML parameters correctly updated (bandGain_1: -2.5, bandFreq_1: 300), binary plugins like MEqualizer correctly updated (param_0: 0.0, param_1: 80.0), 1176 Compressor correctly updated (param_1: 3.0, param_5: 1.0). All plugins now generate presets with properly applied parameter values instead of just copying seed values."
 
+  - task: "Individual Plugin Download Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "New /api/export/individual-plugin endpoint added to allow downloading individual plugin presets instead of full vocal chain ZIP files. Endpoint takes plugin configuration and preset name, generates .aupreset file using CLI tool, returns base64 encoded preset data with filename."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ EXCELLENT SUCCESS: Individual plugin download endpoint is working perfectly! Comprehensive testing confirms: 1) MEqualizer (binary format) generates valid 1201-byte presets with correct base64 encoding, 2) TDR Nova (XML format) generates valid 6391-byte presets with correct base64 encoding, 3) MCompressor generates valid 857-byte presets, 4) All filenames are correctly formatted (e.g., 'Vocal_EQ_Clean_MEqualizer.aupreset'), 5) Base64 data is valid and decodable, 6) Error handling works for invalid plugins (returns 500), 7) Both XML and binary plugin formats are supported correctly. The endpoint successfully enables individual download buttons for each plugin in the vocal chain as requested. All 4 test scenarios passed including realistic vocal processing parameters."
+
 frontend:
   - task: "Update UI for Correct Plugin Display"
     implemented: true
@@ -154,12 +169,12 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 0
+  test_sequence: 1
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Fix Plugin Recommendation System"
+    - "Individual Plugin Download Endpoint"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -171,3 +186,7 @@ agent_communication:
     - message: "✅ ISSUE COMPLETELY RESOLVED! Successfully rewrote entire plugin recommendation system. Backend extensively tested - only user's 9 plugins recommended. Frontend confirmed working by user. Problem solved."
     - agent: "testing"
     - message: "✅ TESTING COMPLETE: Plugin recommendation system is working perfectly! Comprehensive testing confirms that the vocal chain generation system ONLY recommends the user's 9 plugins across all vibe settings. The /api/recommend endpoint successfully generates professional vocal chains using MEqualizer, MCompressor, 1176 Compressor, TDR Nova, MAutoPitch, Graillon 3, Fresh Air, LA-LA, and MConvolutionEZ. No forbidden plugins are being recommended. The system correctly maps vibes to genres (Clean→Pop, Warm→R&B, Punchy→Hip-Hop, etc.) and generates appropriate plugin chains. All backend functionality is working correctly - the user's frustration about wrong plugins being recommended has been resolved."
+    - agent: "main"
+    - message: "Added new /api/export/individual-plugin endpoint for individual plugin downloads. Need testing to verify it works with MEqualizer, TDR Nova, and other plugins, returns valid base64 data, and handles both XML and binary formats correctly."
+    - agent: "testing"
+    - message: "✅ INDIVIDUAL PLUGIN ENDPOINT TESTING COMPLETE: The new /api/export/individual-plugin endpoint is working excellently! Successfully tested with MEqualizer (binary), TDR Nova (XML), and MCompressor. All generate valid .aupreset files with correct base64 encoding. Filenames are properly formatted. Both XML and binary plugin formats work correctly. Error handling is functional. The endpoint is ready for production use and will enable individual download buttons for each plugin in vocal chains as requested by the user."
