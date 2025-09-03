@@ -29,7 +29,13 @@ class ChainGenerator:
             Dictionary containing chain configuration
         """
         try:
-            chain_name = f"{vibe}_Vocal_Chain_BPM{int(features['bpm'])}"
+            # Ensure BPM is valid (avoid division by zero)
+            bpm = features.get('bpm', 120.0)
+            if bpm <= 0:
+                bpm = 120.0
+                features['bpm'] = bpm
+            
+            chain_name = f"{vibe}_Vocal_Chain_BPM{int(bpm)}"
             plugins = []
             
             # Build chain step by step
