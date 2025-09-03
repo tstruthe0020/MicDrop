@@ -341,7 +341,15 @@ PRESET FILES INCLUDED:
                 
                 # Add all preset files
                 for file_info in generated_files:
-                    zipf.write(file_info['path'], file_info['filename'])
+                    try:
+                        if Path(file_info['path']).exists():
+                            zipf.write(file_info['path'], file_info['filename'])
+                        else:
+                            logger.error(f"Preset file disappeared: {file_info['path']}")
+                            errors.append(f"File disappeared before ZIP creation: {file_info['filename']}")
+                    except Exception as zip_error:
+                        logger.error(f"Failed to add {file_info['filename']} to ZIP: {zip_error}")
+                        errors.append(f"Failed to add {file_info['filename']} to ZIP: {zip_error}")
             
             # Generate download URL (relative to /tmp for the container)
             download_url = f"/api/download/{timestamp}/{zip_filename}"
