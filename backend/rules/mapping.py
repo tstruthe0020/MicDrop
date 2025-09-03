@@ -86,7 +86,7 @@ class ChainGenerator:
     
     def _generate_pre_eq(self, features: Dict[str, Any], vibe: str) -> Dict[str, Any]:
         """Generate pre-EQ settings"""
-        spectral = features.spectral
+        spectral = features['spectral']
         
         # Base EQ with high-pass filter
         params = {
