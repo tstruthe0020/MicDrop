@@ -15,6 +15,7 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime
 import json
+import numpy as np
 
 # Import our custom modules
 import sys
