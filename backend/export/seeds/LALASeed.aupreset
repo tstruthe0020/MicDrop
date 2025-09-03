@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>data</key>
+	<data>
+	DwQAAB4BAAAAAIA/AAAAAAAAPkAAAAAAAAAAAAAAAAAAAFlAAAAAAAAANEAAAAAAAAAA
+	AAAAAAAAAOA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8AAAAAAADwPwAA
+	AAAAAAAA
+	</data>
+	<key>manufacturer</key>
+	<integer>1097756514</integer>
+	<key>name</key>
+	<string>LALASeed</string>
+	<key>subtype</key>
+	<integer>1279347761</integer>
+	<key>type</key>
+	<integer>1635083896</integer>
+	<key>version</key>
+	<integer>196864</integer>
+</dict>
+</plist>
