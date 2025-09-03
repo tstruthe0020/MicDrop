@@ -151,8 +151,8 @@ class ChainGenerator:
     
     def _generate_primary_compressor(self, features: Dict[str, Any], vibe: str) -> Dict[str, Any]:
         """Generate primary compressor settings"""
-        spectral = features.spectral
-        bpm = features.bpm
+        spectral = features['spectral']
+        bpm = features['bpm']
         
         # Model selection based on spectral density
         total_energy = sum(spectral.get(band, 0) for band in ['bass', 'lowmid', 'mid', 'presence'])
