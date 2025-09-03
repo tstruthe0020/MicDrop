@@ -699,7 +699,9 @@ class AUPresetGenerator:
                     preset_name = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}"
                     
                     # Convert parameters using the centralized function
-                    from backend.server import convert_parameters
+                    import sys
+                    sys.path.append('/app/backend')
+                    from server import convert_parameters
                     converted_params = convert_parameters(parameters)
                     
                     # Generate individual preset
