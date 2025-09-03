@@ -156,27 +156,50 @@ class LogicPresetExporter:
         """Create Logic Pro Channel Strip Template (.cst) file"""
         
         try:
-            # Create XML structure for .cst file
+            # Create XML structure for .cst file based on Logic Pro's actual format
             root = ET.Element("plist", version="1.0")
             dict_elem = ET.SubElement(root, "dict")
             
             # Channel strip name
             self._add_key_value(dict_elem, "name", strip_name)
             
-            # Plugin chain array
-            self._add_key(dict_elem, "plugins")
-            plugins_array = ET.SubElement(dict_elem, "array")
+            # Channel strip type
+            self._add_key_value(dict_elem, "kind", "Channel Strip Setting")
             
+            # Plugin chain - using Logic Pro's expected structure
+            self._add_key(dict_elem, "channelEQs")
+            eq_array = ET.SubElement(dict_elem, "array")
+            
+            self._add_key(dict_elem, "compressors") 
+            comp_array = ET.SubElement(dict_elem, "array")
+            
+            self._add_key(dict_elem, "effects")
+            fx_array = ET.SubElement(dict_elem, "array")
+            
+            # Sort plugins into appropriate categories
             for plugin_ref in plugin_references:
-                plugin_dict = ET.SubElement(plugins_array, "dict")
+                plugin_dict = ET.SubElement(fx_array, "dict")  # Default to effects
                 
-                # Plugin identifier
-                self._add_key_value(plugin_dict, "plugin", plugin_ref["plugin"])
-                self._add_key_value(plugin_dict, "preset", plugin_ref["preset_name"])
-                self._add_key_value(plugin_dict, "position", plugin_ref["position"])
+                plugin_name = plugin_ref["plugin"]
+                preset_name = plugin_ref["preset_name"]
                 
-                # Plugin state (enabled)
+                # Plugin identification
+                self._add_key_value(plugin_dict, "identifier", self._get_plugin_identifier(plugin_name))
+                self._add_key_value(plugin_dict, "name", plugin_name)
+                self._add_key_value(plugin_dict, "preset", preset_name)
+                self._add_key_value(plugin_dict, "version", 1)
+                
+                # Plugin state
                 self._add_key_value(plugin_dict, "enabled", True)
+                self._add_key_value(plugin_dict, "bypassed", False)
+                
+                # Move to appropriate array based on plugin type
+                if plugin_name == "Channel EQ":
+                    fx_array.remove(plugin_dict)
+                    eq_array.append(plugin_dict)
+                elif plugin_name == "Compressor":
+                    fx_array.remove(plugin_dict)
+                    comp_array.append(plugin_dict)
             
             # Format XML and write to file
             xml_str = ET.tostring(root, encoding='unicode')
@@ -199,6 +222,20 @@ class LogicPresetExporter:
         except Exception as e:
             logger.error(f"Failed to create channel strip file: {e}")
             raise
+    
+    def _get_plugin_identifier(self, plugin_name: str) -> str:
+        """Get Logic Pro plugin identifier"""
+        identifiers = {
+            "Channel EQ": "com.apple.logic.channel-eq",
+            "Compressor": "com.apple.logic.compressor",
+            "DeEsser 2": "com.apple.logic.deesser2", 
+            "Multipressor": "com.apple.logic.multipressor",
+            "Clip Distortion": "com.apple.logic.clip-distortion",
+            "Tape Delay": "com.apple.logic.tape-delay",
+            "ChromaVerb": "com.apple.logic.chromaverb",
+            "Limiter": "com.apple.logic.limiter"
+        }
+        return identifiers.get(plugin_name, f"com.apple.logic.{plugin_name.lower().replace(' ', '-')}")
     
     def _add_key_value(self, parent: ET.Element, key: str, value: Any):
         """Add key-value pair to plist dict"""
