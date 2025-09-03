@@ -336,21 +336,120 @@ def apply_values(seed_preset: Dict[str, Any],
 
 def generate_param_map_skeleton(preset: Dict[str, Any]) -> Dict[str, str]:
     """
-    Generate skeleton parameter map with Param_<ID> naming
+    Generate skeleton parameter map with human-readable naming
     
     Args:
         preset: Preset data dictionary
         
     Returns:
-        Dictionary mapping "Param_<ID>" to "<ID>"
+        Dictionary mapping human names to parameter IDs
     """
     param_map = {}
     
-    if 'data' in preset and isinstance(preset['data'], dict):
-        for param_id in preset['data'].keys():
-            param_map[f"Param_{param_id}"] = str(param_id)
+    # Extract actual parameters from preset
+    params = extract_param_map(preset)
+    
+    if not params or params.get('binary_data'):
+        logger.warning("Could not extract parameters - using placeholder map")
+        return {"Bypass": "0", "Gain": "1", "Mix": "2"}  # Generic placeholder
+    
+    # Create human-readable names for parameters
+    for param_id, value in params.items():
+        human_name = _generate_human_param_name(param_id, value)
+        param_map[human_name] = str(param_id)
     
     return param_map
+
+def _generate_human_param_name(param_id: str, value: Any) -> str:
+    """Generate human-readable parameter name"""
+    # Common parameter name mappings
+    name_mappings = {
+        # General
+        'bypass': 'Bypass',
+        'gain': 'Gain',
+        'mix': 'Mix',
+        'output': 'Output',
+        'input': 'Input',
+        'threshold': 'Threshold',
+        'ratio': 'Ratio',
+        'attack': 'Attack',
+        'release': 'Release',
+        'knee': 'Knee',
+        
+        # EQ specific
+        'freq': 'Frequency',
+        'frequency': 'Frequency',
+        'q': 'Q_Factor',
+        'bandwidth': 'Bandwidth',
+        'type': 'Filter_Type',
+        'slope': 'Slope',
+        
+        # TDR Nova specific
+        'bandGain': 'Band_Gain',
+        'bandFreq': 'Band_Frequency',
+        'bandQ': 'Band_Q',
+        'bandActive': 'Band_Active',
+        'bandType': 'Band_Type',
+        'bandSelected': 'Band_Selected',
+        'bandDynActive': 'Band_Dynamics_Active',
+        'bandDynThreshold': 'Band_Dynamics_Threshold',
+        'bandDynRatio': 'Band_Dynamics_Ratio',
+        'bandDynAttack': 'Band_Dynamics_Attack',
+        'bandDynRelease': 'Band_Dynamics_Release',
+        
+        # Compressor specific
+        'compressor': 'Compressor',
+        'limiter': 'Limiter',
+        'reduction': 'Reduction',
+        'makeup': 'Makeup_Gain',
+        
+        # Effects
+        'reverb': 'Reverb',
+        'delay': 'Delay',
+        'chorus': 'Chorus',
+        'pitch': 'Pitch',
+        'formant': 'Formant',
+        'correction': 'Correction',
+        'speed': 'Speed',
+        'amount': 'Amount'
+    }
+    
+    # Convert param_id to lowercase for matching
+    param_lower = param_id.lower()
+    
+    # Check for direct matches first
+    for key, human_name in name_mappings.items():
+        if key in param_lower:
+            # Add suffix if it's a numbered parameter
+            import re
+            numbers = re.findall(r'\d+', param_id)
+            if numbers:
+                return f"{human_name}_{numbers[0]}"
+            return human_name
+    
+    # Check for common patterns
+    if 'band' in param_lower:
+        # Extract band number and parameter
+        import re
+        band_match = re.search(r'band.*?(\d+)', param_lower)
+        if band_match:
+            band_num = band_match.group(1)
+            param_part = param_id.replace(f'band', '').replace(f'_{band_num}', '').replace(band_num, '')
+            if param_part.lower() in name_mappings:
+                return f"Band_{band_num}_{name_mappings[param_part.lower()]}"
+            return f"Band_{band_num}_{param_part}"
+    
+    # If boolean value, likely a switch/enable
+    if isinstance(value, bool):
+        return f"{param_id.replace('_', ' ').title()}_Enable"
+    
+    # If float value between 0-1, likely a normalized parameter
+    if isinstance(value, float) and 0 <= value <= 1:
+        return f"{param_id.replace('_', ' ').title()}_Amount"
+    
+    # Default: clean up the parameter ID
+    clean_name = param_id.replace('_', ' ').title().replace(' ', '_')
+    return clean_name
 
 def save_param_map_json(param_map: Dict[str, str], path: Union[str, Path]) -> None:
     """Save parameter map as JSON file"""
