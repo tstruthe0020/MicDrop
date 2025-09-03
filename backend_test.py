@@ -579,18 +579,28 @@ class VocalChainAPITester:
         # Test 3: Chain recommendation
         chain = self.test_recommend_endpoint(features)
         
-        # Test 4: Logic export
+        # Test 4: CRITICAL - Plugin restriction test
+        print("\n🔍 CRITICAL TEST: Verifying ONLY user's 9 plugins are recommended...")
+        plugin_restriction_ok = self.test_plugin_restriction()
+        
+        # Test 5: Logic export
         self.test_export_endpoint(chain)
         
-        # Test 5: All-in-one pipeline
+        # Test 6: All-in-one pipeline
         self.test_all_in_one_endpoint()
         
-        # Test 6: Error handling
+        # Test 7: Error handling
         self.test_error_handling()
         
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
+        
+        # Special emphasis on plugin restriction result
+        if plugin_restriction_ok:
+            print("🎉 CRITICAL SUCCESS: Plugin restriction working correctly!")
+        else:
+            print("🚨 CRITICAL FAILURE: Wrong plugins are being recommended!")
         
         if self.tests_passed == self.tests_run:
             print("🎉 All tests passed!")
