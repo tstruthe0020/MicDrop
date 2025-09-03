@@ -175,7 +175,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Fix Swift CLI Path Configuration and Environment"
+    - "Enhance Swift CLI with New ZIP Packaging Features"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
