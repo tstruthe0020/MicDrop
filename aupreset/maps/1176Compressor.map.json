@@ -1,17 +1,9 @@
 {
-  "Bypass": "param_0",
-  "Input_Gain": "param_1",
-  "Output_Gain": "param_2",
-  "Attack": "param_3",
-  "Release": "param_4",
-  "Ratio_4to1": "param_5",
-  "Ratio_8to1": "param_6",
-  "Ratio_12to1": "param_7",
-  "Ratio_20to1": "param_8",
-  "All_Buttons": "param_9",
-  "Vintage_Mode": "param_10",
-  "Mix": "param_11",
-  "Stereo_Link": "param_12",
-  "VU_Meter_Mode": "param_13",
-  "Analog_Mode": "param_14"
+  "Input": "48",
+  "Output": "49",
+  "Attack": "50",
+  "Release": "51",
+  "Ratio": "52",
+  "Meter": "53",
+  "Power": "54"
 }
