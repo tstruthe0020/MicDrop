@@ -194,8 +194,16 @@ async def all_in_one_processing(
         
     except Exception as e:
         # Cleanup on error
-        for path in [beat_path, vocal_path, zip_path]:
-            if path and os.path.exists(path):
+        cleanup_paths = []
+        if 'beat_path' in locals() and beat_path:
+            cleanup_paths.append(beat_path)
+        if 'vocal_path' in locals() and vocal_path:
+            cleanup_paths.append(vocal_path)
+        if 'zip_path' in locals() and zip_path:
+            cleanup_paths.append(zip_path)
+            
+        for path in cleanup_paths:
+            if os.path.exists(path):
                 try:
                     os.unlink(path)
                 except:
