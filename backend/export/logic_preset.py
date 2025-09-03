@@ -266,7 +266,7 @@ class LogicPresetExporter:
         key_elem = ET.SubElement(parent, "key")
         key_elem.text = key
     
-    async def _generate_user_plugin_preset(self, output_path, plugin_name, preset_name, params):
+    def _generate_user_plugin_preset(self, output_path, plugin_name, preset_name, params):
         """Generate preset using CLI system for user's 9 plugins"""
         try:
             import sys
