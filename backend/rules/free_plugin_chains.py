@@ -206,8 +206,38 @@ class FreePluginChainGenerator:
             logger.error(f"User plugin chain generation failed: {str(e)}")
             raise
     
+    def _generate_pitch_correction(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
+        """Generate pitch correction using MAutoPitch"""
+        vocal_features = features.get('vocal', {})
+        
+        # Genre-specific pitch correction settings
+        if genre == "Pop":
+            correction_speed = 80  # Fast correction for tight pop vocals
+            correction_amount = 90  # Strong correction
+        elif genre == "R&B":
+            correction_speed = 50  # Slower for more natural feel
+            correction_amount = 70  # Medium correction
+        else:  # Hip-Hop
+            correction_speed = 70  # Medium speed
+            correction_amount = 75  # Medium-strong correction
+        
+        params = {
+            "bypass": False,
+            "correction_speed": correction_speed,
+            "correction_amount": correction_amount,
+            "preserve_formants": True,
+            "scale": "Chromatic",  # Or could be set based on detected key
+            "reference_pitch": 440.0
+        }
+        
+        return {
+            "plugin": "MAutoPitch",
+            "role": "Pitch Correction",
+            "params": params
+        }
+    
     def _generate_subtractive_eq(self, features: Dict[str, Any], genre: str) -> Dict[str, Any]:
-        """Generate subtractive EQ using TDR Nova"""
+        """Generate subtractive EQ using MEqualizer"""
         spectral = features['spectral']
         
         params = {
@@ -216,7 +246,7 @@ class FreePluginChainGenerator:
             "high_pass_q": 0.7  # Gentle slope
         }
         
-        # Genre-specific HPF settings from PDF
+        # Genre-specific HPF settings
         if genre == "Pop":
             params["high_pass_freq"] = 100.0  # Higher for clean pop
         elif genre == "R&B":
@@ -232,7 +262,7 @@ class FreePluginChainGenerator:
         params.update({
             "band_1_enabled": True,
             "band_1_freq": mud_freq,
-            "band_1_gain": -3.0 if genre == "Pop" else -2.5,  # Pop can be more aggressive
+            "band_1_gain": -3.0 if genre == "Pop" else -2.5,
             "band_1_q": 2.0,
             "band_1_type": "bell"
         })
@@ -250,7 +280,7 @@ class FreePluginChainGenerator:
                 })
         
         return {
-            "plugin": "TDR Nova",
+            "plugin": "MEqualizer",
             "role": "Subtractive EQ",
             "params": params
         }
