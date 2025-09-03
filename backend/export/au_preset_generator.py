@@ -400,12 +400,17 @@ class AUPresetGenerator:
                             except Exception as perm_error:
                                 logger.warning(f"Permission fix warning: {perm_error}")
                         
-                        # Clean up nested directories created by Python CLI
+                        # Clean up nested directories created by Python CLI (but preserve existing files)
                         try:
                             nested_presets_dir = PathLib(output_dir) / "Presets"
                             if nested_presets_dir.exists():
-                                import shutil
-                                shutil.rmtree(str(nested_presets_dir))
+                                # Check if there are any .aupreset files in the nested structure
+                                nested_presets = list(nested_presets_dir.rglob("*.aupreset"))
+                                if not nested_presets:  # Only clean up if no presets remain
+                                    import shutil
+                                    shutil.rmtree(str(nested_presets_dir))
+                                else:
+                                    logger.info(f"Skipping Python cleanup - found {len(nested_presets)} other preset files")
                         except Exception as cleanup_error:
                             logger.warning(f"Cleanup warning: {cleanup_error}")
                         
