@@ -28,6 +28,8 @@ function App() {
   const [chain, setChain] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [activeTab, setActiveTab] = useState('upload');
+  const [loading, setLoading] = useState(false);
+  const [installationResult, setInstallationResult] = useState(null);
   
   const beatInputRef = useRef(null);
   const vocalInputRef = useRef(null);
@@ -132,63 +134,88 @@ function App() {
     }
   };
 
-  const downloadIndividualPreset = async (plugin, index) => {
+  const installToLogic = async () => {
+    if (!chain || !vibe) return;
+    
+    setLoading(true);
     try {
-      setIsProcessing(true);
+      const response = await fetch(`${BACKEND_URL}/api/export/install-to-logic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vibe: vibe,
+          genre: null, // Can be extended later
+          audio_type: null // Can be extended later
+        })
+      });
       
-      const response = await axios.post(`${API}/export/individual-plugin`, {
-        plugin: plugin,
-        preset_name: `${presetName}_${plugin.plugin.replace(' ', '_')}`
-      });
-
-      // Create download URL from base64
-      const binaryString = atob(response.data.preset_base64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "🎵 Presets Installed!",
+          description: result.message,
+          className: "border-green-200 bg-green-50"
+        });
+        
+        // Show detailed instructions
+        setInstallationResult(result);
+      } else {
+        toast({
+          title: "Installation Failed",
+          description: result.message,
+          variant: "destructive"
+        });
       }
-      const blob = new Blob([bytes], { type: 'application/octet-stream' });
-      const url = URL.createObjectURL(blob);
-
-      // Download immediately
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = response.data.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Download started",
-        description: `${plugin.plugin} preset is downloading`
-      });
-
     } catch (error) {
-      console.error('Individual download error:', error);
+      console.error('Installation error:', error);
       toast({
-        title: "Download failed",
-        description: error.response?.data?.detail || "Failed to download individual preset",
+        title: "Installation Error",
+        description: "Failed to install presets to Logic Pro",
         variant: "destructive"
       });
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
-  const downloadPreset = () => {
-    if (downloadUrl) {
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `${presetName}_LogicPresets.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({ 
-        title: "Download started", 
-        description: "Your Logic Pro preset package is downloading" 
+  const installIndividualPreset = async (plugin) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/export/install-individual`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plugin: plugin.plugin,
+          parameters: plugin.params,
+          preset_name: `${presetName}_${plugin.plugin.replace(' ', '_')}`
+        })
       });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: `✅ ${plugin.plugin} Installed!`,
+          description: result.message,
+          className: "border-green-200 bg-green-50"
+        });
+      } else {
+        toast({
+          title: "Installation Failed",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Individual installation error:', error);
+      toast({
+        title: "Installation Error",
+        description: `Failed to install ${plugin.plugin} preset`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -569,12 +596,12 @@ function App() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => downloadIndividualPreset(plugin, index)}
-                              disabled={isProcessing}
+                              onClick={() => installIndividualPreset(plugin)}
+                              disabled={loading}
                               className="px-3 py-1 text-xs"
                             >
                               <Download className="w-3 h-3 mr-1" />
-                              Download
+                              Install
                             </Button>
                           </div>
                         </div>
@@ -625,9 +652,9 @@ function App() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-center gap-4">
-                    <Button onClick={downloadPreset} size="lg" className="bg-green-600 hover:bg-green-700">
+                    <Button onClick={installToLogic} size="lg" className="bg-green-600 hover:bg-green-700">
                       <Download className="w-4 h-4 mr-2" />
-                      Download Presets
+                      Install to Logic Pro
                     </Button>
                     <Button onClick={resetForm} variant="outline" size="lg">
                       Process Another
