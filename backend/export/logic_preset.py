@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 from .aupreset_writer import AUPresetWriter
+from .logic_pst_writer import LogicPSTWriter
 
 logger = logging.getLogger(__name__)
 
