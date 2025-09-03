@@ -739,6 +739,7 @@ function App() {
                       <AlertDescription>
                         <div className="space-y-2">
                           <strong>⚠️ Required Free Plugins:</strong>
+                        {chain.required_plugins && chain.required_plugins.length > 0 && (
                           <div className="text-xs space-y-1">
                             {chain.required_plugins.map((plugin, idx) => (
                               <div key={idx} className="flex justify-between items-center">
