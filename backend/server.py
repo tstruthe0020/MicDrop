@@ -199,7 +199,15 @@ async def install_presets_to_logic(request: RecommendRequest) -> Dict[str, Any]:
         if not recommendations or not recommendations.get("chain"):
             return {"success": False, "message": "No recommendations generated"}
         
-        chain = recommendations["chain"]
+        chain_data = recommendations["chain"]
+        # If chain_data is a dict with 'plugins' key, extract the plugins list
+        if isinstance(chain_data, dict) and "plugins" in chain_data:
+            chain = chain_data["plugins"]
+        elif isinstance(chain_data, list):
+            chain = chain_data
+        else:
+            return {"success": False, "message": "Invalid chain format received"}
+        
         chain_name = f"VocalChain_{request.vibe}_{request.genre or 'Universal'}"
         
         # Install each plugin preset to Logic Pro
