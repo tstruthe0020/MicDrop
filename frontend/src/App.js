@@ -219,22 +219,6 @@ function App() {
     }
   };
 
-  const downloadPreset = () => {
-    if (downloadUrl) {
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `${presetName}_LogicPresets.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({ 
-        title: "Download started", 
-        description: "Your Logic Pro preset package is downloading" 
-      });
-    }
-  };
-
   const resetForm = () => {
     setBeatFile(null);
     setVocalFile(null);
