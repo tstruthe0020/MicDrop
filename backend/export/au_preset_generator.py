@@ -721,6 +721,24 @@ class AUPresetGenerator:
                                     converted[key] = value
                                 else:
                                     converted[key] = float(value)
+                            
+                            # CRITICAL: Auto-activate required TDR Nova settings for audible changes
+                            # If thresholds are set, activate dynamics processing
+                            for band in [1, 2, 3, 4]:
+                                threshold_key = f"band_{band}_threshold"
+                                if threshold_key in backend_params:
+                                    # Activate dynamics processing for this band
+                                    converted[f"bandDynActive_{band}"] = "On"
+                                    converted[f"bandActive_{band}"] = "On"
+                                    converted[f"bandSelected_{band}"] = "On"
+                                    # Add some EQ gain to make it audible
+                                    if f"band_{band}_gain" not in backend_params:
+                                        converted[f"bandGain_{band}"] = -1.0  # Small cut to make it audible
+                            
+                            # Ensure bypass is off
+                            if "bypass" in backend_params or "bypass_master" in backend_params:
+                                converted["bypass_master"] = "Off"
+                                
                         else:
                             # Standard conversion for other plugins
                             for key, value in backend_params.items():
