@@ -302,9 +302,10 @@ def _update_juce_xml_params(preset: Dict[str, Any], new_params: Dict[str, Any]) 
                 import re
                 pattern = f'{param_id}="[^"]*"'
                 
-                # Convert value to appropriate string format
+                # Convert value to appropriate string format for TDR Nova
                 if isinstance(value, bool):
-                    value_str = 'true' if value else 'false'
+                    # TDR Nova uses "On"/"Off" not "true"/"false"!
+                    value_str = 'On' if value else 'Off'
                 elif isinstance(value, str):
                     value_str = value
                 else:
