@@ -175,7 +175,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhance Swift CLI with New ZIP Packaging Features"
+    - "Fix Swift CLI JUCE Plugin State Capture"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
