@@ -1007,8 +1007,68 @@ function App() {
                       </Alert>
                     )}
 
+                    {pluginPaths && (
+                      <div className="p-4 border rounded-lg">
+                        <h3 className="font-semibold mb-3">Individual Plugin Paths</h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                          Configure where each plugin's presets will be saved. Swift CLI will automatically add /Presets/[Manufacturer]/[Plugin]/ to each path.
+                        </p>
+                        
+                        <div className="space-y-3">
+                          {Object.entries(pluginPaths).map(([pluginName, currentPath]) => (
+                            <div key={pluginName} className="flex items-center gap-3 p-3 bg-slate-50 rounded border">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{pluginName}</div>
+                                <Input 
+                                  id={`path-${pluginName.replace(' ', '-')}`}
+                                  defaultValue={currentPath}
+                                  placeholder="/Library/Audio"
+                                  className="mt-1 text-xs"
+                                />
+                              </div>
+                              <Button 
+                                onClick={() => resetPluginPath(pluginName)}
+                                disabled={configLoading}
+                                variant="outline"
+                                size="sm"
+                              >
+                                Reset
+                              </Button>
+                            </div>
+                          ))}
+                          
+                          <Button 
+                            onClick={() => {
+                              const updates = {};
+                              Object.keys(pluginPaths).forEach(pluginName => {
+                                const inputId = `path-${pluginName.replace(' ', '-')}`;
+                                const inputElement = document.getElementById(inputId);
+                                if (inputElement && inputElement.value.trim()) {
+                                  updates[pluginName] = inputElement.value.trim();
+                                }
+                              });
+                              
+                              if (Object.keys(updates).length > 0) {
+                                configurePluginPaths(updates);
+                              } else {
+                                toast({
+                                  title: "No Changes",
+                                  description: "No paths were modified",
+                                  variant: "outline"
+                                });
+                              }
+                            }}
+                            disabled={configLoading}
+                            className="w-full"
+                          >
+                            {configLoading ? "Updating..." : "Update Plugin Paths"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="p-4 border rounded-lg">
-                      <h3 className="font-semibold mb-3">Configure Custom Paths</h3>
+                      <h3 className="font-semibold mb-3">Global Configuration</h3>
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="swift-cli-path">Swift CLI Binary Path (macOS only)</Label>
