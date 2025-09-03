@@ -229,16 +229,19 @@ test_plan:
         - comment: "✅ FULL SYSTEM INTEGRATION COMPLETE! 1) Updated all 9 plugin parameter maps with correct numeric IDs, 2) Fixed backend chain processing and API endpoints, 3) Updated frontend to use 'Install to Logic Pro' instead of downloads, 4) Created complete vocal chain system with Swift CLI integration (+ Python fallback), 5) System tested and functional - ready for Swift CLI binary deployment."
 
   - task: "Fix Swift CLI Path Configuration and Environment"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/backend/export/au_preset_generator.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
         - working: false
         - agent: "main"
         - comment: "CRITICAL ISSUE IDENTIFIED: Swift CLI can only run on macOS but backend is in Linux container. Current paths hardcoded to container locations. Need configurable paths, environment detection, and hybrid approach (Swift CLI for Mac, Python fallback for container). Also need first-time user setup for Logic Pro preset directories."
+        - working: true
+        - agent: "main"
+        - comment: "✅ COMPREHENSIVE SOLUTION IMPLEMENTED! 1) Added environment-aware path detection (macOS vs Linux container), 2) Implemented hybrid approach: Swift CLI first, then Python fallback, 3) Fixed seed file mapping discrepancy (handles both TDRNova.aupreset and TDRNovaSeed.aupreset), 4) Added configurable paths with /api/configure-paths endpoint, 5) Created /api/system-info endpoint for debugging, 6) Updated frontend with System Config tab for user path configuration, 7) Improved preset installation logic to try both approaches automatically. System now works in container (Python) and can be configured for Mac (Swift CLI). Individual and bulk preset installation both working."
 
 agent_communication:
     - agent: "main"
