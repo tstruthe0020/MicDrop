@@ -1695,6 +1695,134 @@ class VocalChainAPITester:
         except Exception as e:
             self.log_test("Error Handling", False, f"Exception: {str(e)}")
 
+    def test_critical_shutil_copy2_fix(self):
+        """
+        FOCUSED TEST: Verify the specific shutil.move() -> shutil.copy2() fix
+        This test specifically addresses the review request about the "only 1 preset in ZIP" issue
+        """
+        try:
+            print("\n🎯 FOCUSED TEST: Verifying shutil.copy2() fix for multiple presets in ZIP")
+            print("   Issue: shutil.move() was deleting source files, leaving only 1 preset in ZIP")
+            print("   Fix: Changed to shutil.copy2() to preserve original files")
+            print("   Expected: ZIP files should now contain 7-8 presets instead of just 1")
+            
+            # Test multiple vibes to ensure consistency across different scenarios
+            test_vibes = ["Clean", "Warm", "Punchy", "Bright", "Vintage"]
+            preset_counts = []
+            file_sizes = []
+            
+            for vibe in test_vibes:
+                try:
+                    print(f"\n   Testing {vibe} vibe...")
+                    
+                    request_data = {
+                        "vibe": vibe,
+                        "genre": "Pop",
+                        "preset_name": f"TestFix_{vibe}"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/download-presets", 
+                                           json=request_data, timeout=60)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            download_info = data.get("download", {})
+                            preset_count = download_info.get("preset_count", 0)
+                            file_size = download_info.get("size", 0)
+                            
+                            preset_counts.append(preset_count)
+                            file_sizes.append(file_size)
+                            
+                            # Verify the actual ZIP content by downloading it
+                            if download_info.get("url"):
+                                download_url = f"{self.base_url}{download_info['url']}"
+                                zip_response = requests.get(download_url, timeout=15)
+                                
+                                if zip_response.status_code == 200:
+                                    actual_zip_size = len(zip_response.content)
+                                    
+                                    # Analyze the results
+                                    if preset_count >= 7:
+                                        status = "✅ FIXED"
+                                        success = True
+                                    elif preset_count >= 3:
+                                        status = "⚠️ PARTIAL"
+                                        success = False
+                                    elif preset_count == 1:
+                                        status = "❌ BUG PERSISTS"
+                                        success = False
+                                    else:
+                                        status = f"❓ UNEXPECTED ({preset_count})"
+                                        success = False
+                                    
+                                    print(f"      {status}: {preset_count} presets, {actual_zip_size} bytes")
+                                    
+                                    self.log_test(f"shutil.copy2() Fix - {vibe}", success, 
+                                                f"{status} - {preset_count} presets in ZIP ({actual_zip_size} bytes)")
+                                else:
+                                    print(f"      ❌ Download failed: {zip_response.status_code}")
+                                    self.log_test(f"shutil.copy2() Fix - {vibe}", False, 
+                                                f"ZIP download failed: {zip_response.status_code}")
+                            else:
+                                print(f"      ❌ No download URL provided")
+                                self.log_test(f"shutil.copy2() Fix - {vibe}", False, "No download URL")
+                        else:
+                            print(f"      ❌ Generation failed: {data.get('message')}")
+                            self.log_test(f"shutil.copy2() Fix - {vibe}", False, 
+                                        f"Generation failed: {data.get('message')}")
+                    else:
+                        print(f"      ❌ API error: {response.status_code}")
+                        self.log_test(f"shutil.copy2() Fix - {vibe}", False, 
+                                    f"API error: {response.status_code}")
+                        
+                except Exception as e:
+                    print(f"      ❌ Exception: {str(e)}")
+                    self.log_test(f"shutil.copy2() Fix - {vibe}", False, f"Exception: {str(e)}")
+            
+            # Analyze overall results
+            if preset_counts:
+                avg_presets = sum(preset_counts) / len(preset_counts)
+                min_presets = min(preset_counts)
+                max_presets = max(preset_counts)
+                
+                print(f"\n📊 OVERALL ANALYSIS:")
+                print(f"   Tested vibes: {len(preset_counts)}")
+                print(f"   Preset counts: {preset_counts}")
+                print(f"   Average presets per ZIP: {avg_presets:.1f}")
+                print(f"   Range: {min_presets} - {max_presets} presets")
+                
+                # Determine if the fix is working
+                if min_presets >= 7:
+                    result_status = "✅ COMPLETELY FIXED"
+                    overall_success = True
+                    message = f"All ZIPs contain 7+ presets (avg: {avg_presets:.1f})"
+                elif min_presets >= 3 and avg_presets >= 6:
+                    result_status = "⚠️ MOSTLY FIXED"
+                    overall_success = False
+                    message = f"Most ZIPs have multiple presets (avg: {avg_presets:.1f}, min: {min_presets})"
+                elif max_presets == 1:
+                    result_status = "❌ FIX NOT WORKING"
+                    overall_success = False
+                    message = "All ZIPs still contain only 1 preset - shutil.move() bug persists"
+                else:
+                    result_status = "❓ INCONSISTENT"
+                    overall_success = False
+                    message = f"Inconsistent results (range: {min_presets}-{max_presets}, avg: {avg_presets:.1f})"
+                
+                print(f"   Result: {result_status}")
+                
+                self.log_test("🎯 CRITICAL: shutil.copy2() Fix Verification", overall_success, 
+                            f"{result_status} - {message}")
+            else:
+                print(f"\n❌ NO DATA: Could not test any vibes successfully")
+                self.log_test("🎯 CRITICAL: shutil.copy2() Fix Verification", False, 
+                            "No successful tests - unable to verify fix")
+                
+        except Exception as e:
+            self.log_test("CRITICAL shutil.copy2() Fix", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run complete test suite"""
         print(f"🚀 Starting Vocal Chain Assistant API Tests")
