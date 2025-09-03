@@ -73,9 +73,9 @@ class LogicPresetExporter:
                     # Generate preset name for this plugin
                     plugin_preset_name = f"{preset_name}_{plugin_name.replace(' ', '_')}"
                     
-                    # Create .pst file using Logic Pro's native format
+                    # Create .pst file using SIMPLE copy method (no parameter modification)
                     pst_file_path = plugin_dir / f"{plugin_preset_name}.pst"
-                    success = self.pst_writer.write_pst_file(
+                    success = self.simple_pst_writer.write_pst_file(
                         str(pst_file_path),
                         plugin_name,
                         plugin_preset_name,
