@@ -722,7 +722,7 @@ function App() {
                         <span className="font-semibold text-blue-800">{chain.system_info.version}</span>
                       </div>
                       <p className="text-sm text-blue-700 mb-2">{chain.system_info.upgrade_reason}</p>
-                      {chain.system_info.benefits && (
+                      {chain.system_info && chain.system_info.benefits && (
                         <ul className="text-xs text-blue-600 space-y-1">
                           {chain.system_info.benefits.map((benefit, idx) => (
                             <li key={idx}>• {benefit}</li>
@@ -739,21 +739,23 @@ function App() {
                       <AlertDescription>
                         <div className="space-y-2">
                           <strong>⚠️ Required Free Plugins:</strong>
-                          <div className="text-xs space-y-1">
-                            {chain.required_plugins.map((plugin, idx) => (
-                              <div key={idx} className="flex justify-between items-center">
-                                <span><strong>{plugin.name}</strong> - {plugin.purpose}</span>
-                                <a 
-                                  href={plugin.download} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 underline"
-                                >
-                                  Download
-                                </a>
-                              </div>
-                            ))}
-                          </div>
+                          {chain.required_plugins && chain.required_plugins.length > 0 && (
+                            <div className="text-xs space-y-1">
+                              {chain.required_plugins.map((plugin, idx) => (
+                                <div key={idx} className="flex justify-between items-center">
+                                  <span><strong>{plugin.name}</strong> - {plugin.purpose}</span>
+                                  <a 
+                                    href={plugin.download} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 underline"
+                                  >
+                                    Download
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <p className="text-xs text-amber-600 mt-2">
                             📥 Install these free plugins first, then download and install the presets below.
                           </p>
@@ -764,7 +766,7 @@ function App() {
 
                   {/* Plugin Chain */}
                   <div className="space-y-2">
-                    {chain.plugins.map((plugin, index) => (
+                    {chain && chain.chain && chain.chain.plugins ? chain.chain.plugins.map((plugin, index) => (
                       <div key={index} className="p-4 bg-slate-50 rounded-lg border">
                         <div className="flex items-center gap-3 mb-3">
                           <Badge variant="outline">{index + 1}</Badge>
@@ -824,7 +826,7 @@ function App() {
                           ))}
                         </div>
                       </div>
-                    ))}
+                    )) : <div className="text-center text-slate-500 py-4">No plugins available</div>}
                   </div>
                 </CardContent>
               </Card>
