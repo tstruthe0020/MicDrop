@@ -309,14 +309,8 @@ class AUPresetGenerator {
         // Clamp to parameter range
         let clampedValue = max(param.minValue, min(param.maxValue, floatValue))
         
-        // Round if parameter is discrete/integer
-        if param.flags.contains(.flag_IsDiscrete) || param.unit == .indexed {
-            return AUValue(round(clampedValue))
-        }
-        
         return AUValue(clampedValue)
-    }
-    
+    }    
     func exportAUState(audioUnit: AVAudioUnit) async throws -> [String: Any] {
         let auAudioUnit = audioUnit.auAudioUnit
         
