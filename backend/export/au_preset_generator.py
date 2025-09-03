@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 class AUPresetGenerator:
-    def __init__(self, aupresetgen_path: str = "aupresetgen"):
+    def __init__(self, aupresetgen_path: str = "/app/swift_cli_integration/aupresetgen"):
         """
         Initialize AU Preset Generator
         
