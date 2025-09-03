@@ -181,6 +181,26 @@ async def export_logic_presets(request: ExportRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
+def convert_parameters(backend_params):
+    """
+    Convert backend parameters to Swift CLI compatible format
+    Handles boolean -> float, string -> float mappings, and ensures all values are doubles
+    """
+    converted = {}
+    for key, value in backend_params.items():
+        if isinstance(value, bool):
+            converted[key] = 1.0 if value else 0.0
+        elif isinstance(value, str):
+            string_mappings = {
+                'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
+                'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
+                'notch': 6.0
+            }
+            converted[key] = string_mappings.get(value, 0.0)
+        else:
+            converted[key] = float(value)
+    return converted
+
 @api_router.post("/export/download-presets")
 async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -204,22 +224,6 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         download_dir = f"/tmp/vocal_chain_downloads/{timestamp}"
         os.makedirs(download_dir, exist_ok=True)
-        
-        def convert_parameters(backend_params):
-            converted = {}
-            for key, value in backend_params.items():
-                if isinstance(value, bool):
-                    converted[key] = 1.0 if value else 0.0
-                elif isinstance(value, str):
-                    string_mappings = {
-                        'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
-                        'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
-                        'notch': 6.0
-                    }
-                    converted[key] = string_mappings.get(value, 0.0)
-                else:
-                    converted[key] = float(value)
-            return converted
         
         # Generate presets for each plugin
         plugins = chain_result['chain']['plugins']
