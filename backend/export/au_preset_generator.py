@@ -195,9 +195,11 @@ class AUPresetGenerator:
             else:
                 # Fall back to Python CLI
                 logger.info(f"Swift CLI not available, using Python fallback for {plugin_name}")
+                # Check if we're in chain generation mode (temp directory suggests batch processing)
+                skip_cleanup = "/tmp/tmp" in output_dir
                 return self._generate_with_python_fallback(
                     plugin_name, parameters, preset_name, output_dir, 
-                    seed_file, parameter_map, verbose
+                    seed_file, parameter_map, verbose, skip_cleanup
                 )
                 
         except Exception as e:
