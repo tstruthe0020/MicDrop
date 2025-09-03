@@ -1,0 +1,1 @@
+# Chain generation rules for Vocal Chain Assistant
