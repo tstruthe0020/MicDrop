@@ -722,7 +722,7 @@ function App() {
                         <span className="font-semibold text-blue-800">{chain.system_info.version}</span>
                       </div>
                       <p className="text-sm text-blue-700 mb-2">{chain.system_info.upgrade_reason}</p>
-                      {chain.system_info.benefits && (
+                      {chain.system_info && chain.system_info.benefits && (
                         <ul className="text-xs text-blue-600 space-y-1">
                           {chain.system_info.benefits.map((benefit, idx) => (
                             <li key={idx}>• {benefit}</li>
