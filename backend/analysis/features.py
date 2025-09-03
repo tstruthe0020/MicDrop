@@ -123,15 +123,17 @@ class AudioAnalyzer:
             min_period = int(60 * sr / (max_bpm * hop_length))
             max_period = int(60 * sr / (min_bpm * hop_length))
             
-            if max_period < len(autocorr):
+            if max_period < len(autocorr) and min_period < max_period:
                 period_range = autocorr[min_period:max_period]
-                peak_idx = np.argmax(period_range) + min_period
-                bpm = 60 * sr / (peak_idx * hop_length)
-                return float(bpm)
-            else:
-                return 120.0  # Default BPM
+                if len(period_range) > 0:
+                    peak_idx = np.argmax(period_range) + min_period
+                    bpm = 60 * sr / (peak_idx * hop_length)
+                    if 60 <= bpm <= 200:  # Validate BPM range
+                        return float(bpm)
+            
+            return 120.0  # Safe default BPM
         except:
-            return 120.0
+            return 120.0  # Safe default BPM
     
     def _calculate_lufs(self, audio: np.ndarray, sr: int) -> float:
         """Calculate integrated LUFS using pyloudnorm"""
