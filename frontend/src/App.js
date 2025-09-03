@@ -739,22 +739,23 @@ function App() {
                       <AlertDescription>
                         <div className="space-y-2">
                           <strong>⚠️ Required Free Plugins:</strong>
-                        {chain.required_plugins && chain.required_plugins.length > 0 && (
-                          <div className="text-xs space-y-1">
-                            {chain.required_plugins.map((plugin, idx) => (
-                              <div key={idx} className="flex justify-between items-center">
-                                <span><strong>{plugin.name}</strong> - {plugin.purpose}</span>
-                                <a 
-                                  href={plugin.download} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 underline"
-                                >
-                                  Download
-                                </a>
-                              </div>
-                            ))}
-                          </div>
+                          {chain.required_plugins && chain.required_plugins.length > 0 && (
+                            <div className="text-xs space-y-1">
+                              {chain.required_plugins.map((plugin, idx) => (
+                                <div key={idx} className="flex justify-between items-center">
+                                  <span><strong>{plugin.name}</strong> - {plugin.purpose}</span>
+                                  <a 
+                                    href={plugin.download} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 underline"
+                                  >
+                                    Download
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <p className="text-xs text-amber-600 mt-2">
                             📥 Install these free plugins first, then download and install the presets below.
                           </p>
