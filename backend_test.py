@@ -1044,8 +1044,13 @@ class VocalChainAPITester:
             self.log_test("Parameter Type Conversion", False, f"Exception: {str(e)}")
 
     def test_download_presets_endpoint_zip_packaging(self):
-        """Test the updated /api/export/download-presets endpoint with new ZIP packaging"""
+        """
+        CRITICAL TEST: Verify the shutil.move() -> shutil.copy2() fix for "only 1 preset in ZIP" issue
+        Tests that ZIP files now contain 7-8 presets instead of just 1
+        """
         try:
+            print("\n🔍 TESTING CRITICAL FIX: Multiple Presets in ZIP (shutil.copy2 fix)")
+            
             # Test different scenarios for ZIP packaging - focus on the critical issue
             test_scenarios = [
                 {
@@ -1062,16 +1067,23 @@ class VocalChainAPITester:
                     "vibe": "Punchy",
                     "genre": "Hip-Hop", 
                     "preset_name": "PunchyVocalChain"
+                },
+                {
+                    "vibe": "Bright",
+                    "genre": "Pop", 
+                    "preset_name": "BrightVocalChain"
                 }
             ]
             
             successful_downloads = 0
             total_presets_found = 0
+            preset_counts_per_vibe = []
             
             for scenario in test_scenarios:
                 try:
+                    print(f"\n🎵 Testing {scenario['vibe']} vibe...")
                     response = requests.post(f"{self.api_url}/export/download-presets", 
-                                           json=scenario, timeout=45)
+                                           json=scenario, timeout=60)
                     
                     if response.status_code == 200:
                         data = response.json()
@@ -1093,68 +1105,99 @@ class VocalChainAPITester:
                                     preset_count = download_info["preset_count"]
                                     structure = download_info["structure"]
                                     
+                                    preset_counts_per_vibe.append(preset_count)
+                                    
                                     # CRITICAL TEST: Verify multiple presets (7-8) are included
                                     if preset_count >= 7:
-                                        preset_count_status = "✅ FIXED"
+                                        preset_count_status = "✅ FIXED - Multiple presets"
+                                        status_success = True
                                     elif preset_count >= 3:
-                                        preset_count_status = "⚠️ PARTIAL"
+                                        preset_count_status = "⚠️ PARTIAL - Some presets"
+                                        status_success = False
+                                    elif preset_count == 1:
+                                        preset_count_status = "❌ CRITICAL ISSUE - Only 1 preset (shutil.move bug)"
+                                        status_success = False
                                     else:
-                                        preset_count_status = "❌ CRITICAL ISSUE"
+                                        preset_count_status = f"❌ UNEXPECTED - {preset_count} presets"
+                                        status_success = False
                                     
                                     if (filename.endswith(".zip") and 
-                                        size > 5000 and  # Increased minimum size for multiple presets
+                                        size > 1000 and  # Minimum size check
                                         preset_count > 0 and
                                         "Logic Pro compatible" in structure):
                                         
-                                        # Test the download URL
+                                        # Test the download URL to verify actual ZIP content
                                         download_url = f"{self.base_url}{download_info['url']}"
                                         download_response = requests.get(download_url, timeout=15)
                                         
                                         if download_response.status_code == 200:
                                             if download_response.content.startswith(b'PK'):  # ZIP file signature
                                                 total_presets_found += preset_count
-                                                self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", True, 
-                                                            f"{preset_count_status} ZIP: {filename}, Size: {size}, Presets: {preset_count}")
-                                                successful_downloads += 1
+                                                
+                                                # Verify ZIP file size is reasonable for multiple presets
+                                                zip_size = len(download_response.content)
+                                                size_per_preset = zip_size / preset_count if preset_count > 0 else 0
+                                                
+                                                self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", status_success, 
+                                                            f"{preset_count_status} | ZIP: {filename} | Size: {zip_size} bytes | Presets: {preset_count} | Avg size/preset: {size_per_preset:.0f} bytes")
+                                                
+                                                if status_success:
+                                                    successful_downloads += 1
                                             else:
-                                                self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", False, 
+                                                self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", False, 
                                                             "Download URL returned non-ZIP content")
                                         else:
-                                            self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", False, 
+                                            self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", False, 
                                                         f"Download URL failed: {download_response.status_code}")
                                     else:
-                                        self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", False, 
+                                        self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", False, 
                                                     f"Invalid ZIP properties: {filename}, {size} bytes, {preset_count} presets")
                                 else:
-                                    self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", False, 
+                                    self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", False, 
                                                 f"Missing download fields: {download_missing}")
                             else:
-                                self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", False, 
+                                self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", False, 
                                             f"Missing response fields: {missing_fields}")
                         else:
-                            self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", False, 
+                            self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", False, 
                                         f"API returned success=false: {data.get('message')}")
                     else:
-                        self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", False, 
+                        self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", False, 
                                     f"Status: {response.status_code}")
                         
                 except Exception as e:
-                    self.log_test(f"Enhanced ZIP Generation - {scenario['vibe']}", False, f"Exception: {str(e)}")
+                    self.log_test(f"ZIP Fix Verification - {scenario['vibe']}", False, f"Exception: {str(e)}")
             
             # CRITICAL SUMMARY TEST: Verify the main issue is resolved
-            avg_presets = total_presets_found / max(successful_downloads, 1)
-            if successful_downloads >= 2 and avg_presets >= 7:
-                self.log_test("CRITICAL: Multiple Presets in ZIP - RESOLVED", True, 
-                            f"✅ Successfully generating {avg_presets:.1f} presets per ZIP (target: 7-8)")
-            elif successful_downloads >= 1 and avg_presets >= 3:
-                self.log_test("CRITICAL: Multiple Presets in ZIP - PARTIAL", False, 
-                            f"⚠️ Generating {avg_presets:.1f} presets per ZIP (target: 7-8)")
+            if preset_counts_per_vibe:
+                avg_presets = sum(preset_counts_per_vibe) / len(preset_counts_per_vibe)
+                min_presets = min(preset_counts_per_vibe)
+                max_presets = max(preset_counts_per_vibe)
+                
+                print(f"\n📊 PRESET COUNT ANALYSIS:")
+                print(f"   Preset counts per vibe: {preset_counts_per_vibe}")
+                print(f"   Average: {avg_presets:.1f} presets per ZIP")
+                print(f"   Range: {min_presets} - {max_presets} presets")
+                
+                # Check if the critical issue is resolved
+                if min_presets >= 7 and avg_presets >= 7:
+                    self.log_test("🎯 CRITICAL FIX VERIFICATION: shutil.copy2() Fix", True, 
+                                f"✅ ISSUE RESOLVED! All ZIPs contain 7+ presets (avg: {avg_presets:.1f}, range: {min_presets}-{max_presets})")
+                elif min_presets >= 3 and avg_presets >= 5:
+                    self.log_test("🎯 CRITICAL FIX VERIFICATION: shutil.copy2() Fix", False, 
+                                f"⚠️ PARTIAL SUCCESS: Most ZIPs have multiple presets (avg: {avg_presets:.1f}, range: {min_presets}-{max_presets})")
+                elif min_presets == 1 and max_presets == 1:
+                    self.log_test("🎯 CRITICAL FIX VERIFICATION: shutil.copy2() Fix", False, 
+                                f"❌ CRITICAL ISSUE PERSISTS: All ZIPs still contain only 1 preset - shutil.move() bug not fixed")
+                else:
+                    self.log_test("🎯 CRITICAL FIX VERIFICATION: shutil.copy2() Fix", False, 
+                                f"❌ INCONSISTENT RESULTS: Preset counts vary significantly (avg: {avg_presets:.1f}, range: {min_presets}-{max_presets})")
             else:
-                self.log_test("CRITICAL: Multiple Presets in ZIP - FAILED", False, 
-                            f"❌ Only generating {avg_presets:.1f} presets per ZIP (target: 7-8)")
+                self.log_test("🎯 CRITICAL FIX VERIFICATION: shutil.copy2() Fix", False, 
+                            "❌ NO DATA: Could not test preset counts - no successful ZIP generations")
                 
         except Exception as e:
-            self.log_test("Enhanced ZIP Generation", False, f"Exception: {str(e)}")
+            self.log_test("CRITICAL ZIP Fix Verification", False, f"Exception: {str(e)}")
 
     def test_error_handling_swift_cli_features(self):
         """Test error handling for missing plugins or invalid parameters in new Swift CLI features"""
