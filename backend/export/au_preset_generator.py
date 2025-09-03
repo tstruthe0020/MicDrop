@@ -749,18 +749,31 @@ class AUPresetGenerator:
                             # Prefer files in the root temp directory over nested ones
                             valid_file = None
                             for file_path in preset_files:
-                                if file_path.exists() and file_path.is_file():
-                                    # Prefer files in the root directory (shorter path)
-                                    if valid_file is None or len(str(file_path)) < len(str(valid_file)):
+                                if file_path.exists() and file_path.is_file() and file_path.stat().st_size > 0:
+                                    # Prefer files in the root directory (shorter path depth)
+                                    path_depth = len(file_path.parts)
+                                    if valid_file is None or path_depth < len(valid_file.parts):
                                         valid_file = file_path
+                                        logger.info(f"🎯 Found valid preset: {file_path} (depth: {path_depth})")
                             
                             if valid_file:
-                                generated_presets.append({
-                                    'plugin': plugin_name,
-                                    'preset_name': preset_name,
-                                    'file_path': valid_file
-                                })
-                                logger.info(f"✅ Selected preset file: {valid_file}")
+                                # Verify file is actually readable
+                                try:
+                                    with open(valid_file, 'rb') as f:
+                                        content = f.read(100)  # Read first 100 bytes to verify
+                                    if len(content) > 0:
+                                        generated_presets.append({
+                                            'plugin': plugin_name,
+                                            'preset_name': preset_name,
+                                            'file_path': valid_file
+                                        })
+                                        logger.info(f"✅ Successfully added preset: {valid_file} ({valid_file.stat().st_size} bytes)")
+                                    else:
+                                        logger.error(f"❌ Preset file is empty: {valid_file}")
+                                        errors.append(f"Empty preset file for {plugin_name}")
+                                except Exception as read_error:
+                                    logger.error(f"❌ Cannot read preset file {valid_file}: {read_error}")
+                                    errors.append(f"Unreadable preset file for {plugin_name}")
                             else:
                                 logger.error(f"❌ No valid preset files found for {plugin_name}")
                                 errors.append(f"No valid preset files found for {plugin_name}")
