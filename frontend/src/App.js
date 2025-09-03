@@ -562,9 +562,21 @@ function App() {
                               <div className="text-sm text-blue-600">Model: {plugin.model}</div>
                             )}
                           </div>
-                          <Badge variant="secondary">
-                            {Object.keys(plugin.params).length} params
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">
+                              {Object.keys(plugin.params).length} params
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => downloadIndividualPreset(plugin, index)}
+                              disabled={isProcessing}
+                              className="px-3 py-1 text-xs"
+                            >
+                              <Download className="w-3 h-3 mr-1" />
+                              Download
+                            </Button>
+                          </div>
                         </div>
                         
                         {/* Parameter Details */}
