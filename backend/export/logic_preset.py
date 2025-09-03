@@ -77,12 +77,26 @@ class LogicPresetExporter:
                     
                     # Create .aupreset file (XML format - much easier than binary .pst!)
                     aupreset_path = plugin_dir / f"{plugin_preset_name}.aupreset"
-                    success = self.aupreset_xml_writer.write_aupreset_file(
-                        str(aupreset_path),
-                        plugin_name,
-                        plugin_preset_name,
-                        plugin_config["params"]
-                    )
+                    
+                    # Use our new CLI system for the 9 user plugins
+                    user_plugins = {
+                        "MEqualizer", "MCompressor", "1176 Compressor", "TDR Nova", 
+                        "MAutoPitch", "Graillon 3", "Fresh Air", "LA-LA", "MConvolutionEZ"
+                    }
+                    
+                    if plugin_name in user_plugins:
+                        # Use CLI system for user's plugins
+                        success = self._generate_user_plugin_preset(
+                            aupreset_path, plugin_name, plugin_preset_name, plugin_config["params"]
+                        )
+                    else:
+                        # Use old XML writer for any remaining Logic plugins
+                        success = self.aupreset_xml_writer.write_aupreset_file(
+                            str(aupreset_path),
+                            plugin_name,
+                            plugin_preset_name,
+                            plugin_config["params"]
+                        )
                     
                     if success:
                         preset_paths.append(aupreset_path)
