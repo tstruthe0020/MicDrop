@@ -451,14 +451,98 @@ class AUPresetGenerator:
         
         return None
     
+    def configure_paths(self, swift_cli_path: Optional[str] = None, 
+                       seeds_dir: Optional[str] = None,
+                       logic_presets_dir: Optional[str] = None) -> Dict[str, str]:
+        """
+        Configure paths for user setup (requested feature)
+        
+        Args:
+            swift_cli_path: Custom path to Swift CLI binary
+            seeds_dir: Custom path to seed files directory
+            logic_presets_dir: Custom path to Logic Pro presets directory
+            
+        Returns:
+            Dictionary with current configuration
+        """
+        updated = {}
+        
+        if swift_cli_path and os.path.isfile(swift_cli_path):
+            self.aupresetgen_path = swift_cli_path
+            updated['swift_cli'] = swift_cli_path
+            
+        if seeds_dir and os.path.isdir(seeds_dir):
+            self.seeds_dir = Path(seeds_dir)
+            updated['seeds_dir'] = seeds_dir
+            
+        if logic_presets_dir:
+            os.makedirs(logic_presets_dir, exist_ok=True)
+            self.logic_preset_dirs['custom'] = logic_presets_dir
+            updated['logic_presets'] = logic_presets_dir
+        
+        # Save configuration to environment variables or config file
+        self._save_configuration()
+        
+        return {
+            'swift_cli_path': self.aupresetgen_path,
+            'seeds_directory': str(self.seeds_dir),
+            'logic_presets_directory': self.logic_preset_dirs['custom'],
+            'updated': updated
+        }
+    
+    def _save_configuration(self):
+        """Save current configuration for future use"""
+        config_data = {
+            'swift_cli_path': self.aupresetgen_path,
+            'seeds_directory': str(self.seeds_dir),
+            'logic_preset_dirs': self.logic_preset_dirs,
+            'platform': platform.system(),
+            'container': self.is_container
+        }
+        
+        config_file = Path('/tmp/au_preset_config.json')
+        try:
+            with open(config_file, 'w') as f:
+                json.dump(config_data, f, indent=2)
+            logger.info(f"Configuration saved to {config_file}")
+        except Exception as e:
+            logger.warning(f"Failed to save configuration: {e}")
+    
+    def get_system_info(self) -> Dict[str, Any]:
+        """Get system information for debugging and setup"""
+        return {
+            'platform': platform.system(),
+            'is_macos': self.is_macos,
+            'is_container': self.is_container,
+            'swift_cli_path': self.aupresetgen_path,
+            'swift_cli_available': self.check_available(),
+            'seeds_directory': str(self.seeds_dir),
+            'seeds_directory_exists': self.seeds_dir.exists(),
+            'logic_preset_dirs': self.logic_preset_dirs,
+            'available_seed_files': self._list_available_seeds()
+        }
+    
+    def _list_available_seeds(self) -> List[str]:
+        """List available seed files"""
+        if not self.seeds_dir.exists():
+            return []
+        
+        return [f.name for f in self.seeds_dir.iterdir() if f.suffix == '.aupreset']
+    
     def check_available(self) -> bool:
-        """Check if the aupresetgen CLI is available"""
+        """Check if the aupresetgen CLI is available and working"""
         try:
             result = subprocess.run(
                 [self.aupresetgen_path, "--help"], 
                 capture_output=True, 
-                timeout=5
+                timeout=5,
+                text=True
             )
+            
+            # Check if it's the placeholder script
+            if "not available in container environment" in result.stdout:
+                return False
+                
             return result.returncode == 0
         except:
             return False
