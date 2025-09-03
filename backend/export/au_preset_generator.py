@@ -210,32 +210,48 @@ class AUPresetGenerator:
     ) -> Tuple[bool, str, str]:
         """Generate preset using Swift CLI with new command structure"""
         
-        # Create temporary values file
-        values_data = {"params": parameters}
+        # Get plugin component identifiers from seed file
+        component_info = self._get_component_info_from_seed(seed_file)
+        if not component_info:
+            return False, "", "Could not extract component info from seed file"
+        
+        type_str, subtype_str, manufacturer_str = component_info
+        
+        # Create temporary values file in new format (direct parameter mapping)
+        temp_values = {}
+        if parameter_map:
+            # Use parameter mapping to convert names to IDs
+            for param_name, value in parameters.items():
+                if param_name in parameter_map:
+                    param_id = parameter_map[param_name]
+                    temp_values[param_id] = value
+                else:
+                    # Try direct mapping
+                    temp_values[param_name] = value
+        else:
+            temp_values = parameters
+            
+        values_data = temp_values
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump(values_data, f, indent=2)
             values_path = f.name
         
-        # Create temporary map file if provided
-        map_path = None
-        if parameter_map:
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-                json.dump(parameter_map, f, indent=2)
-                map_path = f.name
-        
         try:
-            # Build command
+            # Use new CLI format
             cmd = [
                 self.aupresetgen_path,
-                "--seed", str(seed_file),
+                "save-preset",
+                "--type", type_str,
+                "--subtype", subtype_str, 
+                "--manufacturer", manufacturer_str,
                 "--values", values_path,
                 "--preset-name", preset_name,
-                "--out-dir", output_dir
+                "--out-dir", output_dir,
+                "--plugin-name", plugin_name,
+                "--make-zip",
+                "--bundle-root", "Audio Music Apps"
             ]
-            
-            if map_path:
-                cmd.extend(["--map", map_path])
             
             if verbose:
                 cmd.append("--verbose")
@@ -251,77 +267,30 @@ class AUPresetGenerator:
             success = result.returncode == 0
             
             if success:
-                # Find the generated .aupreset file with more flexible search
-                generated_files = []
-                temp_output = Path(output_dir)
+                # Look for generated files
+                preset_file = Path(output_dir) / f"{preset_name}.aupreset"
+                zip_file = Path(output_dir) / f"{plugin_name}.zip"
                 
-                # Search for any .aupreset files in the output directory and subdirectories
-                for preset_file in temp_output.rglob("*.aupreset"):
-                    generated_files.append(preset_file)
-                
-                if generated_files:
-                    # Use the first found file, or find one matching the preset name
-                    source_file = generated_files[0]
-                    for file in generated_files:
-                        if preset_name in file.name:
-                            source_file = file
-                            break
-                    
-                    # Target file location
-                    target_file = Path(output_dir) / f"{preset_name}.aupreset"
-                    
-                    # Ensure target directory exists
-                    target_file.parent.mkdir(parents=True, exist_ok=True)
-                    
-                    # Move file to exact location if it's not already there
-                    if source_file != target_file:
-                        import shutil
-                        shutil.move(str(source_file), str(target_file))
-                    
-                    # Fix file permissions for macOS user
-                    if self.is_macos:
-                        try:
-                            subprocess.run(['chown', 'theostruthers:staff', str(target_file)], capture_output=True)
-                            subprocess.run(['chmod', '644', str(target_file)], capture_output=True)
-                        except Exception as perm_error:
-                            logger.warning(f"Permission fix warning: {perm_error}")
-                    
-                    # Clean up any empty nested directories created by Swift CLI (but preserve existing files)
-                    try:
-                        # Only remove nested structure if it's empty AND doesn't contain other preset files
-                        nested_presets_dir = temp_output / "Presets"
-                        if nested_presets_dir.exists():
-                            # Check if there are any .aupreset files in the nested structure
-                            nested_presets = list(nested_presets_dir.rglob("*.aupreset"))
-                            if not nested_presets:  # Only clean up if no presets remain
-                                for empty_dir in reversed(list(nested_presets_dir.rglob("*"))):
-                                    if empty_dir.is_dir() and not list(empty_dir.iterdir()):
-                                        empty_dir.rmdir()
-                                # Remove Presets dir if empty
-                                if nested_presets_dir.exists() and not list(nested_presets_dir.iterdir()):
-                                    nested_presets_dir.rmdir()
-                            else:
-                                logger.info(f"Skipping cleanup - found {len(nested_presets)} other preset files")
-                    except Exception as cleanup_error:
-                        logger.warning(f"Cleanup warning: {cleanup_error}")
-                    
+                if preset_file.exists():
                     if verbose:
                         logger.info(f"✅ Swift CLI: Successfully generated preset for {plugin_name}")
                     
-                    return True, f"✅ Generated preset: {target_file}", ""
+                    # Extract zip to proper location if it exists
+                    if zip_file.exists():
+                        return True, f"✅ Generated preset with zip: {preset_file}", ""
+                    else:
+                        return True, f"✅ Generated preset: {preset_file}", ""
                 else:
-                    return False, result.stdout, "No .aupreset file was generated"
+                    return False, result.stdout, "Preset file not found after generation"
             else:
                 if verbose:
                     logger.error(f"❌ Swift CLI failed for {plugin_name}: {result.stderr}")
                 return False, result.stdout, result.stderr
-            
+                
         finally:
             # Cleanup temporary files
             if os.path.exists(values_path):
                 os.unlink(values_path)
-            if map_path and os.path.exists(map_path):
-                os.unlink(map_path)
     
     def _generate_with_python_fallback(
         self, plugin_name: str, parameters: Dict[str, Any], preset_name: str,
