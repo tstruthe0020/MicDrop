@@ -665,6 +665,178 @@ class AUPresetGenerator:
         
         return [f.name for f in self.seeds_dir.iterdir() if f.suffix == '.aupreset']
     
+    def generate_chain_zip(
+        self, 
+        plugins_data: List[Dict[str, Any]], 
+        chain_name: str, 
+        output_dir: str,
+        verbose: bool = False
+    ) -> Tuple[bool, str, str]:
+        """
+        Generate multiple presets and package them into a single ZIP with Logic Pro folder structure
+        
+        Args:
+            plugins_data: List of plugin dictionaries with 'plugin', 'params', etc.
+            chain_name: Base name for the chain
+            output_dir: Directory to write the final ZIP
+            verbose: Enable verbose output
+            
+        Returns:
+            Tuple of (success, stdout, stderr)
+        """
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Create temporary directory for staging presets
+            with tempfile.TemporaryDirectory() as temp_dir:
+                generated_presets = []
+                errors = []
+                
+                for i, plugin_data in enumerate(plugins_data):
+                    plugin_name = plugin_data.get('plugin', f'Unknown_{i}')
+                    parameters = plugin_data.get('params', {})
+                    preset_name = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}"
+                    
+                    # Convert parameters using the centralized function
+                    from backend.server import convert_parameters
+                    converted_params = convert_parameters(parameters)
+                    
+                    # Generate individual preset
+                    success, stdout, stderr = self.generate_preset(
+                        plugin_name=plugin_name,
+                        parameters=converted_params,
+                        preset_name=preset_name,
+                        output_dir=temp_dir,
+                        verbose=verbose
+                    )
+                    
+                    if success:
+                        # Look for the generated preset file
+                        preset_files = list(Path(temp_dir).glob(f"**/{preset_name}.aupreset"))
+                        if preset_files:
+                            generated_presets.append({
+                                'plugin': plugin_name,
+                                'preset_name': preset_name,
+                                'file_path': preset_files[0]
+                            })
+                        else:
+                            errors.append(f"Preset file not found for {plugin_name}")
+                    else:
+                        errors.append(f"Failed to generate {plugin_name}: {stderr}")
+                
+                if generated_presets:
+                    # Create final ZIP with Logic Pro structure using ditto (if on macOS) or zipfile
+                    zip_filename = f"{chain_name}_VocalChain.zip"
+                    final_zip_path = Path(output_dir) / zip_filename
+                    
+                    if self.is_macos and self.check_available():
+                        # Use Swift CLI with ditto for proper Logic Pro structure
+                        success = self._create_logic_pro_zip_with_swift(
+                            generated_presets, final_zip_path, verbose
+                        )
+                    else:
+                        # Fallback to Python zipfile with Logic Pro structure
+                        success = self._create_logic_pro_zip_with_python(
+                            generated_presets, final_zip_path, verbose
+                        )
+                    
+                    if success:
+                        return True, f"✅ Generated vocal chain ZIP: {final_zip_path}", ""
+                    else:
+                        return False, "", "Failed to create final ZIP package"
+                else:
+                    return False, "", f"No presets generated. Errors: {'; '.join(errors)}"
+                    
+        except Exception as e:
+            logger.error(f"Exception in chain ZIP generation: {e}")
+            return False, "", str(e)
+    
+    def _create_logic_pro_zip_with_swift(
+        self, 
+        presets: List[Dict[str, Any]], 
+        zip_path: Path, 
+        verbose: bool
+    ) -> bool:
+        """Create ZIP with Logic Pro structure using Swift CLI and ditto"""
+        try:
+            with tempfile.TemporaryDirectory() as staging_dir:
+                # Create Logic Pro folder structure
+                bundle_root = Path(staging_dir) / "Audio Music Apps" / "Plug-In Settings"
+                
+                for preset in presets:
+                    plugin_name = preset['plugin']
+                    preset_file = preset['file_path']
+                    
+                    # Create plugin-specific directory
+                    plugin_dir = bundle_root / plugin_name
+                    plugin_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Copy preset to plugin directory
+                    import shutil
+                    shutil.copy2(preset_file, plugin_dir / preset_file.name)
+                
+                # Use ditto command for macOS-native ZIP creation
+                cmd = ['ditto', '-c', '-k', '--keepParent', str(staging_dir), str(zip_path)]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                
+                if result.returncode == 0:
+                    if verbose:
+                        logger.info(f"✅ Created Logic Pro ZIP with ditto: {zip_path}")
+                    return True
+                else:
+                    logger.error(f"❌ ditto failed: {result.stderr}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Swift ZIP creation failed: {e}")
+            return False
+    
+    def _create_logic_pro_zip_with_python(
+        self, 
+        presets: List[Dict[str, Any]], 
+        zip_path: Path, 
+        verbose: bool
+    ) -> bool:
+        """Create ZIP with Logic Pro structure using Python zipfile"""
+        try:
+            import zipfile
+            
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                # Add README with installation instructions
+                readme_content = f"""Logic Pro Vocal Chain Presets
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+INSTALLATION INSTRUCTIONS:
+1. Extract this ZIP file
+2. Copy the entire "Audio Music Apps" folder to your ~/Music/ directory
+   (This will merge with existing Logic Pro preset folders)
+3. Restart Logic Pro
+4. The presets will appear in each plugin's preset menu
+
+PRESET FILES INCLUDED:
+"""
+                for preset in presets:
+                    readme_content += f"- {preset['preset_name']}.aupreset ({preset['plugin']})\n"
+                    
+                zipf.writestr("README.txt", readme_content)
+                
+                # Add presets with Logic Pro folder structure
+                for preset in presets:
+                    plugin_name = preset['plugin']
+                    preset_file = preset['file_path']
+                    
+                    # Create Logic Pro path structure in ZIP
+                    zip_path_in_archive = f"Audio Music Apps/Plug-In Settings/{plugin_name}/{preset_file.name}"
+                    zipf.write(preset_file, zip_path_in_archive)
+            
+            if verbose:
+                logger.info(f"✅ Created Logic Pro ZIP with Python: {zip_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Python ZIP creation failed: {e}")
+            return False
+
     def check_available(self) -> bool:
         """Check if the aupresetgen CLI is available and working"""
         try:
