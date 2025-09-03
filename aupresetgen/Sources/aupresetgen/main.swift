@@ -388,9 +388,8 @@ class AUPresetGenerator {
         auInfo: AUInfo,
         writeBinary: Bool
     ) throws -> String {
-        // Create directory structure
-        let manufacturerName = auInfo.manufacturer != 0 ? fourCCToString(auInfo.manufacturer) : "Unknown"
-        let pluginName = auInfo.name.isEmpty ? "Unknown" : auInfo.name
+        // Create directory structure with proper Logic Pro names
+        let (manufacturerName, pluginName) = getLogicProNames(auInfo: auInfo)
         
         let outputDir = URL(fileURLWithPath: outDir)
             .appendingPathComponent("Presets")
@@ -407,6 +406,36 @@ class AUPresetGenerator {
         try data.write(to: outputPath)
         
         return outputPath.path
+    }
+    
+    func getLogicProNames(auInfo: AUInfo) -> (manufacturer: String, plugin: String) {
+        // Map raw AU identifiers to proper Logic Pro directory names
+        let manufacturerMappings = [
+            "Tdrl": "Tokyo Dawn Labs",
+            "Meld": "MeldaProduction",
+            "MDA ": "MeldaProduction", 
+            "Mlda": "MeldaProduction",
+            "AUVL": "Auburn Sounds",
+            "Acon": "Acon Digital"
+        ]
+        
+        let pluginMappings = [
+            "TDRNovaSeed": "TDR Nova",
+            "MEqualizerSeed": "MEqualizer",
+            "MCompressorSeed": "MCompressor",
+            "1176CompressorSeed": "1176 Compressor",
+            "MAutoPitchSeed": "MAutoPitch",
+            "Graillon3Seed": "Graillon 3",
+            "FreshAirSeed": "Fresh Air",
+            "LALASeed": "LA-LA",
+            "MConvolutionEZSeed": "MConvolutionEZ"
+        ]
+        
+        let rawManufacturer = fourCCToString(auInfo.manufacturer)
+        let manufacturerName = manufacturerMappings[rawManufacturer] ?? rawManufacturer
+        let pluginName = pluginMappings[auInfo.name] ?? auInfo.name
+        
+        return (manufacturerName, pluginName)
     }
     
     func validateOutput(path: String) throws {
