@@ -67,6 +67,11 @@ class RecommendationRequest(BaseModel):
     features: AudioFeatures
     vibe: Optional[str] = "Balanced"
 
+class RecommendRequest(BaseModel):
+    vibe: str
+    genre: Optional[str] = None
+    audio_type: Optional[str] = None
+
 class ExportRequest(BaseModel):
     chain: VocalChain
     preset_name: str
