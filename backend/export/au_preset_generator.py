@@ -398,7 +398,8 @@ class AUPresetGenerator:
                         
                         if source_file != target_file:
                             import shutil
-                            shutil.move(str(source_file), str(target_file))
+                            # Use copy2 instead of move to preserve original files for ZIP packaging
+                            shutil.copy2(str(source_file), str(target_file))
                         
                         # Fix file permissions for macOS user  
                         if self.is_macos:
