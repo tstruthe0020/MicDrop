@@ -400,7 +400,7 @@ function App() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Waveform className="w-5 h-5" />
+                    <AudioWaveform className="w-5 h-5" />
                     Audio Analysis Results
                   </CardTitle>
                 </CardHeader>
