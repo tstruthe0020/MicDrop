@@ -177,7 +177,7 @@ function App() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl">
-              <Waveform className="w-8 h-8 text-white" />
+              <AudioWaveform className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
               Vocal Chain Assistant
