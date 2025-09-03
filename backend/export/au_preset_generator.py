@@ -402,42 +402,52 @@ class AUPresetGenerator:
         return None
     
     def _find_seed_file(self, plugin_name: str) -> Optional[Path]:
-        """Find seed file for the given plugin name"""
+        """Find seed file for the given plugin name with corrected mapping"""
         
-        # Plugin name to seed file mapping
+        # Updated plugin name to seed file mapping (fixed from current_work context)
+        # The actual files have "Seed" suffix, but some may have been renamed
         seed_mapping = {
-            "TDR Nova": "TDRNovaSeed.aupreset",
-            "MEqualizer": "MEqualizerSeed.aupreset",
-            "MCompressor": "MCompressorSeed.aupreset",
-            "1176 Compressor": "1176CompressorSeed.aupreset",
-            "MAutoPitch": "MAutoPitchSeed.aupreset",
-            "Graillon 3": "Graillon3Seed.aupreset",
-            "Fresh Air": "FreshAirSeed.aupreset",
-            "LA-LA": "LALASeed.aupreset",
-            "MConvolutionEZ": "MConvolutionEZSeed.aupreset"
+            "TDR Nova": ["TDRNova.aupreset", "TDRNovaSeed.aupreset"],
+            "MEqualizer": ["MEqualizer.aupreset", "MEqualizerSeed.aupreset"],
+            "MCompressor": ["MCompressor.aupreset", "MCompressorSeed.aupreset"],
+            "1176 Compressor": ["1176Compressor.aupreset", "1176CompressorSeed.aupreset"],
+            "MAutoPitch": ["MAutoPitch.aupreset", "MAutoPitchSeed.aupreset"],
+            "Graillon 3": ["Graillon3.aupreset", "Graillon3Seed.aupreset"],
+            "Fresh Air": ["FreshAir.aupreset", "FreshAirSeed.aupreset"],
+            "LA-LA": ["LALA.aupreset", "LALASeed.aupreset"],  # Note: LALA vs LA-LA
+            "MConvolutionEZ": ["MConvolutionEZ.aupreset", "MConvolutionEZSeed.aupreset"]
         }
         
-        seed_filename = seed_mapping.get(plugin_name)
-        if not seed_filename:
-            # Try direct mapping
-            seed_filename = f"{plugin_name.replace(' ', '')}Seed.aupreset"
+        # Get possible seed filenames for this plugin
+        possible_names = seed_mapping.get(plugin_name, [])
         
-        seed_path = self.seeds_dir / seed_filename
+        # Add some automatic variations if not in mapping
+        if not possible_names:
+            base_name = plugin_name.replace(' ', '').replace('-', '')
+            possible_names = [
+                f"{base_name}.aupreset",
+                f"{base_name}Seed.aupreset",
+                f"{plugin_name}.aupreset",
+                f"{plugin_name}Seed.aupreset",
+                f"{plugin_name.replace(' ', '_')}.aupreset",
+                f"{plugin_name.replace(' ', '_')}Seed.aupreset"
+            ]
         
-        if seed_path.exists():
-            return seed_path
+        # Search for seed file
+        for seed_filename in possible_names:
+            seed_path = self.seeds_dir / seed_filename
+            
+            if seed_path.exists():
+                if seed_filename != possible_names[0]:  # Log if using fallback name
+                    logger.info(f"Found seed file for {plugin_name}: {seed_filename}")
+                return seed_path
         
-        # Try alternative names
-        alternatives = [
-            f"{plugin_name}Seed.aupreset",
-            f"{plugin_name.replace(' ', '_')}Seed.aupreset",
-            f"{plugin_name.replace(' ', '').lower()}Seed.aupreset"
-        ]
-        
-        for alt in alternatives:
-            alt_path = self.seeds_dir / alt
-            if alt_path.exists():
-                return alt_path
+        # If not found, list available files for debugging
+        if self.seeds_dir.exists():
+            available_files = [f.name for f in self.seeds_dir.iterdir() if f.suffix == '.aupreset']
+            logger.error(f"No seed file found for {plugin_name}. Available files: {available_files}")
+        else:
+            logger.error(f"Seeds directory not found: {self.seeds_dir}")
         
         return None
     
