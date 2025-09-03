@@ -262,18 +262,15 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
                 ]
                 
                 preset_path = None
-                # Search for the file in nested directories
-                for pattern_path in possible_paths:
-                    if "*" in str(pattern_path):
-                        # Use glob for wildcard search
-                        matches = list(Path(download_dir).glob(f"**/{ preset_filename}"))
-                        if matches:
-                            preset_path = matches[0]
-                            break
-                    else:
-                        if pattern_path.exists():
-                            preset_path = pattern_path  
-                            break
+                # First, check direct location
+                direct_path = Path(download_dir) / preset_filename
+                if direct_path.exists():
+                    preset_path = direct_path
+                else:
+                    # Search recursively for the file
+                    matches = list(Path(download_dir).glob(f"**/{preset_filename}"))
+                    if matches:
+                        preset_path = matches[0]
                 
                 if preset_path and preset_path.exists():
                     # Move file to direct location for ZIP packaging
