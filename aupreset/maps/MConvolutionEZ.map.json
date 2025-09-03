@@ -1,3 +1,17 @@
 {
-  "Detected_Param_Names": "detected_param_names"
+  "Bypass": "param_0",
+  "Impulse_File": "param_1",
+  "Pre_Delay": "param_2",
+  "Decay": "param_3",
+  "Low_Cut": "param_4",
+  "High_Cut": "param_5",
+  "Mix": "param_6",
+  "Output_Gain": "param_7",
+  "Input_Gain": "param_8",
+  "Width": "param_9",
+  "Size": "param_10",
+  "Early_Reflections": "param_11",
+  "Diffusion": "param_12",
+  "Modulation": "param_13",
+  "Reverse": "param_14"
 }
