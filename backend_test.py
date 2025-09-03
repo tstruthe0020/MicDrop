@@ -1060,44 +1060,75 @@ class VocalChainAPITester:
             print("\n❌ Health check failed - stopping tests")
             return False
         
-        # Test 2: Audio analysis
+        # Test 2: NEW - System Information API
+        print("\n🔍 NEW TEST: Testing system information and environment detection...")
+        system_info = self.test_system_info_endpoint()
+        
+        # Test 3: NEW - Path Configuration API
+        print("\n🔍 NEW TEST: Testing path configuration for Swift CLI setup...")
+        self.test_configure_paths_endpoint()
+        
+        # Test 4: Audio analysis
         features = self.test_analyze_endpoint()
         
-        # Test 3: Chain recommendation
+        # Test 5: Chain recommendation
         chain = self.test_recommend_endpoint(features)
         
-        # Test 4: CRITICAL - Plugin restriction test
+        # Test 6: CRITICAL - Plugin restriction test
         print("\n🔍 CRITICAL TEST: Verifying ONLY user's 9 plugins are recommended...")
         plugin_restriction_ok = self.test_plugin_restriction()
         
-        # Test 5: Logic export
+        # Test 7: NEW - Hybrid Preset Generation System
+        print("\n🔍 NEW TEST: Testing hybrid preset generation with Swift CLI + Python fallback...")
+        hybrid_generation_ok = self.test_hybrid_preset_generation()
+        
+        # Test 8: NEW - Individual Preset Installation
+        print("\n🔍 NEW TEST: Testing individual preset installation for different plugins...")
+        individual_installation_ok = self.test_individual_preset_installation()
+        
+        # Test 9: Logic export (legacy)
         self.test_export_endpoint(chain)
         
-        # Test 6: NEW - Individual plugin export
-        print("\n🔍 NEW TEST: Testing individual plugin download endpoint...")
+        # Test 10: Individual plugin export (legacy)
+        print("\n🔍 LEGACY TEST: Testing individual plugin download endpoint...")
         self.test_individual_plugin_export()
         
-        # Test 7: All-in-one pipeline
+        # Test 11: All-in-one pipeline
         self.test_all_in_one_endpoint()
         
-        # Test 8: Error handling
+        # Test 12: NEW - Fallback Logic & Error Handling
+        print("\n🔍 NEW TEST: Testing fallback logic and comprehensive error handling...")
+        self.test_fallback_logic_and_error_handling()
+        
+        # Test 13: Error handling (legacy)
         self.test_error_handling()
         
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
         
-        # Special emphasis on plugin restriction result
+        # Special emphasis on critical system results
+        print("\n🎯 CRITICAL SYSTEM TESTS:")
         if plugin_restriction_ok:
-            print("🎉 CRITICAL SUCCESS: Plugin restriction working correctly!")
+            print("✅ Plugin restriction working correctly!")
         else:
-            print("🚨 CRITICAL FAILURE: Wrong plugins are being recommended!")
+            print("❌ CRITICAL FAILURE: Wrong plugins are being recommended!")
+            
+        if hybrid_generation_ok:
+            print("✅ Hybrid preset generation system working!")
+        else:
+            print("❌ Hybrid preset generation has issues!")
+            
+        if individual_installation_ok:
+            print("✅ Individual preset installation working!")
+        else:
+            print("❌ Individual preset installation has issues!")
         
         if self.tests_passed == self.tests_run:
-            print("🎉 All tests passed!")
+            print("\n🎉 All tests passed!")
             return True
         else:
-            print("⚠️  Some tests failed - check details above")
+            print("\n⚠️  Some tests failed - check details above")
             
             # Print failed tests
             failed_tests = [t for t in self.test_results if not t['success']]
