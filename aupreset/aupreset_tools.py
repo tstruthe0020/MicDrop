@@ -408,47 +408,67 @@ def apply_values(seed_preset: Dict[str, Any],
     # Deep copy the seed preset (preserve all non-parameter keys)
     new_preset = seed_preset.copy()
     
+    # Extract current parameters using our enhanced extraction
+    current_params = extract_param_map(seed_preset)
+    
     # Handle parameters
-    if 'data' in new_preset:
-        if isinstance(new_preset['data'], dict):
-            # Make a copy of existing parameters
-            new_params = new_preset['data'].copy()
-            
-            # Apply new values
-            for human_name, value in values.items():
-                if human_name in id_map:
-                    param_id = id_map[human_name]
-                    
-                    # Type coercion based on original type if it exists
-                    if param_id in new_params:
-                        original_type = type(new_params[param_id])
-                        if original_type == bool:
-                            new_params[param_id] = bool(value)
-                        elif original_type == int:
-                            new_params[param_id] = int(float(value))  # Handle "1.0" -> 1
-                        elif original_type == float:
-                            new_params[param_id] = float(value)
-                        else:
+    if current_params and not current_params.get('binary_data'):
+        # We have extractable parameters - work with them
+        new_params = current_params.copy()
+        
+        # Apply new values
+        applied_count = 0
+        for human_name, value in values.items():
+            if human_name in id_map:
+                param_id = id_map[human_name]
+                
+                if param_id in new_params:
+                    # Type coercion based on original type
+                    original_type = type(new_params[param_id])
+                    if original_type == bool:
+                        new_params[param_id] = bool(value)
+                    elif original_type == int:
+                        new_params[param_id] = int(float(value))  # Handle "1.0" -> 1
+                    elif original_type == float:
+                        new_params[param_id] = float(value)
+                    else:
+                        new_params[param_id] = value
+                    applied_count += 1
+                    logger.debug(f"Applied {human_name} -> {param_id} = {value}")
+                else:
+                    # New parameter - infer type from value
+                    if isinstance(value, str):
+                        # Try to convert string numbers
+                        try:
+                            if '.' in value:
+                                new_params[param_id] = float(value)
+                            else:
+                                new_params[param_id] = int(value)
+                        except ValueError:
                             new_params[param_id] = value
                     else:
-                        # New parameter - infer type from value
-                        if isinstance(value, str):
-                            # Try to convert string numbers
-                            try:
-                                if '.' in value:
-                                    new_params[param_id] = float(value)
-                                else:
-                                    new_params[param_id] = int(value)
-                            except ValueError:
-                                new_params[param_id] = value
-                        else:
-                            new_params[param_id] = value
-                else:
-                    logger.warning(f"Human name '{human_name}' not found in ID map")
-            
+                        new_params[param_id] = value
+                    applied_count += 1
+                    logger.debug(f"Added new {human_name} -> {param_id} = {value}")
+            else:
+                logger.warning(f"Human name '{human_name}' not found in ID map")
+        
+        logger.info(f"Applied {applied_count} parameter values")
+        
+        # Now we need to update the preset data structure
+        if 'data' in new_preset and isinstance(new_preset['data'], dict):
+            # Simple case - data is already a dict
             new_preset['data'] = new_params
-        else:
-            logger.warning("Cannot apply values to binary parameter data")
+        elif 'data' in new_preset and isinstance(new_preset['data'], bytes):
+            # Complex case - need to update binary data
+            if 'jucePluginState' in new_preset and b'<?xml' in new_preset['jucePluginState']:
+                # TDR Nova case - update XML in jucePluginState
+                new_preset = _update_juce_xml_params(new_preset, new_params)
+            else:
+                # Other binary plugins - update binary data
+                new_preset = _update_binary_params(new_preset, new_params)
+    else:
+        logger.warning("Cannot extract parameters from preset - returning unchanged")
     
     return new_preset
 
