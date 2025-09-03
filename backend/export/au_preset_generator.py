@@ -286,17 +286,22 @@ class AUPresetGenerator:
                         except Exception as perm_error:
                             logger.warning(f"Permission fix warning: {perm_error}")
                     
-                    # Clean up any empty nested directories created by Swift CLI
+                    # Clean up any empty nested directories created by Swift CLI (but preserve existing files)
                     try:
-                        # Remove the nested structure if it's empty
+                        # Only remove nested structure if it's empty AND doesn't contain other preset files
                         nested_presets_dir = temp_output / "Presets"
                         if nested_presets_dir.exists():
-                            for empty_dir in nested_presets_dir.rglob("*"):
-                                if empty_dir.is_dir() and not list(empty_dir.iterdir()):
-                                    empty_dir.rmdir()
-                            # Remove Presets dir if empty
-                            if nested_presets_dir.exists() and not list(nested_presets_dir.iterdir()):
-                                nested_presets_dir.rmdir()
+                            # Check if there are any .aupreset files in the nested structure
+                            nested_presets = list(nested_presets_dir.rglob("*.aupreset"))
+                            if not nested_presets:  # Only clean up if no presets remain
+                                for empty_dir in reversed(list(nested_presets_dir.rglob("*"))):
+                                    if empty_dir.is_dir() and not list(empty_dir.iterdir()):
+                                        empty_dir.rmdir()
+                                # Remove Presets dir if empty
+                                if nested_presets_dir.exists() and not list(nested_presets_dir.iterdir()):
+                                    nested_presets_dir.rmdir()
+                            else:
+                                logger.info(f"Skipping cleanup - found {len(nested_presets)} other preset files")
                     except Exception as cleanup_error:
                         logger.warning(f"Cleanup warning: {cleanup_error}")
                     
