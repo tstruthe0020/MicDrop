@@ -107,7 +107,7 @@ class AUPresetGenerator {
         if discover {
             print("Plugin Info:")
             print("  Name: \(auInfo.name)")
-            print("  Manufacturer: \(auInfo.manufacturer)")
+            print("  Manufacturer: \(fourCCToString(auInfo.manufacturer))")
             print("  Type: \(fourCCToString(auInfo.type))")
             print("  Subtype: \(fourCCToString(auInfo.subtype))")
             print("  Version: \(auInfo.version)")
@@ -115,7 +115,7 @@ class AUPresetGenerator {
         }
         
         if verbose {
-            print("✓ Plugin: \(auInfo.name) by \(auInfo.manufacturer)")
+            print("✓ Plugin: \(auInfo.name) by \(fourCCToString(auInfo.manufacturer))")
         }
         
         // 3. Instantiate Audio Unit
