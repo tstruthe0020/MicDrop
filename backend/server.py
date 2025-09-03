@@ -271,10 +271,14 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
                     if preset_path and preset_path.exists():
                         # Move file to direct location for ZIP packaging
                         final_path = Path(download_dir) / preset_filename
-                        if preset_path != final_path:
-                            import shutil
-                            shutil.move(str(preset_path), str(final_path))
-                            preset_path = final_path
+                        try:
+                            if preset_path != final_path:
+                                import shutil
+                                shutil.move(str(preset_path), str(final_path))
+                                preset_path = final_path
+                        except Exception as move_error:
+                            logger.error(f"Failed to move preset file: {move_error}")
+                            # Continue with original path if move fails
                         
                         generated_files.append({
                             "plugin": plugin_name,
