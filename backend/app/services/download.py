@@ -142,7 +142,8 @@ def _convert_to_wav(input_path: str, output_path: Path, channels: int = 2):
         # Apply audio filters
         audio = stream.audio
         if channels == 1:
-            audio = audio.filter('pan', 'mono|c0=0.5*(FL+FR)')  # Mix to mono
+            # Simpler mono conversion
+            audio = audio.filter('pan', 'mono|c0=0.5*FL+0.5*FR')
         
         # Convert to WAV
         out = ffmpeg.output(
