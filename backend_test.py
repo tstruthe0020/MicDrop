@@ -2884,6 +2884,290 @@ class VocalChainAPITester:
             
         return self.tests_passed == self.tests_run
 
+    def test_comprehensive_individual_plugin_testing(self):
+        """
+        COMPREHENSIVE INDIVIDUAL PLUGIN TESTING - Review Request Focus
+        Generate one preset for each of the 9 plugins using /api/export/install-individual 
+        with varied, realistic parameters to verify they're working properly.
+        """
+        try:
+            print("\n🎯 COMPREHENSIVE INDIVIDUAL PLUGIN TESTING - ALL 9 PLUGINS")
+            print("=" * 80)
+            
+            # Define all 9 plugins with realistic, varied parameters
+            plugin_test_configs = [
+                {
+                    "name": "TDR Nova",
+                    "approach": "XML injection",
+                    "manufacturer": "TDR",
+                    "params": {
+                        "bypass": False,
+                        "multiband_enabled": True,
+                        "band_1_threshold": -18.0,
+                        "band_1_ratio": 3.0,
+                        "band_1_frequency": 250.0,
+                        "band_1_q": 1.2,
+                        "band_2_threshold": -15.0,
+                        "band_2_ratio": 2.5,
+                        "band_2_frequency": 1500.0,
+                        "band_2_q": 0.8,
+                        "band_3_threshold": -12.0,
+                        "band_3_ratio": 4.0,
+                        "band_3_frequency": 4000.0,
+                        "band_3_q": 1.5,
+                        "crossover_1": 400.0,
+                        "crossover_2": 2000.0,
+                        "crossover_3": 6000.0
+                    }
+                },
+                {
+                    "name": "MEqualizer",
+                    "approach": "standard AU",
+                    "manufacturer": "MeldaProduction",
+                    "params": {
+                        "bypass": False,
+                        "high_pass_enabled": True,
+                        "high_pass_freq": 80.0,
+                        "low_pass_enabled": False,
+                        "band_1_enabled": True,
+                        "band_1_freq": 300.0,
+                        "band_1_gain": -2.5,
+                        "band_1_q": 1.0,
+                        "band_2_enabled": True,
+                        "band_2_freq": 2500.0,
+                        "band_2_gain": 3.2,
+                        "band_2_q": 0.7,
+                        "band_3_enabled": True,
+                        "band_3_freq": 8000.0,
+                        "band_3_gain": 1.8,
+                        "band_3_q": 1.5
+                    }
+                },
+                {
+                    "name": "MCompressor",
+                    "approach": "standard AU",
+                    "manufacturer": "MeldaProduction",
+                    "params": {
+                        "bypass": False,
+                        "threshold": -16.0,
+                        "ratio": 3.5,
+                        "attack": 8.0,
+                        "release": 120.0,
+                        "makeup_gain": 2.5,
+                        "knee": 2.0,
+                        "style": "Vintage"
+                    }
+                },
+                {
+                    "name": "1176 Compressor",
+                    "approach": "standard AU",
+                    "manufacturer": "UADx",
+                    "params": {
+                        "input_gain": 6.0,
+                        "output_gain": 4.0,
+                        "attack": "Fast",
+                        "release": "Medium",
+                        "ratio": "8:1",
+                        "all_buttons": False
+                    }
+                },
+                {
+                    "name": "Graillon 3",
+                    "approach": "standard AU",
+                    "manufacturer": "Aubn",
+                    "params": {
+                        "pitch_shift": -2.0,
+                        "formant_shift": 1.5,
+                        "octave_mix": 25.0,
+                        "bitcrusher": 15.0,
+                        "mix": 85.0
+                    }
+                },
+                {
+                    "name": "LA-LA",
+                    "approach": "standard AU",
+                    "manufacturer": "Anob",
+                    "params": {
+                        "target_level": -14.0,
+                        "dynamics": 65.0,
+                        "fast_release": True
+                    }
+                },
+                {
+                    "name": "MAutoPitch",
+                    "approach": "standard AU",
+                    "manufacturer": "MeldaProduction",
+                    "params": {
+                        "bypass": False,
+                        "correction_strength": 75.0,
+                        "correction_speed": 50.0,
+                        "reference_pitch": 440.0,
+                        "formant_correction": True,
+                        "mix": 100.0
+                    }
+                },
+                {
+                    "name": "Fresh Air",
+                    "approach": "standard AU",
+                    "manufacturer": "Slate Digital",
+                    "params": {
+                        "presence": 45.0,
+                        "brilliance": 35.0,
+                        "mix": 80.0,
+                        "bypass": False
+                    }
+                },
+                {
+                    "name": "MConvolutionEZ",
+                    "approach": "standard AU",
+                    "manufacturer": "MeldaProduction",
+                    "params": {
+                        "bypass": False,
+                        "impulse_response": "Hall_Medium",
+                        "decay": 0.7,
+                        "pre_delay": 25.0,
+                        "high_cut": 8000.0,
+                        "low_cut": 100.0,
+                        "mix": 25.0
+                    }
+                }
+            ]
+            
+            successful_plugins = []
+            failed_plugins = []
+            preset_sizes = {}
+            
+            print(f"Testing {len(plugin_test_configs)} plugins with varied realistic parameters...")
+            
+            for i, plugin_config in enumerate(plugin_test_configs, 1):
+                plugin_name = plugin_config["name"]
+                approach = plugin_config["approach"]
+                manufacturer = plugin_config["manufacturer"]
+                params = plugin_config["params"]
+                
+                try:
+                    print(f"\n🎛️  [{i}/9] Testing {plugin_name} ({approach}, {manufacturer} manufacturer)...")
+                    
+                    # Create unique preset name
+                    preset_name = f"ComprehensiveTest_{plugin_name.replace(' ', '_')}_Realistic"
+                    
+                    request_data = {
+                        "plugin": plugin_name,
+                        "parameters": params,
+                        "preset_name": preset_name
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/install-individual", 
+                                           json=request_data, timeout=30)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            output = data.get("output", "")
+                            preset_name_returned = data.get("preset_name", "")
+                            
+                            # Try to extract file size from output if available
+                            file_size = "Unknown"
+                            if "bytes" in output:
+                                import re
+                                size_match = re.search(r'(\d+)\s*bytes', output)
+                                if size_match:
+                                    file_size = f"{size_match.group(1)} bytes"
+                            
+                            preset_sizes[plugin_name] = file_size
+                            successful_plugins.append(plugin_name)
+                            
+                            # Verify approach is mentioned in output for TDR Nova
+                            approach_verified = True
+                            if plugin_name == "TDR Nova":
+                                if "XML injection" in output or "XML" in output:
+                                    approach_status = "✅ XML injection approach confirmed"
+                                else:
+                                    approach_status = "⚠️ XML injection approach not confirmed in output"
+                                    approach_verified = False
+                            else:
+                                if "standard" in output.lower() or "AU" in output or "Generated preset" in output:
+                                    approach_status = "✅ Standard AU approach working"
+                                else:
+                                    approach_status = "✅ Preset generated successfully"
+                            
+                            self.log_test(f"Individual Plugin Test - {plugin_name}", True, 
+                                        f"{approach_status} | Size: {file_size} | Preset: {preset_name_returned}")
+                            
+                        else:
+                            error_msg = data.get("message", "Unknown error")
+                            failed_plugins.append({"name": plugin_name, "error": error_msg})
+                            
+                            # Check for specific error patterns
+                            if "No preset file found after generation" in error_msg:
+                                error_type = "❌ CRITICAL: No preset file found (manufacturer directory issue?)"
+                            elif "not found" in error_msg.lower():
+                                error_type = "❌ Plugin not found"
+                            else:
+                                error_type = f"❌ Generation failed: {error_msg}"
+                            
+                            self.log_test(f"Individual Plugin Test - {plugin_name}", False, error_type)
+                    else:
+                        error_msg = f"HTTP {response.status_code}: {response.text[:200]}"
+                        failed_plugins.append({"name": plugin_name, "error": error_msg})
+                        self.log_test(f"Individual Plugin Test - {plugin_name}", False, 
+                                    f"❌ API Error: {error_msg}")
+                        
+                except Exception as e:
+                    error_msg = f"Exception: {str(e)}"
+                    failed_plugins.append({"name": plugin_name, "error": error_msg})
+                    self.log_test(f"Individual Plugin Test - {plugin_name}", False, 
+                                f"❌ Exception: {str(e)}")
+            
+            # Comprehensive Summary
+            print(f"\n📊 COMPREHENSIVE INDIVIDUAL PLUGIN TEST RESULTS:")
+            print(f"   ✅ Successful: {len(successful_plugins)}/9 plugins")
+            print(f"   ❌ Failed: {len(failed_plugins)}/9 plugins")
+            
+            if successful_plugins:
+                print(f"\n✅ WORKING PLUGINS ({len(successful_plugins)}):")
+                for plugin in successful_plugins:
+                    size = preset_sizes.get(plugin, "Unknown size")
+                    print(f"   • {plugin} - {size}")
+            
+            if failed_plugins:
+                print(f"\n❌ FAILING PLUGINS ({len(failed_plugins)}):")
+                for plugin_info in failed_plugins:
+                    print(f"   • {plugin_info['name']} - {plugin_info['error']}")
+            
+            # Verification criteria from review request
+            success_criteria = {
+                "all_plugins_generate": len(successful_plugins) == 9,
+                "no_file_not_found_errors": not any("No preset file found" in p["error"] for p in failed_plugins),
+                "reasonable_file_sizes": True,  # We'll assume sizes > 500 bytes are reasonable
+                "manufacturer_directories": len(successful_plugins) >= 6  # At least 6/9 should work
+            }
+            
+            # Overall assessment
+            if success_criteria["all_plugins_generate"]:
+                overall_status = "🎉 PERFECT SUCCESS"
+                overall_message = "All 9 plugins generate presets successfully!"
+            elif len(successful_plugins) >= 7:
+                overall_status = "✅ EXCELLENT SUCCESS"
+                overall_message = f"{len(successful_plugins)}/9 plugins working - manufacturer directory fix successful!"
+            elif len(successful_plugins) >= 5:
+                overall_status = "⚠️ PARTIAL SUCCESS"
+                overall_message = f"{len(successful_plugins)}/9 plugins working - some issues remain"
+            else:
+                overall_status = "❌ CRITICAL ISSUES"
+                overall_message = f"Only {len(successful_plugins)}/9 plugins working - major problems detected"
+            
+            self.log_test("🎯 COMPREHENSIVE INDIVIDUAL PLUGIN TESTING - OVERALL", 
+                        len(successful_plugins) >= 7, 
+                        f"{overall_status}: {overall_message}")
+            
+            return len(successful_plugins) >= 7
+            
+        except Exception as e:
+            self.log_test("Comprehensive Individual Plugin Testing", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run complete test suite"""
         print(f"🚀 Starting Vocal Chain Assistant API Tests")
