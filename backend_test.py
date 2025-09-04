@@ -1271,47 +1271,37 @@ class VocalChainAPITester:
 
     def test_manufacturer_directory_mapping_fix(self):
         """
-        CRITICAL TEST: Manufacturer Directory Mapping Fix for Previously Failing Plugins
-        Tests the 3 previously failing plugins individually to verify they now work correctly:
-        - 1176 Compressor (should now find UADx manufacturer directory)
-        - Graillon 3 (should now find Aubn manufacturer directory)  
-        - LA-LA (should now find Anob manufacturer directory)
+        CRITICAL TEST: Manufacturer Directory Mapping Fix for MCompressor and Fresh Air
+        Tests individual preset generation for these specific plugins:
+        - MCompressor: Should now find the preset in "MeldaProduction/Untitled/" 
+        - Fresh Air: Should now find the preset in "SlDg/Fresh Air/"
         """
         try:
-            print("\n🔍 TESTING MANUFACTURER DIRECTORY MAPPING FIX...")
+            print("\n🔍 TESTING MANUFACTURER DIRECTORY MAPPING FIX FOR MCOMPRESSOR AND FRESH AIR...")
             
-            # Focus on the 3 previously failing plugins with their expected manufacturer directories
-            failing_plugins_test = [
+            # Focus on MCompressor and Fresh Air as requested in the review
+            target_plugins_test = [
                 {
-                    "name": "1176 Compressor", 
-                    "expected_manufacturer": "UADx",
+                    "name": "MCompressor", 
+                    "expected_manufacturer": "MeldaProduction",
+                    "expected_subdirectory": "Untitled",
                     "test_params": {
-                        "input_gain": 5.0,
-                        "output_gain": 3.0,
-                        "attack": "Medium",
-                        "release": "Fast",
-                        "ratio": "4:1",
-                        "all_buttons": False
+                        "threshold": -12.0,
+                        "ratio": 4.0,
+                        "attack": 10.0,
+                        "release": 100.0,
+                        "knee": 2.0,
+                        "makeup_gain": 3.0
                     }
                 },
                 {
-                    "name": "Graillon 3", 
-                    "expected_manufacturer": "Aubn",
+                    "name": "Fresh Air", 
+                    "expected_manufacturer": "SlDg",
+                    "expected_subdirectory": "Fresh Air",
                     "test_params": {
-                        "pitch_shift": 0.0,
-                        "formant_shift": 0.0,
-                        "octave_mix": 50.0,
-                        "bitcrusher": 0.0,
-                        "mix": 100.0
-                    }
-                },
-                {
-                    "name": "LA-LA", 
-                    "expected_manufacturer": "Anob",
-                    "test_params": {
-                        "target_level": -12.0,
-                        "dynamics": 75.0,
-                        "fast_release": True
+                        "presence": 25.0,
+                        "brilliance": 30.0,
+                        "mix": 75.0
                     }
                 }
             ]
@@ -1320,13 +1310,14 @@ class VocalChainAPITester:
             failing_plugins = []
             manufacturer_path_logs = {}
             
-            for plugin_info in failing_plugins_test:
+            for plugin_info in target_plugins_test:
                 plugin_name = plugin_info["name"]
                 expected_manufacturer = plugin_info["expected_manufacturer"]
+                expected_subdirectory = plugin_info["expected_subdirectory"]
                 test_params = plugin_info["test_params"]
                 
                 try:
-                    print(f"\n🎛️  Testing {plugin_name} (Expected manufacturer: {expected_manufacturer})...")
+                    print(f"\n🎛️  Testing {plugin_name} (Expected: {expected_manufacturer}/{expected_subdirectory})...")
                     
                     request_data = {
                         "plugin": plugin_name,
