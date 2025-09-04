@@ -41,6 +41,35 @@ CHAIN_ARCHETYPES = {
     }
 }
 
+# Chain archetype definitions
+CHAIN_ARCHETYPES = {
+    'clean': {
+        'description': 'Transparent, natural vocal processing',
+        'priority': ['clarity', 'transparency'],
+        'aggressive_processing': False
+    },
+    'pop-airy': {
+        'description': 'Bright, commercial pop sound with air and presence',
+        'priority': ['brightness', 'presence', 'commercial'],
+        'aggressive_processing': False
+    },
+    'warm-analog': {
+        'description': 'Warm, vintage analog character with gentle leveling',
+        'priority': ['warmth', 'vintage', 'smooth'],
+        'aggressive_processing': False
+    },
+    'aggressive-rap': {
+        'description': 'Punchy, in-your-face rap vocal with tight control',
+        'priority': ['punch', 'control', 'presence'],
+        'aggressive_processing': True
+    },
+    'intimate-rnb': {
+        'description': 'Smooth, intimate R&B vocal with soft dynamics',
+        'priority': ['intimacy', 'smoothness', 'space'],
+        'aggressive_processing': False
+    }
+}
+
 def recommend_chain(analysis: Analysis) -> Targets:
     """
     Generate plugin parameter targets based on audio analysis
