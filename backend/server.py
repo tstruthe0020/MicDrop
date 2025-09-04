@@ -989,9 +989,18 @@ async def all_in_one_processing(
             generated_presets = []
             errors = []
             
+            # DEBUG: Log all plugins received from chain generator
+            logger.info(f"🔍 DEBUG: Received {len(plugins)} plugins from chain generator:")
+            for i, plugin in enumerate(plugins):
+                plugin_name = plugin.get('plugin', 'Unknown')
+                logger.info(f"  Plugin {i+1}: {plugin_name}")
+            
             for i, plugin in enumerate(plugins):
                 plugin_name = plugin['plugin']
+                logger.info(f"🔄 DEBUG: Processing plugin {i+1}/{len(plugins)}: {plugin_name}")
+                
                 converted_params = convert_parameters(plugin['params'], plugin_name)
+                logger.info(f"✓ DEBUG: Converted {len(converted_params)} parameters for {plugin_name}")
                 
                 # Load parameter mapping if available
                 param_map = None
@@ -1002,10 +1011,14 @@ async def all_in_one_processing(
                     if map_file.exists():
                         with open(map_file, 'r') as f:
                             param_map = json.load(f)
+                        logger.info(f"✓ DEBUG: Loaded parameter map for {plugin_name}")
+                    else:
+                        logger.info(f"ℹ️ DEBUG: No parameter map found for {plugin_name}")
                 except Exception as e:
                     logger.warning(f"Could not load parameter map for {plugin_name}: {e}")
                 
                 # Generate preset
+                logger.info(f"🚀 DEBUG: Calling generate_preset for {plugin_name}")
                 success, stdout, stderr = au_preset_generator.generate_preset(
                     plugin_name=plugin_name,
                     parameters=converted_params,
@@ -1015,13 +1028,17 @@ async def all_in_one_processing(
                 )
                 
                 if success:
+                    logger.info(f"✅ DEBUG: Successfully generated preset for {plugin_name}")
                     generated_presets.append({
                         "plugin": plugin_name,
                         "preset_name": f"{preset_name}_{i+1}_{plugin_name.replace(' ', '_')}",
                         "status": "success"
                     })
                 else:
+                    logger.error(f"❌ DEBUG: Failed to generate preset for {plugin_name}: {stderr}")
                     errors.append(f"Failed to generate {plugin_name}: {stderr}")
+            
+            logger.info(f"🎯 DEBUG: Final result - Generated {len(generated_presets)} out of {len(plugins)} plugins")
             
             return {
                 "success": True,
