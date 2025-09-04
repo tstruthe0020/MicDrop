@@ -995,7 +995,7 @@ function App() {
                 <div className="flex justify-center">
                   <Button 
                     onClick={analyzeAudio}
-                    disabled={(!autoChainUrl && !autoChainFile) || autoChainLoading}
+                    disabled={!autoChainFile || autoChainLoading}
                     size="lg"
                     className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
                   >
