@@ -482,6 +482,74 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
     """
     try:
         vibe = request.get("vibe", "Balanced")
+        targets = request.get("targets", {})
+        
+        logger.info(f"🎯🎯🎯 VOCAL CHAIN GENERATION STARTED 🎯🎯🎯")
+        logger.info(f"🎤 Vibe: {vibe}")
+        logger.info(f"🎼 Input Targets: {targets}")
+        
+        # Log the complete vocal chain order
+        chain_order = [
+            "MEqualizer",           # 1. Corrective EQ
+            "1176 Compressor",      # 2. Character compression  
+            "Graillon 3",           # 3. Pitch correction
+            "TDR Nova",             # 4. Dynamic EQ/De-essing
+            "LA-LA",                # 5. Leveling amplifier
+            "Fresh Air",            # 6. Presence/air
+            "MCompressor",          # 7. Glue compression
+            "MConvolutionEZ"        # 8. Reverb/space
+        ]
+        
+        logger.info(f"🔗 VOCAL CHAIN ORDER: {' → '.join(chain_order)}")
+        logger.info(f"🔗 Total plugins in chain: {len(chain_order)}")
+        
+        # Generate parameters for each plugin using existing chain generator
+        generated_params = {}
+        for i, plugin_name in enumerate(chain_order, 1):
+            logger.info(f"\n🎛️  === PLUGIN {i}/8: {plugin_name} ===")
+            
+            # Use the existing chain generator to get plugin configuration
+            mock_features = {
+                "bpm": 120.0,
+                "lufs": -14.0,
+                "crest": 12.0,
+                "spectral": {"centroid": 2000.0, "rolloff": 8000.0}
+            }
+            
+            # Get full chain and extract this plugin's parameters
+            full_chain = chain_generator.generate_chain(mock_features, vibe)
+            plugin_params = {}
+            
+            # Find this plugin in the generated chain
+            if "plugins" in full_chain:
+                for plugin_config in full_chain["plugins"]:
+                    if plugin_config.get("plugin") == plugin_name:
+                        plugin_params = plugin_config.get("params", {})
+                        break
+            
+            generated_params[plugin_name] = plugin_params
+            
+            # Convert parameters using the existing parameter mapping
+            converted_params = convert_parameters(plugin_params, plugin_name)
+            
+            # Log both original and converted parameters
+            logger.info(f"📊 Original parameters for {plugin_name}:")
+            for param, value in plugin_params.items():
+                logger.info(f"     {param}: {value}")
+                
+            logger.info(f"🔧 Converted parameters for {plugin_name}:")
+            for param, value in converted_params.items():
+                logger.info(f"     {param}: {value}")
+                
+            if not converted_params:
+                logger.warning(f"⚠️  No converted parameters for {plugin_name}!")
+            else:
+                logger.info(f"✅ {plugin_name}: {len(converted_params)} parameters converted")
+        
+        logger.info(f"\n🏁 PARAMETER GENERATION COMPLETE")
+        logger.info(f"📈 Total plugins processed: {len(generated_params)}")
+        
+        # Continue with existing preset generation logic...
         genre = request.get("genre", "Pop")
         audio_type = request.get("audio_type", "vocal")
         preset_name = request.get("preset_name", "VocalChain")
