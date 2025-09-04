@@ -41,10 +41,6 @@ CHAIN_ARCHETYPES = {
     }
 }
 
-class Targets(Dict):
-    """Type hint for plugin parameter targets"""
-    pass
-
 def recommend_chain(analysis: Analysis) -> Targets:
     """
     Generate plugin parameter targets based on audio analysis
