@@ -3567,25 +3567,44 @@ class VocalChainAPITester:
                             files = generate_data.get("files", {})
                             zip_url = generate_data.get("zip_url", "")
                             
-                            # CRITICAL: Check preset generation details in report
-                            preset_generation = report.get("preset_generation", {})
-                            plugins_processed = preset_generation.get("plugins_processed", [])
+                            # CRITICAL: Check plugin decisions in report (new structure)
+                            plugin_decisions = report.get("plugin_decisions", [])
+                            generated_files = report.get("generated_files", {})
                             
                             # Analyze parameter application for each plugin
                             parameter_success_count = 0
-                            total_plugins = len(plugins_processed)
+                            total_plugins = len(plugin_decisions)
                             failing_plugins = []
                             successful_plugins = []
                             
                             print(f"\n📊 PARAMETER MAPPING ANALYSIS:")
                             print(f"   Total plugins processed: {total_plugins}")
                             
-                            for plugin_info in plugins_processed:
-                                plugin_name = plugin_info.get("plugin_name", "Unknown")
-                                parameters_applied = plugin_info.get("parameters_applied", 0)
-                                status = plugin_info.get("status", "unknown")
+                            # Check backend logs for actual parameter counts
+                            import subprocess
+                            try:
+                                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                                          capture_output=True, text=True, timeout=5)
+                                backend_logs = log_result.stdout
+                            except:
+                                backend_logs = ""
+                            
+                            for plugin_info in plugin_decisions:
+                                plugin_name = plugin_info.get("plugin", "Unknown").split(" - ")[0]  # Extract plugin name
+                                parameters_summary = plugin_info.get("parameters_summary", "No parameters")
+                                enabled = plugin_info.get("enabled", False)
                                 
-                                print(f"   • {plugin_name}: {parameters_applied} parameters applied ({status})")
+                                # Extract parameter count from backend logs
+                                parameters_applied = 0
+                                if backend_logs:
+                                    import re
+                                    # Look for log entries like "Generating preset for PluginName with X parameters"
+                                    pattern = rf"Generating preset for {re.escape(plugin_name)} with (\d+) parameters"
+                                    matches = re.findall(pattern, backend_logs)
+                                    if matches:
+                                        parameters_applied = int(matches[-1])  # Get the most recent match
+                                
+                                print(f"   • {plugin_name}: {parameters_applied} parameters applied ({parameters_summary})")
                                 
                                 # Check if this is one of the previously failing plugins
                                 previously_failing = plugin_name in [
@@ -3593,7 +3612,7 @@ class VocalChainAPITester:
                                     "MCompressor", "MConvolutionEZ"
                                 ]
                                 
-                                if parameters_applied > 0:
+                                if parameters_applied > 0 and enabled:
                                     parameter_success_count += 1
                                     successful_plugins.append({
                                         "name": plugin_name,
