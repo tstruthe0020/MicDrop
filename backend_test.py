@@ -3583,7 +3583,7 @@ class VocalChainAPITester:
                             # Check backend logs for actual parameter counts
                             import subprocess
                             try:
-                                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.err.log'], 
                                                           capture_output=True, text=True, timeout=5)
                                 backend_logs = log_result.stdout
                             except:
