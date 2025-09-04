@@ -317,37 +317,161 @@ CHAIN_ARCHETYPES = {
 
 def recommend_chain(analysis: Analysis) -> Targets:
     """
-    Generate plugin parameter targets based on audio analysis
+    Generate professional plugin parameter targets based on enhanced audio analysis
     
     Args:
         analysis: Complete audio analysis results
         
     Returns:
-        Targets dictionary with plugin parameters and chain style
+        Targets dictionary with professional plugin parameters and chain style
     """
-    logger.info("Generating plugin parameter recommendations")
+    logger.info("🎯 STARTING PROFESSIONAL CHAIN RECOMMENDATION")
     
-    # Determine chain archetype
-    chain_style = _determine_chain_style(analysis)
-    logger.info(f"Selected chain style: {chain_style}")
+    # Determine chain archetype using enhanced analysis
+    chain_style = _determine_chain_style_professional(analysis)
+    logger.info(f"🎯 Selected professional chain style: {chain_style}")
     
-    # Generate targets for each plugin
+    # Use professional parameter mapping
+    professional_targets = professional_parameter_mapping(analysis, chain_style)
+    
+    # Create comprehensive targets with both professional and legacy formats
     targets = {
         'chain_style': chain_style,
-        'analysis_summary': _create_analysis_summary(analysis),
-        'Graillon3': _recommend_graillon3(analysis),
-        'MEqualizer': _recommend_mequalizer(analysis, chain_style),
-        'TDRNova': _recommend_tdrnova(analysis, chain_style),
-        '1176Compressor': _recommend_1176(analysis, chain_style),
-        'LALA': _recommend_lala(analysis, chain_style),
-        'FreshAir': _recommend_fresh_air(analysis, chain_style),
-        'MCompressor': _recommend_mcompressor(analysis, chain_style),
-        'MConvolutionEZ': _recommend_convolution(analysis, chain_style),
-        'headroom_db': settings.HEADROOM_DB
+        'analysis_summary': _create_analysis_summary_professional(analysis),
+        'professional_params': professional_targets,  # New professional parameters
+        'headroom_db': settings.HEADROOM_DB,
+        
+        # Legacy plugin names for compatibility with existing system
+        'Graillon3': professional_targets.get('Graillon 3', {}),
+        'TDRNova': professional_targets.get('TDR Nova', {}),
+        '1176Compressor': professional_targets.get('1176 Compressor', {}),
+        'LALA': professional_targets.get('LA-LA', {}),
+        'FreshAir': professional_targets.get('Fresh Air', {}),
+        'MConvolutionEZ': professional_targets.get('MConvolutionEZ', {}),
+        
+        # Add enhanced analysis data
+        'enhanced_analysis': {
+            'spectral_tilt': analysis.audio_features.get('spectral_tilt'),
+            'brightness_index': analysis.audio_features.get('brightness_index'),
+            'vocal_f0': analysis.vocal_features.get('f0_median'),
+            'sibilance_freq': analysis.vocal_features.get('sibilance_centroid'),
+            'recommendation_confidence': _calculate_recommendation_confidence(analysis)
+        }
     }
     
-    logger.info("Plugin recommendations generated")
+    logger.info("🎯 PROFESSIONAL CHAIN RECOMMENDATION COMPLETE")
     return targets
+
+def _determine_chain_style_professional(analysis: Analysis) -> str:
+    """Determine the best chain archetype based on enhanced professional analysis"""
+    
+    audio_features = analysis.audio_features
+    vocal_features = analysis.vocal_features
+    
+    # Extract enhanced metrics
+    bpm = audio_features.get('bpm', 120.0)
+    lufs_i = audio_features.get('lufs_i', -20.0)
+    brightness_index = audio_features.get('brightness_index', 0.8)
+    spectral_tilt = audio_features.get('spectral_tilt', -6.0)
+    crest_db = audio_features.get('crest_db', 12.0)
+    dynamic_spread = audio_features.get('dynamic_spread', 8.0)
+    
+    f0_median = vocal_features.get('f0_median', 180.0)
+    vocal_intensity = vocal_features.get('intensity', 0.6)
+    sibilance_centroid = vocal_features.get('sibilance_centroid', 6500.0)
+    plosive_index = vocal_features.get('plosive_index', 0.2)
+    
+    # Professional archetype scoring
+    scores = {style: 0.0 for style in CHAIN_ARCHETYPES.keys()}
+    
+    # High energy aggressive style
+    if bpm > 130 and lufs_i > -15 and vocal_intensity > 0.7:
+        scores['aggressive-rap'] += 3.0
+    if crest_db > 14 and plosive_index > 0.3:
+        scores['aggressive-rap'] += 2.0
+        
+    # Intimate R&B style  
+    if bpm < 90 and vocal_intensity < 0.5 and f0_median > 180:
+        scores['intimate-rnb'] += 3.0
+    if dynamic_spread < 6 and spectral_tilt < -8:
+        scores['intimate-rnb'] += 2.0
+        
+    # Pop airy style
+    if brightness_index > 1.0 and spectral_tilt > -4:
+        scores['pop-airy'] += 2.5
+    if sibilance_centroid > 7000 and bpm > 100 and bpm < 140:
+        scores['pop-airy'] += 2.0
+        
+    # Warm analog style
+    if brightness_index < 0.7 and spectral_tilt < -8:
+        scores['warm-analog'] += 2.5
+    if crest_db < 10 and vocal_intensity > 0.4:
+        scores['warm-analog'] += 1.5
+        
+    # Clean style (fallback)
+    scores['clean'] += 1.0  # Base score
+    
+    # Select highest scoring archetype
+    best_style = max(scores.items(), key=lambda x: x[1])[0]
+    
+    logger.info(f"🎯 Professional archetype scores: {scores}")
+    logger.info(f"🎯 Selected: {best_style}")
+    
+    return best_style
+
+def _create_analysis_summary_professional(analysis: Analysis) -> Dict[str, Any]:
+    """Create professional analysis summary with enhanced metrics"""
+    
+    audio = analysis.audio_features
+    vocal = analysis.vocal_features
+    
+    return {
+        'tempo': audio.get('bpm'),
+        'key': audio.get('key', {}).get('tonic', 'Unknown'),
+        'key_confidence': audio.get('key', {}).get('confidence', 0.0),
+        'loudness_lufs': audio.get('lufs_i'),
+        'dynamic_range': audio.get('dynamic_spread'),
+        'spectral_character': {
+            'tilt_db': audio.get('spectral_tilt'),
+            'brightness': audio.get('brightness_index'),
+            'low_end_dominance': audio.get('low_end_dominance')
+        },
+        'vocal_character': {
+            'f0_hz': vocal.get('f0_median'),
+            'gender_profile': vocal.get('gender_profile'),
+            'sibilance_freq': vocal.get('sibilance_centroid'),
+            'mud_ratio': vocal.get('mud_ratio'),
+            'intensity': vocal.get('intensity')
+        },
+        'processing_needs': {
+            'mud_control': vocal.get('mud_ratio', 0) > 0.35,
+            'sibilance_control': vocal.get('sibilance_centroid', 6500) > 7000,
+            'plosive_control': vocal.get('plosive_index', 0) > 0.3,
+            'brightness_needed': audio.get('brightness_index', 0.8) < 0.7
+        }
+    }
+
+def _calculate_recommendation_confidence(analysis: Analysis) -> float:
+    """Calculate confidence score for professional recommendations"""
+    
+    confidence = 0.5  # Base confidence
+    
+    # Boost confidence based on analysis quality
+    audio = analysis.audio_features
+    vocal = analysis.vocal_features
+    
+    if audio.get('key', {}).get('confidence', 0) > 0.7:
+        confidence += 0.1
+    if vocal.get('intensity', 0) > 0.6:
+        confidence += 0.1
+    if vocal.get('f0_median', 0) > 0:
+        confidence += 0.1
+    if audio.get('brightness_index', 0) > 0:
+        confidence += 0.1
+    if audio.get('spectral_tilt', 0) != 0:
+        confidence += 0.1
+        
+    return min(confidence, 0.95)
 
 def _determine_chain_style(analysis: Analysis) -> str:
     """Determine the best chain archetype based on analysis"""
