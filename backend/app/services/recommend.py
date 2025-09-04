@@ -48,8 +48,9 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
     """
     logger.info(f"🎯 PROFESSIONAL PARAMETER MAPPING: Starting for chain style '{chain_style}'")
     
-    audio_features = analysis.audio_features
-    vocal_features = analysis.vocal_features
+    # Analysis is a dictionary, not an object with attributes
+    audio_features = analysis  # The analysis dict contains all the audio features
+    vocal_features = analysis.get('vocal', {})  # Vocal features are nested under 'vocal' key
     
     # Extract key analysis metrics
     bpm = audio_features.get('bpm', 120.0)
