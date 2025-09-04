@@ -47,6 +47,7 @@ function App() {
   const [autoChainPresetName, setAutoChainPresetName] = useState('Auto_Vocal_Chain');
   
   const beatInputRef = useRef(null);
+  const autoChainFileInputRef = useRef(null);
   const vocalInputRef = useRef(null);
 
   const vibeOptions = [
