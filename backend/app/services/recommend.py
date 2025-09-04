@@ -291,31 +291,6 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
     # F. MCONVOLUTIONEZ (REVERB) PARAMETERS
     logger.info("🎯 Mapping MConvolutionEZ parameters...")
     
-    # Decay based on tempo and genre
-    if chain_style == 'pop-airy':
-        decay_base = 1.5
-    elif chain_style == 'intimate-rnb':
-        decay_base = 2.2
-    elif chain_style == 'aggressive-rap':
-        decay_base = 0.8
-    else:
-        decay_base = 1.4
-    
-    # Adjust for tempo (faster = shorter)
-    tempo_factor = np.clip(120 / bpm, 0.7, 1.3)
-    reverb_decay = decay_base * tempo_factor
-    
-    # Pre-delay based on tempo (1/64 to 1/32 note)
-    pre_delay = np.clip((60 / bpm) * 1000 / 32, 15, 40)  # ms
-    
-    # HF damping if track is bright
-    hf_damping_freq = 10000
-    if brightness_index > 1.1:
-        hf_damping_freq = 8000
-    
-    # Mix level (conservative start)
-    reverb_mix = 0.12  # 12% wet
-    
     logger.info("🎯 PARAMETER MAPPING COMPLETE - Generating plugin targets...")
     
     # Generate plugin targets with mapped parameters
