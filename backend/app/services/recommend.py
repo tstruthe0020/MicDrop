@@ -424,8 +424,9 @@ def _determine_chain_style_professional(analysis: Analysis) -> str:
 def _create_analysis_summary_professional(analysis: Analysis) -> Dict[str, Any]:
     """Create professional analysis summary with enhanced metrics"""
     
-    audio = analysis.audio_features
-    vocal = analysis.vocal_features
+    # Analysis is a dictionary, not an object with attributes
+    audio = analysis  # The analysis dict contains all the audio features
+    vocal = analysis.get('vocal', {})  # Vocal features are nested under 'vocal' key
     
     return {
         'tempo': audio.get('bpm'),
