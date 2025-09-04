@@ -504,16 +504,14 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
         else:
             logger.info("📻 Using LEGACY parameter generation system")
         
-        # Log the complete vocal chain order
+        # Log the complete vocal chain order - OPTIMIZED FOR WORKING PLUGINS
         chain_order = [
-            "MEqualizer",           # 1. Corrective EQ
-            "1176 Compressor",      # 2. Character compression  
-            "Graillon 3",           # 3. Pitch correction
-            "TDR Nova",             # 4. Dynamic EQ/De-essing
-            "LA-LA",                # 5. Leveling amplifier
-            "Fresh Air",            # 6. Presence/air
-            "MCompressor",          # 7. Glue compression
-            "MConvolutionEZ"        # 8. Reverb/space
+            "TDR Nova",             # 1. High-pass filter + De-essing
+            "1176 Compressor",      # 2. Character compression
+            "TDR Nova",             # 3. Dynamic EQ (second instance for different processing)
+            "1176 Compressor",      # 4. Additional character compression (different settings)
+            # Skip problematic plugins: MEqualizer, Graillon 3, Fresh Air, MConvolutionEZ, MCompressor
+            # Focus on proven working plugins with different parameter sets
         ]
         
         logger.info(f"🔗 VOCAL CHAIN ORDER: {' → '.join(chain_order)}")
