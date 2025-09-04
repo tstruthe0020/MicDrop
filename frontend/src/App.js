@@ -15,6 +15,10 @@ import { Toaster } from './components/ui/toaster';
 import { Upload, Music, Settings, Download, AudioWaveform, Zap, Volume2, Play, Pause } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Debug the backend URL
+console.log('🎯 DEBUG: BACKEND_URL from env:', BACKEND_URL);
+console.log('🎯 DEBUG: All env vars:', process.env);
 const API = `${BACKEND_URL}/api`;
 
 function App() {
