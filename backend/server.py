@@ -322,13 +322,16 @@ def convert_parameters(backend_params, plugin_name=None):
     
     # Graillon 3 uses complex parameter mapping
     elif plugin_name == "Graillon 3":
-        # Map API parameter names to Graillon 3 parameter names
+        # Use parameter numbers from Graillon3.map.json
         param_name_mapping = {
-            "pitch_shift": "Pitch_Shift",
-            "formant_shift": "Formant_Shift", 
-            "octave_mix": "Wet_Mix",
-            "bitcrusher": "FX_Enabled",
-            "mix": "Output_Gain"
+            "pitch_shift": "15",      # Pitch_Shift
+            "formant_shift": "51",    # Formant_Shift
+            "octave_mix": "0",        # Wet_Mix
+            "bitcrusher": "60",       # FX_Enabled
+            "mix": "8",               # Output_Gain
+            "correction_amount": "17", # Correction_Amount
+            "smooth": "18",           # Smooth
+            "reference": "20"         # Reference
         }
         
         for key, value in backend_params.items():
