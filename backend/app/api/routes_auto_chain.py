@@ -255,6 +255,29 @@ async def upload_and_generate(
         cleanup_temp_files(uuid_str)
         raise HTTPException(status_code=500, detail=f"Upload processing failed: {str(e)}")
 
+@router.get("/download/{uuid_str}/{filename}")
+async def download_auto_chain_file(uuid_str: str, filename: str):
+    """Download generated auto chain files"""
+    try:
+        file_path = Path(f"/tmp/auto_chain/{uuid_str}/{filename}")
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        def iterfile():
+            with open(file_path, "rb") as f:
+                yield from f
+        
+        return StreamingResponse(
+            iterfile(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error serving auto chain download: {e}")
+        raise HTTPException(status_code=500, detail="Download failed")
+
 @router.get("/status/{uuid_str}")
 async def get_status(uuid_str: str):
     """Get processing status for a UUID (placeholder for future async processing)"""
