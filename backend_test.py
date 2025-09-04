@@ -3583,6 +3583,15 @@ class VocalChainAPITester:
         print("Testing all 9 plugins with varied realistic parameters as requested in review...")
         comprehensive_success = self.test_comprehensive_individual_plugin_testing()
         
+        # 🎯 CRITICAL: MANUFACTURER DIRECTORY MAPPING FIX TESTS (Review Request)
+        print("\n🎯 MANUFACTURER DIRECTORY MAPPING FIX TESTS (REVIEW REQUEST)")
+        print("=" * 60)
+        print("Testing MCompressor and Fresh Air manufacturer directory mapping fix...")
+        self.test_manufacturer_directory_mapping_fix()
+        
+        print("Testing Clean vibe full vocal chain generation with 7 plugins...")
+        clean_vibe_success = self.test_clean_vibe_full_vocal_chain_seven_plugins()
+        
         # Test 10: Logic export (legacy)
         self.test_export_endpoint(chain)
         
