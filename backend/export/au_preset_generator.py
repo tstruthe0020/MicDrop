@@ -614,7 +614,7 @@ class AUPresetGenerator:
         mappings = {
             "TDR Nova": "Tokyo Dawn Labs",
             "MEqualizer": "MeldaProduction",
-            "MCompressor": "MeldaProduction/Untitled",  # Updated: Actual Swift CLI output
+            "MCompressor": "MeldaProduction",  # Actual subdirectory is "Untitled"
             "MAutoPitch": "MeldaProduction",
             "MConvolutionEZ": "MeldaProduction",
             "1176 Compressor": "UADx",          # Updated: UADx (not Auburn Sounds)
@@ -624,6 +624,14 @@ class AUPresetGenerator:
         }
         
         return mappings.get(plugin_name, "Unknown")
+    
+    def _get_plugin_subdirectory(self, plugin_name: str) -> str:
+        """Get the actual plugin subdirectory name - some plugins use different names"""
+        subdirectory_mappings = {
+            "MCompressor": "Untitled",  # MCompressor creates "Untitled" subdirectory
+        }
+        
+        return subdirectory_mappings.get(plugin_name, plugin_name)
     
     
     def _get_component_info_from_seed(self, seed_file: Path) -> Optional[Tuple[str, str, str]]:
