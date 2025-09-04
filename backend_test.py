@@ -1269,6 +1269,382 @@ class VocalChainAPITester:
         except Exception as e:
             self.log_test("Error Handling Swift CLI Features", False, f"Exception: {str(e)}")
 
+    def test_enhanced_swift_cli_debugging_all_plugins(self):
+        """
+        COMPREHENSIVE TEST for Enhanced Swift CLI Debugging - ALL 9 PLUGINS
+        Tests each plugin individually to capture detailed Swift CLI debugging information
+        Focus on identifying which plugins are failing and why
+        """
+        try:
+            print("\n🔍 TESTING ENHANCED SWIFT CLI DEBUGGING FOR ALL 9 PLUGINS...")
+            
+            # All 9 plugins that should be supported
+            all_plugins = [
+                "TDR Nova",        # Should work - XML injection
+                "MEqualizer",      # Should work - standard AU
+                "MConvolutionEZ",  # Should work - standard AU
+                "1176 Compressor", # FAILING - needs debug capture
+                "Graillon 3",      # FAILING - needs debug capture
+                "LA-LA",           # FAILING - needs debug capture
+                "MAutoPitch",      # UNKNOWN STATUS - needs testing
+                "MCompressor",     # UNKNOWN STATUS - needs testing
+                "Fresh Air"        # Should work but verify
+            ]
+            
+            successful_plugins = []
+            failing_plugins = []
+            debug_logs = {}
+            
+            for plugin_name in all_plugins:
+                try:
+                    print(f"\n🎛️  Testing {plugin_name}...")
+                    
+                    # Create realistic parameters for each plugin
+                    test_params = self._get_test_parameters_for_plugin(plugin_name)
+                    
+                    request_data = {
+                        "plugin": plugin_name,
+                        "parameters": test_params,
+                        "preset_name": f"DebugTest_{plugin_name.replace(' ', '_')}"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/install-individual", 
+                                           json=request_data, timeout=30)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            output = data.get("output", "")
+                            preset_name = data.get("preset_name", "")
+                            
+                            # Capture debug information from output
+                            debug_info = self._extract_debug_info(output)
+                            debug_logs[plugin_name] = {
+                                "status": "SUCCESS",
+                                "output": output,
+                                "debug_info": debug_info,
+                                "preset_name": preset_name
+                            }
+                            
+                            successful_plugins.append(plugin_name)
+                            self.log_test(f"Swift CLI Debug - {plugin_name}", True, 
+                                        f"✅ SUCCESS: {debug_info.get('approach', 'Unknown approach')}")
+                        else:
+                            error_msg = data.get("message", "Unknown error")
+                            debug_logs[plugin_name] = {
+                                "status": "FAILED",
+                                "error": error_msg,
+                                "response": data
+                            }
+                            
+                            failing_plugins.append(plugin_name)
+                            self.log_test(f"Swift CLI Debug - {plugin_name}", False, 
+                                        f"❌ FAILED: {error_msg}")
+                    else:
+                        error_msg = f"HTTP {response.status_code}: {response.text[:200]}"
+                        debug_logs[plugin_name] = {
+                            "status": "HTTP_ERROR",
+                            "error": error_msg
+                        }
+                        
+                        failing_plugins.append(plugin_name)
+                        self.log_test(f"Swift CLI Debug - {plugin_name}", False, 
+                                    f"❌ HTTP ERROR: {response.status_code}")
+                        
+                except Exception as e:
+                    debug_logs[plugin_name] = {
+                        "status": "EXCEPTION",
+                        "error": str(e)
+                    }
+                    
+                    failing_plugins.append(plugin_name)
+                    self.log_test(f"Swift CLI Debug - {plugin_name}", False, 
+                                f"❌ EXCEPTION: {str(e)}")
+            
+            # Analyze results and patterns
+            print(f"\n📊 SWIFT CLI DEBUGGING ANALYSIS:")
+            print(f"   Total plugins tested: {len(all_plugins)}")
+            print(f"   Successful: {len(successful_plugins)} - {successful_plugins}")
+            print(f"   Failed: {len(failing_plugins)} - {failing_plugins}")
+            
+            # Log detailed debug information for analysis
+            for plugin_name, debug_data in debug_logs.items():
+                print(f"\n🔍 DEBUG LOG for {plugin_name}:")
+                print(f"   Status: {debug_data['status']}")
+                if debug_data['status'] == 'SUCCESS':
+                    debug_info = debug_data.get('debug_info', {})
+                    print(f"   Approach: {debug_info.get('approach', 'Unknown')}")
+                    print(f"   Swift CLI Available: {debug_info.get('swift_available', 'Unknown')}")
+                    print(f"   Return Code: {debug_info.get('return_code', 'Unknown')}")
+                    print(f"   File Generated: {debug_info.get('file_found', 'Unknown')}")
+                else:
+                    print(f"   Error: {debug_data.get('error', 'Unknown error')}")
+            
+            # Summary test based on expected vs actual results
+            expected_working = ["TDR Nova", "MEqualizer", "MConvolutionEZ", "Fresh Air"]
+            expected_failing = ["1176 Compressor", "Graillon 3", "LA-LA"]
+            unknown_status = ["MAutoPitch", "MCompressor"]
+            
+            # Check if expected working plugins are actually working
+            working_as_expected = [p for p in expected_working if p in successful_plugins]
+            failing_as_expected = [p for p in expected_failing if p in failing_plugins]
+            
+            if len(working_as_expected) >= 3 and len(failing_as_expected) >= 2:
+                self.log_test("🎯 Enhanced Swift CLI Debugging - Pattern Analysis", True, 
+                            f"✅ PATTERNS CONFIRMED: {len(working_as_expected)}/4 expected working, {len(failing_as_expected)}/3 expected failing")
+            else:
+                self.log_test("🎯 Enhanced Swift CLI Debugging - Pattern Analysis", False, 
+                            f"❌ UNEXPECTED PATTERNS: {len(working_as_expected)}/4 expected working, {len(failing_as_expected)}/3 expected failing")
+            
+            # Overall success based on capturing debug information
+            if len(debug_logs) == len(all_plugins):
+                self.log_test("🔍 Enhanced Swift CLI Debugging - Comprehensive Coverage", True, 
+                            f"✅ COMPLETE: Captured debug logs for all {len(all_plugins)} plugins")
+            else:
+                self.log_test("🔍 Enhanced Swift CLI Debugging - Comprehensive Coverage", False, 
+                            f"❌ INCOMPLETE: Only captured {len(debug_logs)}/{len(all_plugins)} plugin debug logs")
+                
+        except Exception as e:
+            self.log_test("Enhanced Swift CLI Debugging", False, f"Exception: {str(e)}")
+
+    def _get_test_parameters_for_plugin(self, plugin_name: str) -> Dict[str, Any]:
+        """Get realistic test parameters for each plugin"""
+        if plugin_name == "TDR Nova":
+            return {
+                "bypass": False,
+                "band_1_frequency": 250.0,
+                "band_1_gain": -2.0,
+                "band_1_q": 1.5,
+                "band_2_frequency": 1500.0,
+                "band_2_gain": 1.5,
+                "band_2_q": 0.8,
+                "threshold": -12.0,
+                "ratio": 2.5
+            }
+        elif plugin_name == "MEqualizer":
+            return {
+                "bypass": False,
+                "gain_1": -2.5,
+                "freq_1": 300.0,
+                "q_1": 1.2,
+                "gain_2": 1.8,
+                "freq_2": 2500.0,
+                "q_2": 0.8
+            }
+        elif plugin_name == "MCompressor":
+            return {
+                "bypass": False,
+                "threshold": -18.0,
+                "ratio": 3.0,
+                "attack": 10.0,
+                "release": 100.0,
+                "makeup_gain": 2.0
+            }
+        elif plugin_name == "1176 Compressor":
+            return {
+                "bypass": False,
+                "input_gain": 5.0,
+                "output_gain": 3.0,
+                "attack": "Medium",
+                "release": "Fast",
+                "ratio": "4:1",
+                "all_buttons": False
+            }
+        elif plugin_name == "Graillon 3":
+            return {
+                "bypass": False,
+                "pitch_shift": -2.0,
+                "formant_shift": 0.0,
+                "octave_mix": 25.0,
+                "bitcrusher": 0.0,
+                "mix": 80.0
+            }
+        elif plugin_name == "LA-LA":
+            return {
+                "bypass": False,
+                "target_level": -16.0,
+                "dynamics": 75.0,
+                "fast_release": True
+            }
+        elif plugin_name == "MAutoPitch":
+            return {
+                "bypass": False,
+                "correction": 80.0,
+                "speed": 50.0,
+                "formant": True,
+                "mix": 100.0
+            }
+        elif plugin_name == "Fresh Air":
+            return {
+                "bypass": False,
+                "presence": 25.0,
+                "brilliance": 15.0,
+                "mix": 100.0
+            }
+        elif plugin_name == "MConvolutionEZ":
+            return {
+                "bypass": False,
+                "mix": 80.0,
+                "gain": 0.0,
+                "predelay": 0.0
+            }
+        else:
+            # Default parameters
+            return {
+                "bypass": False,
+                "gain": 0.0,
+                "mix": 100.0
+            }
+
+    def _extract_debug_info(self, output: str) -> Dict[str, Any]:
+        """Extract debug information from Swift CLI output"""
+        debug_info = {}
+        
+        # Check for approach used
+        if "XML injection approach" in output:
+            debug_info["approach"] = "XML injection (TDR Nova)"
+        elif "standard AVAudioUnit approach" in output:
+            debug_info["approach"] = "Standard AU"
+        elif "Python fallback" in output:
+            debug_info["approach"] = "Python fallback"
+        else:
+            debug_info["approach"] = "Unknown"
+        
+        # Check for Swift CLI availability
+        if "Swift CLI not available" in output:
+            debug_info["swift_available"] = False
+        elif "Swift CLI" in output:
+            debug_info["swift_available"] = True
+        else:
+            debug_info["swift_available"] = "Unknown"
+        
+        # Look for return codes
+        if "Return code: 0" in output:
+            debug_info["return_code"] = 0
+        elif "Return code:" in output:
+            import re
+            match = re.search(r"Return code: (\d+)", output)
+            if match:
+                debug_info["return_code"] = int(match.group(1))
+        
+        # Check if file was found
+        if "Generated preset:" in output:
+            debug_info["file_found"] = True
+        elif "No preset file found" in output:
+            debug_info["file_found"] = False
+        else:
+            debug_info["file_found"] = "Unknown"
+        
+        return debug_info
+
+    def test_vocal_chain_generation_with_debugging(self):
+        """
+        Test vocal chain generation with different vibes to capture comprehensive debugging
+        """
+        try:
+            print("\n🎵 TESTING VOCAL CHAIN GENERATION WITH ENHANCED DEBUGGING...")
+            
+            test_vibes = ["Clean", "Warm", "Punchy", "Bright"]
+            chain_results = {}
+            
+            for vibe in test_vibes:
+                try:
+                    print(f"\n🎛️  Testing {vibe} vocal chain...")
+                    
+                    request_data = {
+                        "vibe": vibe,
+                        "genre": "Pop",
+                        "preset_name": f"DebugChain_{vibe}"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/download-presets", 
+                                           json=request_data, timeout=60)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            # Extract chain information
+                            vocal_chain = data.get("vocal_chain", {})
+                            download_info = data.get("download", {})
+                            stdout = data.get("stdout", "")
+                            
+                            plugins_in_chain = []
+                            if "chain" in vocal_chain and "plugins" in vocal_chain["chain"]:
+                                plugins_in_chain = [p.get("plugin", "Unknown") for p in vocal_chain["chain"]["plugins"]]
+                            
+                            chain_results[vibe] = {
+                                "status": "SUCCESS",
+                                "plugins": plugins_in_chain,
+                                "preset_count": download_info.get("preset_count", 0),
+                                "zip_size": download_info.get("size", 0),
+                                "stdout": stdout
+                            }
+                            
+                            self.log_test(f"Vocal Chain Debug - {vibe}", True, 
+                                        f"✅ Generated {len(plugins_in_chain)} plugins, {download_info.get('preset_count', 0)} presets")
+                        else:
+                            error_msg = data.get("message", "Unknown error")
+                            chain_results[vibe] = {
+                                "status": "FAILED",
+                                "error": error_msg
+                            }
+                            
+                            self.log_test(f"Vocal Chain Debug - {vibe}", False, 
+                                        f"❌ FAILED: {error_msg}")
+                    else:
+                        error_msg = f"HTTP {response.status_code}"
+                        chain_results[vibe] = {
+                            "status": "HTTP_ERROR",
+                            "error": error_msg
+                        }
+                        
+                        self.log_test(f"Vocal Chain Debug - {vibe}", False, 
+                                    f"❌ HTTP ERROR: {response.status_code}")
+                        
+                except Exception as e:
+                    chain_results[vibe] = {
+                        "status": "EXCEPTION",
+                        "error": str(e)
+                    }
+                    
+                    self.log_test(f"Vocal Chain Debug - {vibe}", False, 
+                                f"❌ EXCEPTION: {str(e)}")
+            
+            # Analyze which plugins are being processed across all vibes
+            all_plugins_used = set()
+            successful_vibes = []
+            
+            for vibe, result in chain_results.items():
+                if result["status"] == "SUCCESS":
+                    successful_vibes.append(vibe)
+                    all_plugins_used.update(result.get("plugins", []))
+            
+            print(f"\n📊 VOCAL CHAIN ANALYSIS:")
+            print(f"   Successful vibes: {len(successful_vibes)}/{len(test_vibes)} - {successful_vibes}")
+            print(f"   Unique plugins used: {len(all_plugins_used)} - {sorted(all_plugins_used)}")
+            
+            # Check if we're getting the expected 9 plugins
+            expected_plugins = {"TDR Nova", "MEqualizer", "MCompressor", "1176 Compressor", 
+                              "Graillon 3", "LA-LA", "MAutoPitch", "Fresh Air", "MConvolutionEZ"}
+            
+            plugins_found = all_plugins_used.intersection(expected_plugins)
+            plugins_missing = expected_plugins - all_plugins_used
+            
+            if len(plugins_found) >= 7:
+                self.log_test("🎯 Vocal Chain Plugin Coverage", True, 
+                            f"✅ GOOD COVERAGE: {len(plugins_found)}/9 expected plugins found")
+            else:
+                self.log_test("🎯 Vocal Chain Plugin Coverage", False, 
+                            f"❌ LIMITED COVERAGE: Only {len(plugins_found)}/9 expected plugins found")
+            
+            if plugins_missing:
+                print(f"   Missing plugins: {sorted(plugins_missing)}")
+                
+        except Exception as e:
+            self.log_test("Vocal Chain Generation Debug", False, f"Exception: {str(e)}")
+
     def test_enhanced_zip_packaging_features(self):
         """
         COMPREHENSIVE TEST for Enhanced ZIP Packaging Features
