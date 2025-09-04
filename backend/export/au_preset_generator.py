@@ -492,7 +492,7 @@ class AUPresetGenerator:
             
             # Look for parameter map file
             map_file = f"{plugin_name.replace(' ', '').replace('-', '')}.map.json"
-            map_path = aupreset_dir / "maps" / map_file
+            map_path = self.maps_dir / map_file
             
             try:
                 # Run the Python CLI tool
