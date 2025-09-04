@@ -9,6 +9,9 @@ from .graillon_keymap import scale_mask
 
 logger = logging.getLogger(__name__)
 
+# Use regular Dict instead of custom class for Pydantic compatibility
+Targets = Dict[str, Any]
+
 # Chain archetype definitions
 CHAIN_ARCHETYPES = {
     'clean': {
