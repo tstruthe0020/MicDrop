@@ -3363,6 +3363,144 @@ class VocalChainAPITester:
         except Exception as e:
             self.log_test("Auto Chain Backend Readiness", False, f"Exception: {str(e)}")
 
+    def test_clean_vibe_full_vocal_chain_seven_plugins(self):
+        """
+        CRITICAL TEST: Full vocal chain generation with Clean vibe to verify all 7 plugins are included in ZIP
+        Tests that the ZIP now contains 7 presets instead of 5 and resolves "No preset file found after generation" errors
+        """
+        try:
+            print("\n🔍 TESTING CLEAN VIBE FULL VOCAL CHAIN - 7 PLUGINS IN ZIP...")
+            
+            request_data = {
+                "vibe": "Clean",
+                "genre": "Pop",
+                "preset_name": "CleanVocalChain_7Plugins_Test"
+            }
+            
+            response = requests.post(f"{self.api_url}/export/download-presets", 
+                                   json=request_data, timeout=60)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    # Verify response structure
+                    required_fields = ["vocal_chain", "download"]
+                    missing_fields = [field for field in required_fields if field not in data]
+                    
+                    if not missing_fields:
+                        download_info = data["download"]
+                        vocal_chain = data["vocal_chain"]
+                        
+                        # Extract key information
+                        filename = download_info.get("filename", "")
+                        size = download_info.get("size", 0)
+                        preset_count = download_info.get("preset_count", 0)
+                        structure = download_info.get("structure", "")
+                        
+                        # Get the actual plugins in the chain
+                        chain_plugins = []
+                        if "chain" in vocal_chain and "plugins" in vocal_chain["chain"]:
+                            chain_plugins = vocal_chain["chain"]["plugins"]
+                            plugin_names = [p.get("plugin", "Unknown") for p in chain_plugins]
+                        else:
+                            plugin_names = []
+                        
+                        print(f"\n📊 CLEAN VIBE VOCAL CHAIN ANALYSIS:")
+                        print(f"   ZIP filename: {filename}")
+                        print(f"   ZIP size: {size} bytes")
+                        print(f"   Preset count: {preset_count}")
+                        print(f"   Plugins in chain: {len(chain_plugins)}")
+                        print(f"   Plugin names: {plugin_names}")
+                        
+                        # CRITICAL TEST: Verify 7 plugins are included
+                        if preset_count >= 7:
+                            preset_count_status = "✅ SUCCESS - 7+ presets"
+                            count_success = True
+                        elif preset_count >= 5:
+                            preset_count_status = f"⚠️ IMPROVED - {preset_count} presets (was 5, target 7)"
+                            count_success = False
+                        else:
+                            preset_count_status = f"❌ ISSUE PERSISTS - Only {preset_count} presets"
+                            count_success = False
+                        
+                        # Test the download URL to verify actual ZIP content
+                        download_url = f"{self.base_url}{download_info['url']}"
+                        download_response = requests.get(download_url, timeout=15)
+                        
+                        if download_response.status_code == 200:
+                            if download_response.content.startswith(b'PK'):  # ZIP file signature
+                                zip_size = len(download_response.content)
+                                
+                                # Verify ZIP contains multiple files (rough estimate)
+                                size_per_preset = zip_size / preset_count if preset_count > 0 else 0
+                                
+                                # Check if "No preset file found after generation" errors are resolved
+                                stdout_output = data.get("stdout", "")
+                                errors = data.get("errors", [])
+                                
+                                no_preset_errors = []
+                                if stdout_output and "No preset file found" in stdout_output:
+                                    no_preset_errors.append("stdout contains 'No preset file found'")
+                                if errors:
+                                    for error in errors:
+                                        if "No preset file found" in str(error):
+                                            no_preset_errors.append(f"Error: {error}")
+                                
+                                if not no_preset_errors:
+                                    error_resolution_status = "✅ RESOLVED - No 'preset file found' errors"
+                                    error_success = True
+                                else:
+                                    error_resolution_status = f"❌ PERSISTS - Found errors: {no_preset_errors}"
+                                    error_success = False
+                                
+                                # Overall success criteria
+                                overall_success = count_success and error_success and zip_size > 5000
+                                
+                                self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", overall_success, 
+                                            f"{preset_count_status} | {error_resolution_status} | ZIP: {zip_size} bytes | Avg/preset: {size_per_preset:.0f}b")
+                                
+                                # Additional verification: Check if specific plugins are included
+                                expected_plugins = ["MEqualizer", "MCompressor", "TDR Nova", "Fresh Air", "1176 Compressor", "Graillon 3", "LA-LA"]
+                                found_plugins = [p for p in expected_plugins if p in plugin_names]
+                                missing_plugins = [p for p in expected_plugins if p not in plugin_names]
+                                
+                                if len(found_plugins) >= 7:
+                                    self.log_test("Clean Vibe - Plugin Coverage", True, 
+                                                f"✅ Excellent coverage: {len(found_plugins)} expected plugins found: {found_plugins}")
+                                elif len(found_plugins) >= 5:
+                                    self.log_test("Clean Vibe - Plugin Coverage", False, 
+                                                f"⚠️ Good coverage: {len(found_plugins)} plugins found, missing: {missing_plugins}")
+                                else:
+                                    self.log_test("Clean Vibe - Plugin Coverage", False, 
+                                                f"❌ Poor coverage: Only {len(found_plugins)} expected plugins found")
+                                
+                                return overall_success
+                            else:
+                                self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", False, 
+                                            "Download URL returned non-ZIP content")
+                                return False
+                        else:
+                            self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", False, 
+                                        f"Download URL failed: {download_response.status_code}")
+                            return False
+                    else:
+                        self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", False, 
+                                    f"Missing response fields: {missing_fields}")
+                        return False
+                else:
+                    self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", False, 
+                                f"API returned success=false: {data.get('message')}")
+                    return False
+            else:
+                self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", False, 
+                            f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run complete test suite"""
         print(f"🚀 Starting Vocal Chain Assistant API Tests")
