@@ -3168,6 +3168,210 @@ class VocalChainAPITester:
             self.log_test("Comprehensive Individual Plugin Testing", False, f"Exception: {str(e)}")
             return False
 
+    def test_auto_chain_analyze_endpoint(self):
+        """Test Auto Vocal Chain /api/auto-chain/analyze endpoint with URL and file upload"""
+        try:
+            # Test 1: Analyze with provided audio URL
+            test_url = "https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav"
+            
+            request_data = {
+                "input_source": test_url
+            }
+            
+            print(f"\n🎵 Testing Auto Chain Analyze with URL: {test_url}")
+            response = requests.post(f"{self.api_url}/auto-chain/analyze", 
+                                   json=request_data, timeout=60)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    # Verify response structure
+                    required_fields = ["uuid", "analysis", "recommendations", "processing_time_s"]
+                    missing_fields = [field for field in required_fields if field not in data]
+                    
+                    if not missing_fields:
+                        analysis = data["analysis"]
+                        recommendations = data["recommendations"]
+                        processing_time = data["processing_time_s"]
+                        
+                        # Verify audio_features are present
+                        audio_features_present = False
+                        if isinstance(analysis, dict):
+                            # Check for expected audio analysis fields
+                            expected_audio_fields = ["tempo", "key", "loudness"]
+                            audio_features_present = any(field in analysis for field in expected_audio_fields)
+                        
+                        # Verify vocal_features are present  
+                        vocal_features_present = False
+                        if isinstance(analysis, dict):
+                            # Check for vocal-specific analysis
+                            expected_vocal_fields = ["dynamics", "timbre", "vocal"]
+                            vocal_features_present = any(field in analysis for field in expected_vocal_fields)
+                        
+                        # Verify recommendations include chain style
+                        chain_style_present = False
+                        if isinstance(recommendations, dict):
+                            chain_style_present = "chain_style" in recommendations
+                        
+                        if audio_features_present and vocal_features_present and chain_style_present:
+                            self.log_test("Auto Chain Analyze - URL", True, 
+                                        f"Analysis complete in {processing_time:.1f}s with audio & vocal features, chain style: {recommendations.get('chain_style', 'N/A')}")
+                        else:
+                            missing_features = []
+                            if not audio_features_present:
+                                missing_features.append("audio_features")
+                            if not vocal_features_present:
+                                missing_features.append("vocal_features")
+                            if not chain_style_present:
+                                missing_features.append("chain_style")
+                            
+                            self.log_test("Auto Chain Analyze - URL", False, 
+                                        f"Missing features: {', '.join(missing_features)}")
+                    else:
+                        self.log_test("Auto Chain Analyze - URL", False, 
+                                    f"Missing response fields: {missing_fields}")
+                else:
+                    self.log_test("Auto Chain Analyze - URL", False, 
+                                f"API returned success=false: {data.get('message', 'Unknown error')}")
+            else:
+                self.log_test("Auto Chain Analyze - URL", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+            
+            # Test 2: Analyze with file upload (using upload endpoint)
+            beat_file_path = self.create_test_audio_file(duration=5.0, frequency=440.0)
+            
+            if beat_file_path:
+                try:
+                    with open(beat_file_path, 'rb') as f:
+                        files = {'file': ('test_audio.wav', f, 'audio/wav')}
+                        data = {'chain_style': 'clean'}
+                        
+                        print(f"\n🎵 Testing Auto Chain with file upload...")
+                        response = requests.post(f"{self.api_url}/auto-chain/upload", 
+                                               files=files, data=data, timeout=60)
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        
+                        if result.get("success"):
+                            # Verify it's a complete auto chain response
+                            required_fields = ["uuid", "zip_url", "report", "files", "processing_time_s"]
+                            missing_fields = [field for field in required_fields if field not in result]
+                            
+                            if not missing_fields:
+                                zip_url = result["zip_url"]
+                                report = result["report"]
+                                files_info = result["files"]
+                                processing_time = result["processing_time_s"]
+                                
+                                # Verify report contains analysis
+                                analysis_in_report = False
+                                if isinstance(report, dict) and "analysis" in report:
+                                    analysis_in_report = True
+                                
+                                if analysis_in_report and zip_url and files_info:
+                                    self.log_test("Auto Chain Analyze - File Upload", True, 
+                                                f"Complete pipeline in {processing_time:.1f}s, ZIP: {zip_url}")
+                                else:
+                                    self.log_test("Auto Chain Analyze - File Upload", False, 
+                                                "Incomplete response data")
+                            else:
+                                self.log_test("Auto Chain Analyze - File Upload", False, 
+                                            f"Missing fields: {missing_fields}")
+                        else:
+                            self.log_test("Auto Chain Analyze - File Upload", False, 
+                                        f"Upload failed: {result.get('message', 'Unknown error')}")
+                    else:
+                        self.log_test("Auto Chain Analyze - File Upload", False, 
+                                    f"Status: {response.status_code}")
+                        
+                finally:
+                    # Cleanup
+                    if os.path.exists(beat_file_path):
+                        os.unlink(beat_file_path)
+            else:
+                self.log_test("Auto Chain Analyze - File Upload", False, 
+                            "Failed to create test audio file")
+                
+        except Exception as e:
+            self.log_test("Auto Chain Analyze Endpoint", False, f"Exception: {str(e)}")
+
+    def test_auto_chain_backend_readiness(self):
+        """Test if Auto Chain backend is ready for frontend integration"""
+        try:
+            # Test the analyze endpoint with the specific URL from the review request
+            test_url = "https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav"
+            
+            request_data = {
+                "input_source": test_url
+            }
+            
+            print(f"\n🎯 Testing Auto Chain Backend Readiness for Frontend Integration...")
+            response = requests.post(f"{self.api_url}/auto-chain/analyze", 
+                                   json=request_data, timeout=60)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    analysis = data.get("analysis", {})
+                    recommendations = data.get("recommendations", {})
+                    processing_time = data.get("processing_time_s", 0)
+                    
+                    # Check for required frontend integration fields
+                    readiness_checks = {
+                        "audio_features_present": False,
+                        "vocal_features_present": False, 
+                        "tempo_detected": False,
+                        "key_detected": False,
+                        "loudness_detected": False,
+                        "chain_recommendation": False,
+                        "processing_fast": processing_time < 30.0  # Should be under 30 seconds
+                    }
+                    
+                    # Check audio features
+                    if isinstance(analysis, dict):
+                        if any(field in analysis for field in ["tempo", "bpm"]):
+                            readiness_checks["tempo_detected"] = True
+                            readiness_checks["audio_features_present"] = True
+                        
+                        if any(field in analysis for field in ["key", "pitch"]):
+                            readiness_checks["key_detected"] = True
+                            readiness_checks["audio_features_present"] = True
+                        
+                        if any(field in analysis for field in ["loudness", "lufs", "rms"]):
+                            readiness_checks["loudness_detected"] = True
+                            readiness_checks["audio_features_present"] = True
+                        
+                        if any(field in analysis for field in ["dynamics", "timbre", "vocal"]):
+                            readiness_checks["vocal_features_present"] = True
+                    
+                    # Check recommendations
+                    if isinstance(recommendations, dict) and "chain_style" in recommendations:
+                        readiness_checks["chain_recommendation"] = True
+                    
+                    # Count successful checks
+                    passed_checks = sum(readiness_checks.values())
+                    total_checks = len(readiness_checks)
+                    
+                    if passed_checks >= 6:  # Most checks should pass
+                        self.log_test("Auto Chain Backend Readiness", True, 
+                                    f"✅ Ready for frontend integration! {passed_checks}/{total_checks} checks passed, processing: {processing_time:.1f}s")
+                    else:
+                        failed_checks = [check for check, passed in readiness_checks.items() if not passed]
+                        self.log_test("Auto Chain Backend Readiness", False, 
+                                    f"❌ Not ready: {passed_checks}/{total_checks} checks passed. Failed: {', '.join(failed_checks)}")
+                else:
+                    self.log_test("Auto Chain Backend Readiness", False, 
+                                f"Analysis failed: {data.get('message', 'Unknown error')}")
+            else:
+                self.log_test("Auto Chain Backend Readiness", False, 
+                            f"Endpoint not accessible: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Auto Chain Backend Readiness", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run complete test suite"""
         print(f"🚀 Starting Vocal Chain Assistant API Tests")
