@@ -390,6 +390,70 @@ def convert_parameters(backend_params, plugin_name=None):
         
         return converted
     
+    # MEqualizer uses parameter numbers from MEqualizer.map.json
+    elif plugin_name == "MEqualizer":
+        param_name_mapping = {
+            "mix": "0",                    # Mix
+            "output_gain": "1",            # Output_Gain
+            "band_1_enable": "3",          # Band_1_Enable
+            "band_1_frequency": "4",       # Band_1_Frequency
+            "band_1_gain": "5",            # Band_1_Gain
+            "band_1_q": "6",               # Band_1_Q
+            "band_1_type": "7",            # Band_1_Type
+            "band_2_enable": "10",         # Band_2_Enable
+            "band_2_frequency": "11",      # Band_2_Frequency
+            "band_2_gain": "12",           # Band_2_Gain
+            "band_2_q": "13",              # Band_2_Q
+            "band_2_type": "14",           # Band_2_Type
+            "band_3_enable": "17",         # Band_3_Enable
+            "band_3_frequency": "18",      # Band_3_Frequency
+            "band_3_gain": "19",           # Band_3_Gain
+            "band_3_q": "20",              # Band_3_Q
+            "band_3_type": "21",           # Band_3_Type
+            "band_4_enable": "24",         # Band_4_Enable
+            "band_4_frequency": "25",      # Band_4_Frequency
+            "band_4_gain": "26",           # Band_4_Gain
+            "band_4_q": "27",              # Band_4_Q
+            "band_4_type": "28"            # Band_4_Type
+        }
+        
+        for key, value in backend_params.items():
+            if key == "bypass":
+                continue
+                
+            mapped_name = param_name_mapping.get(key, key)
+            if mapped_name in param_name_mapping.values():
+                converted[mapped_name] = float(value)
+        
+        return converted
+    
+    # MCompressor uses parameter numbers from MCompressor.map.json  
+    elif plugin_name == "MCompressor":
+        param_name_mapping = {
+            "input_gain": "0",             # Input_Gain
+            "output_gain": "1",            # Output_Gain
+            "attack": "2",                 # Attack
+            "release": "3",                # Release
+            "rms_length": "4",             # RMS_Length
+            "threshold": "5",              # Threshold
+            "ratio": "6",                  # Ratio
+            "knee_mode": "7",              # Knee_Mode
+            "knee_size": "8",              # Knee_Size
+            "link_channels": "9",          # Link_Channels
+            "maximize_to_0db": "10",       # Maximize_To_0dB
+            "custom_shape": "11"           # Custom_Shape
+        }
+        
+        for key, value in backend_params.items():
+            if key == "bypass":
+                continue
+                
+            mapped_name = param_name_mapping.get(key, key)
+            if mapped_name in param_name_mapping.values():
+                converted[mapped_name] = float(value)
+        
+        return converted
+
     # Default conversion for other plugins
     else:
         for key, value in backend_params.items():
