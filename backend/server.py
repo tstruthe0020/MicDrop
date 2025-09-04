@@ -1141,7 +1141,7 @@ async def debug_routes():
             })
     return {"routes": routes}
 
-@api_router.post("/auto-chain-upload")
+@app.post("/api/auto-chain-upload")
 async def auto_chain_upload(audio_file: UploadFile = File(...)):
     """
     Simple Auto Chain file upload endpoint - analyze uploaded audio and return recommendations
