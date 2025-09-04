@@ -173,28 +173,39 @@ class PresetsBridge:
         """Convert TDR Nova dynamic EQ moves to parameters"""
         params = {
             'bypass': False,
-            'multiband_enabled': len(targets) > 0
+            'multiband_enabled': False
         }
         
-        # Set crossover frequencies for multiband
-        if len(targets) > 1:
-            params.update({
-                'crossover_1': 250,
-                'crossover_2': 2000,
-                'crossover_3': 6000
-            })
+        # Handle case where targets might be a dict instead of list
+        if isinstance(targets, dict):
+            if not targets.get('enabled', True):
+                params['bypass'] = True
+                return params
+            targets = [targets]
         
-        # Process dynamic bands
-        for i, band in enumerate(targets[:3]):  # Max 3 bands
-            band_num = i + 1
-            params.update({
-                f'band_{band_num}_threshold': band['threshold_db'],
-                f'band_{band_num}_ratio': band['ratio'],
-                # Additional TDR Nova specific parameters
-                f'bandActive_{band_num}': True,
-                f'bandDynActive_{band_num}': True,
-                f'bandGain_{band_num}': 0.0  # No static gain, just dynamics
-            })
+        # Only enable multiband if we have targets
+        if targets and len(targets) > 0:
+            params['multiband_enabled'] = True
+            
+            # Set crossover frequencies for multiband
+            if len(targets) > 1:
+                params.update({
+                    'crossover_1': 250,
+                    'crossover_2': 2000,
+                    'crossover_3': 6000
+                })
+            
+            # Process dynamic bands
+            for i, band in enumerate(targets[:3]):  # Max 3 bands
+                band_num = i + 1
+                params.update({
+                    f'band_{band_num}_threshold': band.get('threshold_db', -20),
+                    f'band_{band_num}_ratio': band.get('ratio', 2.0),
+                    # Additional TDR Nova specific parameters
+                    f'bandActive_{band_num}': True,
+                    f'bandDynActive_{band_num}': True,
+                    f'bandGain_{band_num}': 0.0  # No static gain, just dynamics
+                })
         
         return params
     
