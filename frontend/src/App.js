@@ -435,17 +435,7 @@ function App() {
   };
 
   // Auto Chain Functions
-  const handleAutoChainFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setAutoChainFile(file);
-      setAutoChainUrl(''); // Clear URL when file is uploaded
-      toast({ 
-        title: "Audio file uploaded", 
-        description: `${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)` 
-      });
-    }
-  };
+
 
   const handleAutoChainFileSelect = (e) => {
     const file = e.target.files[0];
