@@ -324,16 +324,14 @@ class PresetsBridge:
         }
     
     def _convert_convolution_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert professional MConvolutionEZ parameters"""
+        """Convert professional MConvolutionEZ parameters using actual parameter names"""
         return {
-            'bypass': False,
-            'impulse_type': targets.get('impulse_type', 'Plate'),
-            'decay': targets.get('decay', 1.5),
-            'pre_delay': targets.get('pre_delay', 25.0),
-            'low_cut': targets.get('low_cut', 250.0),
-            'high_cut': targets.get('hf_damping', 10000.0),
-            'mix': targets.get('mix', 0.12) * 100,  # Convert to percentage
-            'width': 1.0
+            'Dry_Wet': targets.get('mix', 0.12),  # Mix level (0-1)
+            'Widening': 1.0,  # Full stereo width
+            'High_Pass': targets.get('low_cut', 250.0),  # Low cut frequency
+            'Low_Pass': targets.get('hf_damping', 10000.0),  # High cut frequency  
+            'Predelay': targets.get('pre_delay', 25.0),  # Pre-delay in ms
+            'Normalize_IR': True  # Normalize impulse response
         }
 
     def _get_plugin_name(self, target_plugin: str) -> str:
