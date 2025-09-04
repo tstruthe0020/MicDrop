@@ -173,6 +173,143 @@ class PresetsBridge:
         logger.info(f"Generated {len(generated_files)} preset files")
         return generated_files
     
+    def _convert_professional_params(self, plugin_key: str, professional_targets: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert professional parameter mapping to plugin-specific parameters"""
+        
+        logger.info(f"🎯 Converting professional params for {plugin_key}: {professional_targets}")
+        
+        if plugin_key == 'Graillon 3':
+            return self._convert_graillon3_professional(professional_targets)
+        elif plugin_key == 'TDR Nova':
+            return self._convert_tdrnova_professional(professional_targets)
+        elif plugin_key == '1176 Compressor':
+            return self._convert_1176_professional(professional_targets)
+        elif plugin_key == 'LA-LA':
+            return self._convert_lala_professional(professional_targets)
+        elif plugin_key == 'Fresh Air':
+            return self._convert_fresh_air_professional(professional_targets)
+        elif plugin_key == 'MConvolutionEZ':
+            return self._convert_convolution_professional(professional_targets)
+        elif plugin_key == 'MEqualizer':
+            # For now, use a simple EQ setup - can be enhanced later
+            return {
+                'bypass': False,
+                'high_pass_enabled': True,
+                'high_pass_freq': 100.0,
+                'high_pass_q': 0.7
+            }
+        else:
+            logger.warning(f"Unknown professional plugin: {plugin_key}")
+            return {}
+    
+    def _convert_graillon3_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert professional Graillon 3 parameters"""
+        return {
+            'pitch_shift': 0.0,  # Will be controlled by key/scale
+            'correction_amount': targets.get('correction_amount', 0.4),
+            'correction_speed': targets.get('correction_speed', 20.0),
+            'key': targets.get('key', 'C'),
+            'scale': targets.get('scale_mask', 'Chromatic'),
+            'mix': 100.0
+        }
+    
+    def _convert_tdrnova_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert professional TDR Nova parameters"""
+        params = {
+            'bypass': False,
+            'multiband_enabled': targets.get('multiband_enabled', True)
+        }
+        
+        # HPF
+        if 'hpf_freq' in targets:
+            params.update({
+                'crossover_1': targets['hpf_freq'],
+                'band_1_enabled': True
+            })
+        
+        # Mud dip (band 2)
+        if 'mud_center' in targets and 'mud_gain' in targets:
+            params.update({
+                'crossover_2': targets['mud_center'],
+                'band_2_threshold': targets['mud_gain'] + 10,  # Convert gain to threshold
+                'band_2_ratio': 3.0,
+                'band_2_enabled': True
+            })
+        
+        # De-esser (band 4)  
+        if 'deess_center' in targets and 'deess_threshold' in targets:
+            params.update({
+                'crossover_3': targets['deess_center'],
+                'band_4_threshold': targets['deess_threshold'],
+                'band_4_ratio': targets.get('deess_ratio', 2.5),
+                'band_4_enabled': True
+            })
+        
+        return params
+    
+    def _convert_1176_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert professional 1176 Compressor parameters"""
+        
+        # Convert string ratios to parameter values
+        ratio_map = {
+            '4:1': 1.0,
+            '8:1': 2.0,
+            '12:1': 3.0,
+            '20:1': 4.0
+        }
+        
+        # Convert attack/release strings
+        attack_map = {
+            'Fast': 1.0,
+            'Medium': 5.0,
+            'Slow': 10.0
+        }
+        
+        release_map = {
+            'Fast': 40.0,
+            'Medium': 100.0,
+            'Slow': 200.0
+        }
+        
+        return {
+            'input_gain': 5.0,
+            'output_gain': 3.0,
+            'ratio': targets.get('ratio', '4:1'),
+            'attack': targets.get('attack', 'Medium'),
+            'release': targets.get('release', 'Medium'),
+            'all_buttons': False
+        }
+    
+    def _convert_lala_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert professional LA-LA parameters"""
+        return {
+            'target_level': -12.0,  # Standard target level
+            'dynamics': targets.get('peak_reduction', 0.25) * 100,  # Convert to percentage
+            'fast_release': False,
+            'mode': targets.get('mode', 'Normal')
+        }
+    
+    def _convert_fresh_air_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert professional Fresh Air parameters"""
+        return {
+            'presence': targets.get('mid_air', 0.2) * 100,   # Convert to percentage
+            'brilliance': targets.get('high_air', 0.3) * 100, # Convert to percentage
+            'mix': targets.get('mix', 1.0) * 100              # Convert to percentage
+        }
+    
+    def _convert_convolution_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert professional MConvolutionEZ parameters"""
+        return {
+            'bypass': False,
+            'impulse_type': targets.get('impulse_type', 'Plate'),
+            'decay': targets.get('decay', 1.5),
+            'pre_delay': targets.get('pre_delay', 25.0),
+            'low_cut': targets.get('low_cut', 250.0),
+            'high_cut': targets.get('hf_damping', 10000.0),
+            'mix': targets.get('mix', 0.12) * 100,  # Convert to percentage
+            'width': 1.0
+        }
+
     def _get_plugin_name(self, target_plugin: str) -> str:
         """Map target plugin names to actual plugin names"""
         mapping = {
