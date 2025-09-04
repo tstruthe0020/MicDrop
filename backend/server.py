@@ -1184,16 +1184,16 @@ async def auto_chain_upload(audio_file: UploadFile = File(...)):
             
             # Loudness (RMS as proxy)
             rms = librosa.feature.rms(y=y)[0]
-            avg_rms = np.mean(rms)
+            avg_rms = float(np.mean(rms))
             lufs_estimate = 20 * np.log10(avg_rms) - 10 if avg_rms > 0 else -60
             
             # Dynamics (crest factor)
-            peak = np.max(np.abs(y))
+            peak = float(np.max(np.abs(y)))
             crest_factor = 20 * np.log10(peak / avg_rms) if avg_rms > 0 else 20
             
             # Mock vocal detection
             spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
-            vocal_present = np.mean(spectral_centroid) > 2000  # Simple heuristic
+            vocal_present = float(np.mean(spectral_centroid)) > 2000  # Simple heuristic
             
             analysis = {
                 "bpm": float(tempo),
