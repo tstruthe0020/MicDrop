@@ -191,13 +191,9 @@ class PresetsBridge:
         elif plugin_key == 'MConvolutionEZ':
             return self._convert_convolution_professional(professional_targets)
         elif plugin_key == 'MEqualizer':
-            # For now, use a simple EQ setup - can be enhanced later
-            return {
-                'bypass': False,
-                'high_pass_enabled': True,
-                'high_pass_freq': 100.0,
-                'high_pass_q': 0.7
-            }
+            return self._convert_mequalizer_professional(professional_targets)
+        elif plugin_key == 'MCompressor':
+            return self._convert_mcompressor_professional(professional_targets)
         else:
             logger.warning(f"Unknown professional plugin: {plugin_key}")
             return {}
