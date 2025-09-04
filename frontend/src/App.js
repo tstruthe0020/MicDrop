@@ -1163,7 +1163,7 @@ function App() {
                   <Alert>
                     <Upload className="h-4 w-4" />
                     <AlertDescription>
-                      Provide an audio URL or upload a file to begin AI-powered analysis
+                      Upload an audio file to begin AI-powered analysis and intelligent vocal chain generation
                     </AlertDescription>
                   </Alert>
                 )}
