@@ -520,10 +520,10 @@ function App() {
       };
 
       console.log('🎯 DEBUG: About to call URL analysis endpoint');
-      console.log('🎯 DEBUG: URL:', `${BACKEND_URL}/api/auto-chain-url`);
+      console.log('🎯 DEBUG: URL:', `${BACKEND_URL}/api/auto-chain/analyze`);
       console.log('🎯 DEBUG: Audio URL:', autoChainUrl.trim());
       
-      const response = await fetch(`${BACKEND_URL}/api/auto-chain-url`, {
+      const response = await fetch(`${BACKEND_URL}/api/auto-chain/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
