@@ -105,6 +105,20 @@
 user_problem_statement: "Please use ask_human tool and confirm your plan now. Perfect analysis! Here's the direction to proceed: Phase 1: Frontend Integration (Priority #1) - Create a new 'Auto Chain' tab in the existing interface (alongside Upload, Process, Results, Config tabs). Build components for Audio URL input field, File upload option as backup, Real-time analysis display showing BPM, key, loudness, vocal characteristics, Chain style recommendation with explanation, Download interface for generated presets. Focus on showcasing the AI analysis and recommendations using the working /analyze endpoint."
 
 backend:
+  - task: "Fix Professional Parameter Mapping and Auto Chain Endpoint Registration"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "CRITICAL ROUTING ISSUE IDENTIFIED: Auto chain routes `/api/auto-chain/generate` and `/api/auto-chain/analyze` were returning 404 due to router inclusion order. The `api_router.include_router(auto_chain_router)` was happening AFTER `app.include_router(api_router)`, so the sub-router routes were not being registered in the main app's routing table. Also, `professional_params` key was missing from targets being passed to `presets_bridge.py`."
+        - working: true
+        - agent: "main"
+        - comment: "✅ CRITICAL FIX COMPLETE! Fixed router inclusion order by moving `api_router.include_router(auto_chain_router, prefix='/auto-chain')` BEFORE `app.include_router(api_router)`. This ensures auto-chain routes are registered in the main app. Verified endpoints are now accessible: `/api/auto-chain/analyze` and `/api/auto-chain/generate` return proper errors instead of 404. Added comprehensive debug logging to track router registration. The professional parameter mapping system should now work correctly with proper route access."
   - task: "Auto Vocal Chain Pipeline Backend Development"
     implemented: true
     working: true
