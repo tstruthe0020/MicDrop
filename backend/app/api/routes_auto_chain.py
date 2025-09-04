@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any, Union
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from ..core.config import settings
