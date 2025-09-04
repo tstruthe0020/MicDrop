@@ -2825,12 +2825,53 @@ class VocalChainAPITester:
             
             return False
 
+    def run_enhanced_swift_cli_debugging_tests(self):
+        """Run enhanced Swift CLI debugging tests as requested in the review"""
+        print("🔍 Starting Enhanced Swift CLI Debugging Tests...")
+        print(f"Testing against: {self.api_url}")
+        print("=" * 80)
+        
+        # Test 1: Individual plugin testing for all 9 plugins
+        self.test_enhanced_swift_cli_debugging_all_plugins()
+        
+        # Test 2: Vocal chain generation with debugging
+        self.test_vocal_chain_generation_with_debugging()
+        
+        # Test 3: Enhanced ZIP packaging features
+        self.test_enhanced_zip_packaging_features()
+        
+        # Print summary focused on debugging results
+        print("\n" + "=" * 80)
+        print("🎯 ENHANCED SWIFT CLI DEBUGGING SUMMARY")
+        print("=" * 80)
+        
+        success_rate = (self.tests_passed / self.tests_run) * 100 if self.tests_run > 0 else 0
+        
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {success_rate:.1f}%")
+        
+        # Focus on debugging insights
+        print("\n🔍 DEBUGGING INSIGHTS:")
+        print("This test captured comprehensive Swift CLI debugging information")
+        print("for all 9 plugins to identify patterns in successful vs failing plugins.")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed": self.tests_passed,
+            "failed": self.tests_run - self.tests_passed,
+            "success_rate": success_rate,
+            "test_results": self.test_results
+        }
+
 def main():
     """Main test execution"""
     tester = VocalChainAPITester()
     
     try:
-        success = tester.run_all_tests()
+        # Run the enhanced Swift CLI debugging tests as requested in the review
+        success = tester.run_enhanced_swift_cli_debugging_tests()
         return 0 if success else 1
         
     except KeyboardInterrupt:
