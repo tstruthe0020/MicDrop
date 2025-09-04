@@ -366,8 +366,9 @@ def recommend_chain(analysis: Analysis) -> Targets:
 def _determine_chain_style_professional(analysis: Analysis) -> str:
     """Determine the best chain archetype based on enhanced professional analysis"""
     
-    audio_features = analysis.audio_features
-    vocal_features = analysis.vocal_features
+    # Analysis is a dictionary, not an object with attributes
+    audio_features = analysis  # The analysis dict contains all the audio features
+    vocal_features = analysis.get('vocal', {})  # Vocal features are nested under 'vocal' key
     
     # Extract enhanced metrics
     bpm = audio_features.get('bpm', 120.0)
