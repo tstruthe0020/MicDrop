@@ -603,13 +603,22 @@ function App() {
         headroom_db: 6.0
       };
 
+      console.log('🎯 DEBUG: Making auto-chain request:', requestBody);
+      console.log('🎯 DEBUG: Backend URL:', BACKEND_URL);
+      console.log('🎯 DEBUG: Full URL:', `${BACKEND_URL}/api/auto-chain/generate`);
+
       const response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
       });
 
+      console.log('🎯 DEBUG: Response status:', response.status);
+      console.log('🎯 DEBUG: Response ok:', response.ok);
+      console.log('🎯 DEBUG: Response headers:', [...response.headers.entries()]);
+
       const result = await response.json();
+      console.log('🎯 DEBUG: Response result:', result);
       
       if (result.success) {
         // Trigger download of the ZIP file
