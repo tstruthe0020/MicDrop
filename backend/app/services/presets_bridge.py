@@ -104,7 +104,18 @@ class PresetsBridge:
     def _convert_targets_to_params(self, plugin: str, target_config: Dict[str, Any]) -> Dict[str, Any]:
         """Convert recommendation targets to plugin-specific parameters"""
         
-        if not target_config.get('enabled', True):
+        # Handle different target_config types
+        if isinstance(target_config, list):
+            # For plugins that return lists (like MEqualizer, TDRNova)
+            if not target_config:  # Empty list means disabled
+                return {}
+        elif isinstance(target_config, dict):
+            # For plugins that return dicts, check enabled flag
+            if not target_config.get('enabled', True):
+                return {}
+        else:
+            # Unexpected type
+            logger.warning(f"Unexpected target_config type for {plugin}: {type(target_config)}")
             return {}
         
         try:
