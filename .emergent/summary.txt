@@ -1,60 +1,64 @@
 <analysis>
-The previous AI engineer successfully debugged the core Audio Unit preset generation system, fixing manufacturer directory mismatches and ensuring all nine plugins generated presets. The current work focused on building the Auto Vocal Chain pipeline, involving new backend services for audio analysis and parameter recommendation, and subsequent frontend integration.
+The trajectory details a complex debugging journey from an initial MVP to a fully functional Auto Vocal Chain feature. The previous AI engineer initially resolved core Audio Unit preset generation issues. My work began with fixing critical FastAPI routing problems (specifically, the  endpoint returning 404s due to incorrect router inclusion order and a  directory permission issue, which was resolved by switching to ).
 
-Key challenges during this phase included resolving  import issues, persistent FastAPI routing errors for  and  (despite multiple fixes), a  formatting error in audio analysis, and a React rendering issue on the frontend. While comprehensive audio analysis and advanced parameter *calculation* logic (Phase 1 & 2) have been implemented, the system is failing to correctly *apply* these calculated parameters to most plugins during preset generation. Specifically, the  endpoint returns a 404, and the log shows a fallback to legacy/default parameters for most plugins, with only TDR Nova and 1176 Compressor parameters seemingly applying. Fresh Air also fails to generate. The current task is to ensure the calculated professional parameters are correctly mapped and utilized by the preset generator.
+Subsequently, the focus shifted to the frontend, which was also incorrectly calling the backend. After resolving initial frontend UI and endpoint issues, the user revealed they were running the application locally, causing environment variable caching and local backend 404s despite the external backend working. The decision was made to enhance the Python fallback mechanism for local development and consolidate frontend logic for URL and file uploads into a single unified flow.
+
+The persistent problem then became parameter application within generated presets. Initial attempts to fix this by adding missing plugins (MEqualizer, MCompressor) and using exact parameter names from  files proved insufficient. Diagnostic logging revealed that the Swift CLI for preset generation was not working in the container, forcing a fallback to a Python method that initially just copied seed files. Even after fixing the Python fallback to use , most plugins still failed to apply parameters correctly. The final root cause identified from detailed backend logs is a pervasive mismatch: the Python backend's parameter conversion logic is still using human-readable names where the Swift CLI (or its Python fallback via ) expects numeric indices or specific, exact parameter keys from the  files. While TDR Nova and 1176 Compressor show some success due to their specific parameter handling, other plugins are failing silently, applying zero parameters.
 </analysis>
 
 <product_requirements>
-The initial product goal was a Vocal Chain Assistant generating production-ready Audio Unit (AU) presets for Logic Pro for nine specific plugins, addressing inert preset issues and providing a downloadable ZIP. This was achieved.
-
-The current, ongoing requirement is to implement an Auto Vocal Chain pipeline. This automates vocal chain creation by:
-1. Downloading or uploading audio.
-2. Performing advanced audio analysis (BPM, key, LUFS, spectral tilt, low-end dominance, brightness, transient density, vocal F0, sibilance, mud, nasal, plosives, dynamic spread).
-3. Recommending a chain archetype and concrete, professional-grade parameters for all 9 plugins based on detailed mapping rules (Graillon 3, TDR Nova, 1176, LA-LA, Fresh Air, MConvolutionEZ).
-4. Generating  files and a .
-5. Returning a ZIP file with presets and report.
-This pipeline exposes  and  endpoints, with a performance target of < 10s for 3-min tracks. The system also requires genre presets, inter-stage gain matching, hard caps on parameters, and rationales for recommendations.
+The initial product, a Vocal Chain Assistant, generated production-ready Audio Unit (AU) presets for Logic Pro for nine specific plugins, solving inert preset issues. The current, ongoing objective is to build an Auto Vocal Chain pipeline. This pipeline should automate vocal chain creation by allowing users to upload or provide an audio URL, performing advanced audio analysis (e.g., BPM, key, LUFS, spectral tilt, vocal F0, sibilance). Based on this analysis, it should recommend a chain archetype and concrete, professional-grade parameters for all nine plugins (Graillon 3, TDR Nova, 1176, LA-LA, Fresh Air, MConvolutionEZ, MEqualizer, MCompressor) using detailed mapping rules. Finally, it must generate  files and a , packaging these into a downloadable ZIP file. Key non-functional requirements include backend API routes prefixed with , a performance target of less than 10 seconds for 3-minute tracks, genre presets, inter-stage gain matching, hard caps on parameters, and rationales for recommendations.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full-stack Architecture**: React (frontend), FastAPI (backend), MongoDB (database).
-- **Audio Unit (AU) Preset Generation**: Swift CLI (), Hybrid XML Injection.
-- **Audio Analysis Libraries**: librosa, numpy, scipy, pyloudnorm, soundfile, ffmpeg-python, yt-dlp.
-- **Data Validation**: Pydantic for models and settings.
-- **Modular Backend Services**: Dedicated services for pipeline steps.
+-   **Full-stack Architecture**: React (frontend), FastAPI (backend), MongoDB (database).
+-   **Audio Unit (AU) Preset Generation**: Swift CLI (), Hybrid XML Injection, Python fallback ().
+-   **Audio Analysis Libraries**: librosa, numpy, scipy, pyloudnorm, soundfile, ffmpeg-python, yt-dlp.
+-   **Data Validation**: Pydantic for models and settings.
+-   **Modular Backend Services**: Dedicated services for pipeline steps (analyze, recommend, presets_bridge, report, zipper).
+-   **Containerization**: Kubernetes environment.
 </key_technical_concepts>
 
 <code_architecture>
 
-- ****: Main FastAPI application.
-    - **Changes**: Integrated , added  endpoint, and middleware for debugging.
-- ****: Python interface for Swift CLI.
-    - **Changes**:  updated for MCompressor () and Fresh Air (), and logic for finding preset files adjusted.
-- ****: Defines new FastAPI endpoints.
-    - **Changes**: Modified router prefix handling multiple times (initially , then removed, now subject to debug).
-- ****: Audio feature extraction.
-    - **Changes**: Enhanced with detailed spectral, dynamic, and vocal analysis parameters.
-- ****: Logic for recommending chain archetypes and parameters.
-    - **Changes**: Implemented comprehensive professional parameter calculation logic (Phase 1 & 2 of user's request).
-- ****: Adapts recommended targets to existing preset generator.
-    - **Changes**: Added a new  method and updated to use exact plugin parameter names from  files for Graillon 3, 1176, LA-LA, Fresh Air, MConvolutionEZ, and TDR Nova.
-- ****: Main React component.
-    - **Changes**: Added new 🎵 Auto Chain tab, UI for file upload, and display of enhanced analysis results. Fixed React rendering error for key display.
-- ****: JSON files for parameter mappings.
-    - **Importance**: Provides the exact parameter names for each plugin, crucial for correct parameter application. These were consulted to fix parameter mapping.
+-   ****: Main FastAPI application.
+    -   **Importance**: Orchestrates API routes and core logic.
+    -   **Changes**: Router inclusion order fixed for auto-chain routes. Added specific debug logging, and enhanced parameter conversion logic within the fallback system using numeric indices from  for 1176 Compressor, Graillon 3, LA-LA, MEqualizer, and MCompressor.
+-   ****: Python interface for the Swift CLI.
+    -   **Importance**: Handles the actual generation of  files.
+    -   **Changes**: Updated  for various plugins. The internal logic was examined to understand the Swift CLI vs. Python fallback behavior, confirming the Python fallback was initially just copying seeds without parameter injection when Swift CLI was unavailable.
+-   ****: Defines new FastAPI endpoints for the Auto Vocal Chain.
+    -   **Importance**: Exposes , , and .
+    -   **Changes**: Fixed output directory from  to . Added a dedicated download endpoint for auto-chain generated ZIPs.
+-   ****: Audio feature extraction.
+    -   **Importance**: Performs detailed audio analysis.
+    -   **Changes**: Enhanced with detailed spectral, dynamic, and vocal analysis parameters.
+-   ****: Logic for recommending chain archetypes and parameters.
+    -   **Importance**: Generates professional parameters based on analysis.
+    -   **Changes**: Implemented comprehensive professional parameter calculation. Added missing parameter generation for MEqualizer and MCompressor. Updated  for a simplified 4-plugin chain using only TDR Nova and 1176 Compressor instances.
+-   ****: Adapts recommended targets to existing preset generator.
+    -   **Importance**: Bridges analysis recommendations with preset generation.
+    -   **Changes**: Added  and updated to use exact plugin parameter names from . Added specific conversion logic for MEqualizer and MCompressor.
+-   ****: Main React component.
+    -   **Importance**: User interface for the Auto Vocal Chain.
+    -   **Changes**: Added 🎵 Auto Chain tab, UI for file upload, and display of analysis results. Fixed React rendering errors. Consolidated file upload and URL input into one unified analysis function, updating UI to reflect this. Hardcoded  for local development. Added extensive debug logging and increased fetch timeouts.
+-   ****: JSON files for parameter mappings.
+    -   **Importance**: Crucial for correct parameter application by providing exact parameter names/indices for each plugin. These were consulted to fix parameter mapping and identify the numeric/string parameter key mismatch.
 </code_architecture>
 
 <pending_tasks>
-- Debug and resolve why the professional parameter mapping is not being applied for all plugins, leading to default/legacy parameters for some (MEqualizer, Graillon 3, LA-LA, MConvolutionEZ, Fresh Air failure).
-- Ensure the  endpoint is correctly registered and accessible (it returned 404 in the latest logs).
+-   Fix parameter name mapping in the backend's  function (in 's fallback system and potentially 's professional system) to use numeric indices from  files for all plugins that expect them, instead of human-readable names, for MEqualizer, Fresh Air, Graillon 3, MCompressor, MConvolutionEZ, and LA-LA's .
+-   Verify each plugin individually after mapping fixes to ensure parameters are applied correctly.
 </pending_tasks>
 
 <current_work>
-The AI engineer has successfully integrated an Auto Vocal Chain tab into the frontend (), allowing users to upload audio files. The backend now performs detailed audio analysis (BPM, key, LUFS, spectral tilt, vocal F0, sibilance, etc.) via the  endpoint and displays these results on the frontend. The system also calculates professional parameters for multiple plugins (Graillon 3, TDR Nova, 1176, LA-LA, Fresh Air, MConvolutionEZ) based on the analysis. Manufacturer directory issues for MCompressor and Fresh Air were resolved, allowing their presets to be found.
+Currently, the Auto Vocal Chain feature has a unified frontend allowing both URL and file audio input. The backend successfully processes audio, performs advanced analysis, and generates professional parameter recommendations. The system is configured to use the professional parameter generation path. However, when the frontend attempts to call the  endpoint on the user's local backend, it consistently receives a 404 error, causing a fallback to a legacy preset generation path within .
 
-However, despite these parameter calculations and mapping updates in , only TDR Nova and 1176 Compressor currently show correct parameter application. The core issue, identified in the latest log, is that the  key is missing from the targets being passed to the , causing the system to fall back to legacy/default processing for other plugins. The  endpoint also consistently returns a 404, preventing the full auto-chain generation pipeline from being correctly invoked. Fresh Air plugin generation is failing with return code -6.
+Despite the fallback, detailed backend logs reveal that this legacy path now attempts to use PROFESSIONAL parameter generation with the recently introduced 4-plugin chain (TDR Nova and 1176 Compressor instances) that was intended to simplify the working set. However, the  function subsequently processes 7 or 8 plugins (MEqualizer, TDR Nova, MCompressor, MEqualizer, Fresh Air, LA-LA, MConvolutionEZ, Graillon 3), indicating a discrepancy between the intended optimized chain and what is actually being processed in the fallback.
+
+Crucially, the backend logs show that while 1176 Compressor and TDR Nova successfully apply a number of parameters, MEqualizer, MCompressor, Fresh Air, Graillon 3, LA-LA, and MConvolutionEZ are largely failing to apply parameters, with the Swift CLI logging Warning: Parameter not found for the human-readable parameter names being passed. This confirms that the core issue is an ongoing mismatch between the parameter keys expected by the underlying AU preset generator (numeric IDs or specific strings from ) and the parameter names generated by the Python backend's conversion logic. The generated  files for these problematic plugins are either small (e.g., 894 bytes for MCompressor, 1157 bytes for MEqualizer) or, in the case of Fresh Air, only partially successful (1/3 parameters applied).
 </current_work>
 
 <optional_next_step>
-Debug why the  are not being correctly generated and passed to , and why  returns 404.
+Fix parameter name mapping in  to use numeric indices from  files.
 </optional_next_step>
