@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 class ComprehensiveTDRNovaTest:
-    def __init__(self, base_url="https://swift-preset-gen.preview.emergentagent.com"):
+    def __init__(self, base_url="https://mixmaster-32.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
