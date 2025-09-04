@@ -38,6 +38,9 @@ class AUPresetGenerator:
         else:
             self.seeds_dir = self._detect_seeds_dir()
             
+        # Detect maps directory
+        self.maps_dir = self._detect_maps_dir()
+            
         # Configure Logic Pro preset directories
         self.logic_preset_dirs = self._get_logic_preset_dirs()
         
@@ -49,6 +52,7 @@ class AUPresetGenerator:
         logger.info(f"  Container: {self.is_container}")
         logger.info(f"  Swift CLI: {self.aupresetgen_path}")
         logger.info(f"  Seeds dir: {self.seeds_dir}")
+        logger.info(f"  Maps dir: {self.maps_dir}")
         logger.info(f"  Logic dirs: {self.logic_preset_dirs}")
         logger.info(f"  Plugin paths: {len(self.plugin_paths)} configured")
         
