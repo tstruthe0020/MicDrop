@@ -359,7 +359,7 @@ def convert_parameters(backend_params, plugin_name=None):
         
         return converted
         
-    # LA-LA uses gain and dynamics parameters
+    # LA-LA uses numeric parameter indices from LALA.map.json
     elif plugin_name == "LA-LA":
         # Use parameter numbers from LALA.map.json
         param_name_mapping = {
@@ -374,20 +374,20 @@ def convert_parameters(backend_params, plugin_name=None):
             if key == "bypass":
                 continue
                 
-            mapped_name = param_name_mapping.get(key, key.title())
-            
-            # Convert parameter values
-            if key == "target_level":
-                # Target level in dB, normalize to 0.0-1.0 range
-                converted[mapped_name] = max(0.0, min(1.0, (float(value) + 20) / 40.0))
-            elif key == "dynamics":
-                # Dynamics percentage
-                converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
-            elif key == "fast_release":
-                # Boolean for fast release mode
-                converted[mapped_name] = 1.0 if value else 0.0
-            else:
-                converted[mapped_name] = float(value)
+            mapped_name = param_name_mapping.get(key, key)
+            if mapped_name in param_name_mapping.values():
+                # Convert parameter values
+                if key == "target_level":
+                    # Target level in dB, normalize to 0.0-1.0 range
+                    converted[mapped_name] = max(0.0, min(1.0, (float(value) + 20) / 40.0))
+                elif key == "dynamics":
+                    # Dynamics percentage
+                    converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+                elif key == "fast_release":
+                    # Boolean for fast release mode
+                    converted[mapped_name] = 1.0 if value else 0.0
+                else:
+                    converted[mapped_name] = float(value)
         
         return converted
     
