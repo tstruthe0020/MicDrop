@@ -698,10 +698,14 @@ function App() {
         console.error('🎯 DEBUG: This appears to be a network/fetch error');
       }
       
-      // Fallback to existing preset generation system
+      if (error.name === 'AbortError') {
+        console.error('🎯 DEBUG: Request was aborted (likely timeout)');
+      }
+      
+      // Show the actual error in the fallback message
       toast({
-        title: "Using Fallback System",
-        description: `Auto Chain endpoint error: ${error.message}. Using existing preset system.`,
+        title: "Using Fallback System", 
+        description: `Auto Chain error: ${error.name}: ${error.message}. Using existing system.`,
         variant: "default"
       });
       
