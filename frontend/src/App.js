@@ -702,12 +702,66 @@ function App() {
         console.error('🎯 DEBUG: Request was aborted (likely timeout)');
       }
       
-      // Show the actual error in the fallback message
-      toast({
-        title: "Using Fallback System", 
-        description: `Auto Chain error: ${error.name}: ${error.message}. Using existing system.`,
-        variant: "default"
-      });
+      // Fallback to existing preset generation system WITH professional parameters
+      console.log('🎯 DEBUG: Using fallback system - but with professional parameters');
+      
+      // Use the analysis and recommendations we already have
+      if (autoChainAnalysis && autoChainRecommendation) {
+        try {
+          console.log('🎯 DEBUG: Calling legacy system with professional recommendations');
+          
+          // Call the legacy preset generation with our professional analysis
+          const legacyResponse = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              targets: {
+                // Use the analysis and recommendation data we have
+                bpm: autoChainAnalysis.bpm,
+                key: autoChainAnalysis.key?.tonic || 'C',
+                lufs: autoChainAnalysis.lufs_i,
+                vibe: autoChainRecommendation.archetype,
+                presetName: autoChainPresetName
+              }
+            })
+          });
+          
+          if (legacyResponse.ok) {
+            const legacyResult = await legacyResponse.json();
+            
+            // Trigger download
+            if (legacyResult.downloadUrl) {
+              const link = document.createElement('a');
+              link.href = `${BACKEND_URL}${legacyResult.downloadUrl}`;
+              link.download = `vocal_chain_${autoChainRecommendation.archetype}.zip`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+            
+            toast({
+              title: "✅ Professional Presets Generated!",
+              description: `Generated ${autoChainRecommendation.archetype} vocal chain using professional analysis (fallback system)`,
+              className: "border-green-200 bg-green-50"
+            });
+          } else {
+            throw new Error('Legacy system also failed');
+          }
+        } catch (fallbackError) {
+          console.error('🎯 DEBUG: Fallback system error:', fallbackError);
+          toast({
+            title: "Generation Failed",
+            description: `Both Auto Chain and fallback systems failed: ${error.name}: ${error.message}`,
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "Analysis Required",
+          description: "Please analyze audio first before generating presets",
+          variant: "destructive"
+        });
+      }
       
       try {
         // Use existing system as fallback
