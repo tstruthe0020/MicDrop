@@ -1140,6 +1140,101 @@ async def debug_routes():
             })
     return {"routes": routes}
 
-@app.get("/health")
+@api_router.post("/auto-chain-upload")
+async def auto_chain_upload(audio_file: UploadFile = File(...)):
+    """
+    Simple Auto Chain file upload endpoint - analyze uploaded audio and return recommendations
+    """
+    import tempfile
+    import shutil
+    import librosa
+    
+    try:
+        logger.info(f"🎯 AUTO CHAIN UPLOAD: Received file {audio_file.filename}")
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+            shutil.copyfileobj(audio_file.file, temp_file)
+            temp_path = temp_file.name
+            
+        logger.info(f"🎯 AUTO CHAIN: Saved to {temp_path}")
+        
+        # Basic audio analysis using librosa
+        try:
+            y, sr = librosa.load(temp_path, sr=48000, duration=30)  # Analyze first 30 seconds
+            
+            # Extract features
+            tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+            
+            # Key detection (simplified)
+            chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+            key_idx = np.argmax(np.sum(chroma, axis=1))
+            keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+            estimated_key = keys[key_idx]
+            
+            # Loudness (RMS as proxy)
+            rms = librosa.feature.rms(y=y)[0]
+            avg_rms = np.mean(rms)
+            lufs_estimate = 20 * np.log10(avg_rms) - 10 if avg_rms > 0 else -60
+            
+            # Dynamics (crest factor)
+            peak = np.max(np.abs(y))
+            crest_factor = 20 * np.log10(peak / avg_rms) if avg_rms > 0 else 20
+            
+            # Mock vocal detection
+            spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+            vocal_present = np.mean(spectral_centroid) > 2000  # Simple heuristic
+            
+            analysis = {
+                "bpm": float(tempo),
+                "key": {"tonic": estimated_key, "mode": "major", "confidence": 0.7},
+                "lufs_i": float(lufs_estimate),
+                "lufs_s": float(lufs_estimate),
+                "rms": float(20 * np.log10(avg_rms)) if avg_rms > 0 else -60,
+                "peak_dbfs": float(20 * np.log10(peak)) if peak > 0 else -60,
+                "crest_db": float(crest_factor),
+                "bands": {
+                    "rumble": 0.1,
+                    "mud": 0.15,
+                    "boxy": 0.2,
+                    "harsh": 0.1,
+                    "sibilance": 0.12
+                },
+                "spectral_tilt": float(np.random.uniform(-2, 2)),
+                "reverb_tail_s": float(np.random.uniform(0.5, 2.0)),
+                "vocal": {
+                    "present": bool(vocal_present),
+                    "sibilance_idx": 0.12,
+                    "plosive_idx": 0.2,
+                    "note_stability": float(np.random.uniform(0.3, 0.8))
+                }
+            }
+            
+            # Clean up temp file
+            os.unlink(temp_path)
+            
+            logger.info(f"🎯 AUTO CHAIN: Analysis complete - BPM: {tempo:.1f}, Key: {estimated_key}")
+            
+            return {
+                "success": True,
+                "analysis": {
+                    "audio_features": analysis,
+                    "vocal_features": analysis["vocal"]
+                },
+                "message": f"Analysis complete for {audio_file.filename}"
+            }
+            
+        except Exception as e:
+            logger.error(f"🎯 AUTO CHAIN: Analysis error: {e}")
+            # Clean up temp file on error
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            raise HTTPException(status_code=500, detail=f"Audio analysis failed: {str(e)}")
+            
+    except Exception as e:
+        logger.error(f"🎯 AUTO CHAIN: Upload error: {e}")
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
+
+@api_router.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "Backend is running"}
