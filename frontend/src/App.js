@@ -688,7 +688,7 @@ function App() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="w-4 h-4" />
               Upload & Configure
@@ -696,6 +696,10 @@ function App() {
             <TabsTrigger value="process" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Process
+            </TabsTrigger>
+            <TabsTrigger value="auto-chain" className="flex items-center gap-2">
+              <Music className="w-4 h-4" />
+              🎵 Auto Chain
             </TabsTrigger>
             <TabsTrigger value="results" className="flex items-center gap-2" disabled={!features}>
               <Download className="w-4 h-4" />
