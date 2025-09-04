@@ -470,13 +470,23 @@ function App() {
           input_source: autoChainUrl.trim()
         };
         
-        const response = await fetch(`${BACKEND_URL}/api/auto-chain/analyze`, {
+        const analyzeUrl = `${BACKEND_URL}/api/auto-chain/analyze`;
+        console.log('🎯 DEBUG: About to call analyze endpoint');
+        console.log('🎯 DEBUG: URL:', analyzeUrl); 
+        console.log('🎯 DEBUG: Backend URL:', BACKEND_URL);
+        console.log('🎯 DEBUG: Request body:', requestBody);
+        
+        const response = await fetch(analyzeUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody)
         });
         
+        console.log('🎯 DEBUG: Response status:', response.status);
+        console.log('🎯 DEBUG: Response headers:', [...response.headers.entries()]);
+        
         const result = await response.json();
+        console.log('🎯 DEBUG: Response body:', result);
         if (result.success) {
           setAutoChainAnalysis(result.analysis);
           generateRecommendation(result.analysis);
