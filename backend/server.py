@@ -483,10 +483,26 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
     try:
         vibe = request.get("vibe", "Balanced")
         targets = request.get("targets", {})
+        use_professional_params = targets.get("use_professional_params", False)
         
         logger.info(f"🎯🎯🎯 VOCAL CHAIN GENERATION STARTED 🎯🎯🎯")
         logger.info(f"🎤 Vibe: {vibe}")
         logger.info(f"🎼 Input Targets: {targets}")
+        logger.info(f"🧠 Use Professional Params: {use_professional_params}")
+        
+        # If professional params requested, use enhanced parameter generation
+        if use_professional_params:
+            logger.info("🚀 Using PROFESSIONAL parameter generation system")
+            
+            # Extract audio features for professional parameter calculation
+            audio_features = targets.get("audio_features", {})
+            vocal_features = targets.get("vocal_features", {})
+            
+            logger.info(f"🎵 Audio features: BPM={audio_features.get('bpm', 'N/A')}, LUFS={audio_features.get('lufs_i', 'N/A')}")
+            logger.info(f"🎤 Vocal features keys: {list(vocal_features.keys())}")
+            
+        else:
+            logger.info("📻 Using LEGACY parameter generation system")
         
         # Log the complete vocal chain order
         chain_order = [
