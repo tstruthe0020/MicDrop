@@ -234,6 +234,40 @@ class PresetsBridge:
                 
         return params
     
+    def _convert_tdrnova_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert professional TDR Nova parameters (keep existing sophisticated logic)"""
+        params = {
+            'bypass': False,
+            'multiband_enabled': targets.get('multiband_enabled', True)
+        }
+        
+        # HPF
+        if 'hpf_freq' in targets:
+            params.update({
+                'crossover_1': targets['hpf_freq'],
+                'band_1_enabled': True
+            })
+        
+        # Mud dip (band 2)
+        if 'mud_center' in targets and 'mud_gain' in targets:
+            params.update({
+                'crossover_2': targets['mud_center'],
+                'band_2_threshold': targets['mud_gain'] + 10,  # Convert gain to threshold
+                'band_2_ratio': 3.0,
+                'band_2_enabled': True
+            })
+        
+        # De-esser (band 4)  
+        if 'deess_center' in targets and 'deess_threshold' in targets:
+            params.update({
+                'crossover_3': targets['deess_center'],
+                'band_4_threshold': targets['deess_threshold'],
+                'band_4_ratio': targets.get('deess_ratio', 2.5),
+                'band_4_enabled': True
+            })
+        
+        return params
+    
     def _convert_1176_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
         """Convert professional 1176 Compressor parameters using actual parameter names"""
         
