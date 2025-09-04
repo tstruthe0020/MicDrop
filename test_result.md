@@ -216,7 +216,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Auto Chain Frontend Integration"
     - "Preserve Existing Frontend Functionality"
   stuck_tasks: []
   test_all: false
