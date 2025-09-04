@@ -1160,97 +1160,223 @@ async def auto_chain_upload(audio_file: UploadFile = File(...)):
             
         logger.info(f"🎯 AUTO CHAIN: Saved to {temp_path}")
         
-        # Basic audio analysis using librosa
+        # Enhanced Professional Audio Analysis
         try:
             logger.info("🎯 Step 1: Loading audio with librosa")
-            y, sr = librosa.load(temp_path, sr=48000, duration=30)  # Analyze first 30 seconds
+            y, sr = librosa.load(temp_path, sr=48000, duration=60)  # Analyze up to 60 seconds for better accuracy
             logger.info(f"🎯 Step 1 complete: Loaded {len(y)} samples at {sr}Hz")
             
             if len(y) == 0:
                 raise ValueError("Audio file is empty or invalid")
             
-            # Extract features with error handling
+            # Frame-based analysis (20-50ms frames with 50% overlap)
+            frame_length = int(0.025 * sr)  # 25ms frames
+            hop_length = frame_length // 2   # 50% overlap
+            
+            logger.info("🎯 Step 2: Advanced tempo and beat tracking")
             try:
-                logger.info("🎯 Step 2: Beat tracking")
-                tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
-                tempo = float(tempo)  # Ensure it's a Python float
+                tempo, beats = librosa.beat.beat_track(y=y, sr=sr, hop_length=hop_length)
+                tempo = float(tempo)
                 logger.info(f"🎯 Step 2 complete: BPM = {tempo}")
             except Exception as e:
                 logger.warning(f"🎯 Step 2 failed: {e}")
-                tempo = 120.0  # Default BPM
+                tempo = 120.0
                 
-            # Key detection (simplified)
+            logger.info("🎯 Step 3: Enhanced key detection with confidence")
             try:
-                logger.info("🎯 Step 3: Key detection")
-                chroma = librosa.feature.chroma_stft(y=y, sr=sr)
-                key_idx = int(np.argmax(np.sum(chroma, axis=1)))  # Convert to Python int first
+                # More sophisticated key detection
+                chroma = librosa.feature.chroma_cqt(y=y, sr=sr, hop_length=hop_length)
+                chroma_mean = np.mean(chroma, axis=1)
+                key_idx = int(np.argmax(chroma_mean))
                 keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
                 estimated_key = keys[key_idx]
-                logger.info(f"🎯 Step 3 complete: Key = {estimated_key}")
+                
+                # Calculate key confidence
+                key_confidence = float(chroma_mean[key_idx] / np.sum(chroma_mean))
+                logger.info(f"🎯 Step 3 complete: Key = {estimated_key} (confidence: {key_confidence:.2f})")
             except Exception as e:
                 logger.warning(f"🎯 Step 3 failed: {e}")
-                estimated_key = 'C'  # Default key
+                estimated_key = 'C'
+                key_confidence = 0.5
             
-            # Loudness (RMS as proxy)
+            logger.info("🎯 Step 4: Professional loudness analysis (LUFS estimation)")
             try:
-                logger.info("🎯 Step 4: Loudness analysis")
-                rms = librosa.feature.rms(y=y)[0]
-                avg_rms = float(np.mean(rms))
-                lufs_estimate = float(20 * np.log10(avg_rms) - 10) if avg_rms > 0 else -60.0
-                logger.info(f"🎯 Step 4 complete: LUFS estimate = {lufs_estimate}")
+                # Frame-based RMS for better LUFS estimation
+                rms_frames = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
+                avg_rms = float(np.mean(rms_frames))
+                
+                # Short-term LUFS estimation (better than simple RMS)
+                lufs_integrated = float(20 * np.log10(avg_rms) - 14.7) if avg_rms > 0 else -60.0  # K-weighting approximation
+                lufs_short_term = float(20 * np.log10(np.percentile(rms_frames, 95)) - 14.7) if len(rms_frames) > 0 else -60.0
+                
+                logger.info(f"🎯 Step 4 complete: LUFS Integrated = {lufs_integrated:.1f}, Short-term = {lufs_short_term:.1f}")
             except Exception as e:
                 logger.warning(f"🎯 Step 4 failed: {e}")
                 avg_rms = 0.1
-                lufs_estimate = -20.0
+                lufs_integrated = -20.0
+                lufs_short_term = -18.0
             
-            # Dynamics (crest factor)
+            logger.info("🎯 Step 5: Advanced dynamics analysis")
             try:
-                logger.info("🎯 Step 5: Dynamics analysis")
+                # Peak analysis
                 peak = float(np.max(np.abs(y)))
+                peak_dbfs = float(20 * np.log10(peak)) if peak > 0 else -60.0
+                
+                # Crest factor (peak-to-RMS ratio)
                 crest_factor = float(20 * np.log10(peak / avg_rms)) if avg_rms > 0 else 20.0
-                logger.info(f"🎯 Step 5 complete: Crest factor = {crest_factor}")
+                
+                # Dynamic spread (10th-90th percentile RMS)
+                rms_p10 = float(np.percentile(rms_frames, 10))
+                rms_p90 = float(np.percentile(rms_frames, 90))
+                dynamic_spread = float(20 * np.log10(rms_p90 / rms_p10)) if rms_p10 > 0 else 12.0
+                
+                logger.info(f"🎯 Step 5 complete: Crest = {crest_factor:.1f} dB, Dynamic spread = {dynamic_spread:.1f} dB")
             except Exception as e:
                 logger.warning(f"🎯 Step 5 failed: {e}")
                 peak = 0.5
+                peak_dbfs = -6.0
                 crest_factor = 12.0
+                dynamic_spread = 8.0
             
-            # Mock vocal detection
+            logger.info("🎯 Step 6: Professional spectral analysis")
             try:
-                logger.info("🎯 Step 6: Vocal detection")
-                spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
-                vocal_present = bool(float(np.mean(spectral_centroid)) > 2000)  # Simple heuristic
-                logger.info(f"🎯 Step 6 complete: Vocal present = {vocal_present}")
+                # Spectral features with frequency band analysis
+                stft = librosa.stft(y, hop_length=hop_length, n_fft=2048)
+                magnitude = np.abs(stft)
+                freqs = librosa.fft_frequencies(sr=sr, n_fft=2048)
+                
+                # Spectral tilt (HF/LF energy ratio: 6-10 kHz vs 100-400 Hz)
+                hf_mask = (freqs >= 6000) & (freqs <= 10000)
+                lf_mask = (freqs >= 100) & (freqs <= 400)
+                
+                hf_energy = np.mean(magnitude[hf_mask, :])
+                lf_energy = np.mean(magnitude[lf_mask, :])
+                spectral_tilt = float(20 * np.log10(hf_energy / lf_energy)) if lf_energy > 0 else -6.0
+                
+                # Low-end dominance index: RMS(40-120 Hz) / RMS(full band)
+                low_end_mask = (freqs >= 40) & (freqs <= 120)
+                low_end_energy = np.mean(magnitude[low_end_mask, :])
+                full_band_energy = np.mean(magnitude)
+                low_end_dominance = float(low_end_energy / full_band_energy) if full_band_energy > 0 else 0.1
+                
+                # Brightness index: RMS(6-12 kHz) / RMS(1-3 kHz)
+                bright_mask = (freqs >= 6000) & (freqs <= 12000)
+                mid_mask = (freqs >= 1000) & (freqs <= 3000)
+                bright_energy = np.mean(magnitude[bright_mask, :])
+                mid_energy = np.mean(magnitude[mid_mask, :])
+                brightness_index = float(bright_energy / mid_energy) if mid_energy > 0 else 0.8
+                
+                # Transient density (zero crossings approximation)
+                zero_crossings = librosa.zero_crossings(y, pad=False)
+                transient_density = float(np.sum(zero_crossings) / (len(y) / sr))  # per second
+                
+                logger.info(f"🎯 Step 6 complete: Spectral tilt = {spectral_tilt:.1f} dB, Brightness = {brightness_index:.2f}")
             except Exception as e:
                 logger.warning(f"🎯 Step 6 failed: {e}")
-                vocal_present = True
+                spectral_tilt = -6.0
+                low_end_dominance = 0.15
+                brightness_index = 0.8
+                transient_density = 50.0
             
-            # Build analysis dict with careful type conversion
-            logger.info("🎯 Step 7: Building analysis response")
+            logger.info("🎯 Step 7: Advanced vocal characteristics detection")
+            try:
+                # Fundamental frequency (F0) analysis
+                f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin=librosa.note_to_hz('C2'), 
+                                                           fmax=librosa.note_to_hz('C7'), 
+                                                           hop_length=hop_length)
+                f0_clean = f0[voiced_flag]
+                
+                if len(f0_clean) > 0:
+                    f0_median = float(np.median(f0_clean))
+                    f0_variance = float(np.std(f0_clean))
+                    # Determine if male/female-ish profile
+                    gender_profile = "female" if f0_median > 200 else "male"
+                else:
+                    f0_median = 150.0
+                    f0_variance = 30.0
+                    gender_profile = "unknown"
+                
+                # Sibilance analysis (5-9 kHz band)
+                sibilance_mask = (freqs >= 5000) & (freqs <= 9000)
+                sibilance_spectrum = np.mean(magnitude[sibilance_mask, :], axis=1)
+                if len(sibilance_spectrum) > 0:
+                    sibilance_peak_idx = np.argmax(sibilance_spectrum)
+                    sibilance_freqs = freqs[sibilance_mask]
+                    sibilance_centroid = float(sibilance_freqs[sibilance_peak_idx])
+                else:
+                    sibilance_centroid = 6500.0
+                
+                # Mud band energy (200-500 Hz)
+                mud_mask = (freqs >= 200) & (freqs <= 500)
+                mud_energy = np.mean(magnitude[mud_mask, :])
+                mud_ratio = float(mud_energy / mid_energy) if mid_energy > 0 else 0.3
+                
+                # Nasal energy (900-2000 Hz)  
+                nasal_mask = (freqs >= 900) & (freqs <= 2000)
+                nasal_energy = np.mean(magnitude[nasal_mask, :])
+                nasal_ratio = float(nasal_energy / mid_energy) if mid_energy > 0 else 0.5
+                
+                # Plosive index (peaks <120 Hz vs midband)
+                plosive_mask = (freqs >= 20) & (freqs <= 120)
+                plosive_energy = np.mean(magnitude[plosive_mask, :])
+                plosive_index = float(plosive_energy / mid_energy) if mid_energy > 0 else 0.2
+                
+                # Vocal intensity (overall vocal presence)
+                vocal_intensity = float(np.mean(voiced_probs)) if len(voiced_probs) > 0 else 0.5
+                
+                logger.info(f"🎯 Step 7 complete: F0 = {f0_median:.1f} Hz ({gender_profile}), Sibilance = {sibilance_centroid:.0f} Hz")
+            except Exception as e:
+                logger.warning(f"🎯 Step 7 failed: {e}")
+                f0_median = 180.0
+                f0_variance = 40.0
+                gender_profile = "unknown"
+                sibilance_centroid = 6500.0
+                mud_ratio = 0.3
+                nasal_ratio = 0.5
+                plosive_index = 0.2
+                vocal_intensity = 0.6
+            
+            logger.info("🎯 Step 8: Building comprehensive analysis response")
+            # Build comprehensive analysis dict
             analysis = {
+                # Beat/Instrumental Analysis
                 "bpm": tempo,
-                "key": {"tonic": estimated_key, "mode": "major", "confidence": 0.7},
-                "lufs_i": lufs_estimate,
-                "lufs_s": lufs_estimate,
-                "rms": float(20 * np.log10(avg_rms)) if avg_rms > 0 else -60.0,
-                "peak_dbfs": float(20 * np.log10(peak)) if peak > 0 else -60.0,
-                "crest_db": crest_factor,
-                "bands": {
-                    "rumble": 0.1,
-                    "mud": 0.15,
-                    "boxy": 0.2,
-                    "harsh": 0.1,
-                    "sibilance": 0.12
+                "key": {
+                    "tonic": estimated_key, 
+                    "mode": "major", 
+                    "confidence": key_confidence
                 },
-                "spectral_tilt": float(np.random.uniform(-2, 2)),
-                "reverb_tail_s": float(np.random.uniform(0.5, 2.0)),
+                
+                # Loudness Analysis
+                "lufs_i": lufs_integrated,  # Integrated LUFS
+                "lufs_s": lufs_short_term,  # Short-term LUFS
+                "peak_dbfs": peak_dbfs,
+                "rms_db": float(20 * np.log10(avg_rms)) if avg_rms > 0 else -60.0,
+                "crest_db": crest_factor,
+                "dynamic_spread": dynamic_spread,
+                
+                # Spectral Analysis
+                "spectral_tilt": spectral_tilt,  # HF/LF ratio in dB
+                "low_end_dominance": low_end_dominance,  # 40-120 Hz dominance
+                "brightness_index": brightness_index,  # 6-12 kHz / 1-3 kHz
+                "transient_density": transient_density,  # Transients per second
+                
+                # Advanced Vocal Characteristics
                 "vocal": {
-                    "present": vocal_present,
-                    "sibilance_idx": 0.12,
-                    "plosive_idx": 0.2,
-                    "note_stability": float(np.random.uniform(0.3, 0.8))
+                    "present": bool(vocal_intensity > 0.3),
+                    "intensity": vocal_intensity,
+                    "f0_median": f0_median,
+                    "f0_variance": f0_variance,
+                    "gender_profile": gender_profile,
+                    "sibilance_centroid": sibilance_centroid,
+                    "mud_ratio": mud_ratio,  # 200-500 Hz relative to mids
+                    "nasal_ratio": nasal_ratio,  # 900-2000 Hz relative to mids  
+                    "plosive_index": plosive_index,  # <120 Hz relative to mids
+                    "breathiness": float(np.random.uniform(0.1, 0.4)),  # Placeholder for now
+                    "roughness": float(np.random.uniform(0.1, 0.3))     # Placeholder for now
                 }
             }
-            logger.info("🎯 Step 7 complete: Analysis dict built")
+            logger.info("🎯 Step 8 complete: Comprehensive analysis built")
             
             # Clean up temp file
             os.unlink(temp_path)
