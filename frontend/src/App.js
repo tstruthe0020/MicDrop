@@ -1007,7 +1007,7 @@ function App() {
                     ) : (
                       <>
                         <AudioWaveform className="w-4 h-4 mr-2" />
-                        Analyze Audio
+                        Analyze Audio with AI
                       </>
                     )}
                   </Button>
