@@ -645,7 +645,7 @@ function App() {
 
       // Create an AbortController for timeout handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
 
       const response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
         method: 'POST',
