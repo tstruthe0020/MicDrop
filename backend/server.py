@@ -278,6 +278,95 @@ def convert_parameters(backend_params, plugin_name=None):
         
         return converted
     
+    # Fresh Air uses simple parameter mapping
+    elif plugin_name == "Fresh Air":
+        # Map API parameter names to Fresh Air parameter names
+        param_name_mapping = {
+            "presence": "Mid_Air",    # Mid Air parameter
+            "brilliance": "High_Air", # High Air parameter  
+            "mix": "Trim",           # Trim/Mix parameter
+            "bypass": "Bypass"
+        }
+        
+        for key, value in backend_params.items():
+            # Skip bypass - handled by Swift CLI
+            if key == "bypass":
+                continue
+                
+            mapped_name = param_name_mapping.get(key, key.title())
+            # Normalize 0-100 values to 0.0-1.0 range
+            if key in ["presence", "brilliance", "mix"]:
+                converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+            else:
+                converted[mapped_name] = float(value)
+        
+        return converted
+    
+    # Graillon 3 uses complex parameter mapping
+    elif plugin_name == "Graillon 3":
+        # Map API parameter names to Graillon 3 parameter names
+        param_name_mapping = {
+            "pitch_shift": "Pitch_Shift",
+            "formant_shift": "Formant_Shift", 
+            "octave_mix": "Wet_Mix",
+            "bitcrusher": "FX_Enabled",
+            "mix": "Output_Gain"
+        }
+        
+        for key, value in backend_params.items():
+            if key == "bypass":
+                continue
+                
+            mapped_name = param_name_mapping.get(key, key.title())
+            
+            # Convert parameter values
+            if key == "pitch_shift":
+                # Pitch shift in semitones, normalize to 0.0-1.0 range
+                converted[mapped_name] = max(0.0, min(1.0, (float(value) + 12) / 24.0))
+            elif key == "formant_shift":
+                # Formant shift, normalize -12 to +12 semitones
+                converted[mapped_name] = max(0.0, min(1.0, (float(value) + 12) / 24.0))
+            elif key in ["octave_mix", "mix"]:
+                # Percentage values
+                converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+            elif key == "bitcrusher":
+                # Enable/disable bitcrusher effect
+                converted["FX_Enabled"] = 1.0 if float(value) > 0 else 0.0
+            else:
+                converted[mapped_name] = float(value)
+        
+        return converted
+        
+    # LA-LA uses gain and dynamics parameters
+    elif plugin_name == "LA-LA":
+        # Map API parameter names to LA-LA parameter names
+        param_name_mapping = {
+            "target_level": "Gain",
+            "dynamics": "Peak_Reduction",
+            "fast_release": "Mode"
+        }
+        
+        for key, value in backend_params.items():
+            if key == "bypass":
+                continue
+                
+            mapped_name = param_name_mapping.get(key, key.title())
+            
+            # Convert parameter values
+            if key == "target_level":
+                # Target level in dB, normalize to 0.0-1.0 range
+                converted[mapped_name] = max(0.0, min(1.0, (float(value) + 20) / 40.0))
+            elif key == "dynamics":
+                # Dynamics percentage
+                converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+            elif key == "fast_release":
+                # Boolean for fast release mode
+                converted[mapped_name] = 1.0 if value else 0.0
+            else:
+                converted[mapped_name] = float(value)
+        
+        return converted
+    
     # Default conversion for other plugins
     else:
         for key, value in backend_params.items():
