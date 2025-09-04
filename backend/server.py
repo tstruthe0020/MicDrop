@@ -296,14 +296,14 @@ def convert_parameters(backend_params, plugin_name=None):
         
         return converted
     
-    # Fresh Air uses simple parameter mapping
+    # Fresh Air uses numeric parameter indices from FreshAir.map.json
     elif plugin_name == "Fresh Air":
-        # Map API parameter names to Fresh Air parameter names
+        # Map API parameter names to Fresh Air numeric indices
         param_name_mapping = {
-            "presence": "Mid_Air",    # Mid Air parameter
-            "brilliance": "High_Air", # High Air parameter  
-            "mix": "Trim",           # Trim/Mix parameter
-            "bypass": "Bypass"
+            "presence": "0",      # Mid_Air parameter
+            "brilliance": "1",    # High_Air parameter  
+            "mix": "3",           # Trim/Mix parameter
+            "bypass": "2"         # Bypass parameter
         }
         
         for key, value in backend_params.items():
@@ -311,12 +311,13 @@ def convert_parameters(backend_params, plugin_name=None):
             if key == "bypass":
                 continue
                 
-            mapped_name = param_name_mapping.get(key, key.title())
-            # Normalize 0-100 values to 0.0-1.0 range
-            if key in ["presence", "brilliance", "mix"]:
-                converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
-            else:
-                converted[mapped_name] = float(value)
+            mapped_name = param_name_mapping.get(key, key)
+            if mapped_name in param_name_mapping.values():
+                # Normalize 0-100 values to 0.0-1.0 range
+                if key in ["presence", "brilliance", "mix"]:
+                    converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+                else:
+                    converted[mapped_name] = float(value)
         
         return converted
     
