@@ -217,6 +217,7 @@ metadata:
 test_plan:
   current_focus:
     - "Preserve Existing Frontend Functionality"
+    - "Manufacturer Directory Mapping Fix for MCompressor and Fresh Air"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
