@@ -64,8 +64,8 @@ async def auto_chain(request: AutoChainRequest, background_tasks: BackgroundTask
     logger.info(f"Starting auto chain generation for {uuid_str}")
     
     try:
-        # Create output directory
-        output_dir = settings.OUT_DIR / uuid_str
+        # Create output directory - use /tmp for compatibility with preset generator
+        output_dir = Path("/tmp/auto_chain") / uuid_str
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Step 1: Download/fetch audio
