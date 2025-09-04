@@ -3501,6 +3501,213 @@ class VocalChainAPITester:
             self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", False, f"Exception: {str(e)}")
             return False
 
+    def test_auto_chain_parameter_mapping_fix(self):
+        """
+        CRITICAL TEST: Auto Chain Parameter Mapping Fix
+        Tests the specific fix where plugins were applying 0 parameters due to 
+        human-readable names instead of numeric indices from .map.json files
+        
+        Focus Areas from Review Request:
+        1. Parameter Mapping Verification: Test /api/auto-chain/generate endpoint
+        2. Plugin-Specific Testing: Verify previously failing plugins now show "Applied X parameters"
+        3. Compare Before vs After: Human-readable names → numeric indices
+        """
+        try:
+            print("\n🔍 TESTING AUTO CHAIN PARAMETER MAPPING FIX...")
+            print("🎯 Focus: Verify plugins apply parameters correctly (not 0 parameters)")
+            
+            # Test URL from review request
+            test_url = "https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav"
+            
+            # Test 1: Auto Chain Analysis Endpoint
+            print(f"\n🎵 Step 1: Testing /api/auto-chain/analyze with provided URL...")
+            analyze_request = {
+                "input_source": test_url
+            }
+            
+            analyze_response = requests.post(f"{self.api_url}/auto-chain/analyze", 
+                                           json=analyze_request, timeout=60)
+            
+            if analyze_response.status_code == 200:
+                analyze_data = analyze_response.json()
+                
+                if analyze_data.get("success"):
+                    processing_time = analyze_data.get("processing_time_s", 0)
+                    analysis = analyze_data.get("analysis", {})
+                    recommendations = analyze_data.get("recommendations", {})
+                    
+                    # Verify analysis contains required fields
+                    audio_features = analysis.get("audio_features", {})
+                    vocal_features = analysis.get("vocal_features", {})
+                    
+                    bpm = audio_features.get("tempo", 0)
+                    key = audio_features.get("key", "Unknown")
+                    lufs = audio_features.get("loudness", {}).get("lufs_i", 0)
+                    
+                    self.log_test("Auto Chain Analysis", True, 
+                                f"Analysis complete in {processing_time:.1f}s | BPM: {bpm} | Key: {key} | LUFS: {lufs:.1f}")
+                    
+                    # Test 2: Auto Chain Generation Endpoint (CRITICAL TEST)
+                    print(f"\n🎛️  Step 2: Testing /api/auto-chain/generate for parameter mapping...")
+                    generate_request = {
+                        "input_source": test_url,
+                        "chain_style": None,  # Let system recommend
+                        "headroom_db": 6.0
+                    }
+                    
+                    generate_response = requests.post(f"{self.api_url}/auto-chain/generate", 
+                                                    json=generate_request, timeout=120)
+                    
+                    if generate_response.status_code == 200:
+                        generate_data = generate_response.json()
+                        
+                        if generate_data.get("success"):
+                            processing_time_gen = generate_data.get("processing_time_s", 0)
+                            report = generate_data.get("report", {})
+                            files = generate_data.get("files", {})
+                            zip_url = generate_data.get("zip_url", "")
+                            
+                            # CRITICAL: Check preset generation details in report
+                            preset_generation = report.get("preset_generation", {})
+                            plugins_processed = preset_generation.get("plugins_processed", [])
+                            
+                            # Analyze parameter application for each plugin
+                            parameter_success_count = 0
+                            total_plugins = len(plugins_processed)
+                            failing_plugins = []
+                            successful_plugins = []
+                            
+                            print(f"\n📊 PARAMETER MAPPING ANALYSIS:")
+                            print(f"   Total plugins processed: {total_plugins}")
+                            
+                            for plugin_info in plugins_processed:
+                                plugin_name = plugin_info.get("plugin_name", "Unknown")
+                                parameters_applied = plugin_info.get("parameters_applied", 0)
+                                status = plugin_info.get("status", "unknown")
+                                
+                                print(f"   • {plugin_name}: {parameters_applied} parameters applied ({status})")
+                                
+                                # Check if this is one of the previously failing plugins
+                                previously_failing = plugin_name in [
+                                    "MEqualizer", "Fresh Air", "Graillon 3", 
+                                    "MCompressor", "MConvolutionEZ"
+                                ]
+                                
+                                if parameters_applied > 0:
+                                    parameter_success_count += 1
+                                    successful_plugins.append({
+                                        "name": plugin_name,
+                                        "params": parameters_applied,
+                                        "previously_failing": previously_failing
+                                    })
+                                else:
+                                    failing_plugins.append({
+                                        "name": plugin_name,
+                                        "params": parameters_applied,
+                                        "previously_failing": previously_failing
+                                    })
+                            
+                            # Verify ZIP file generation
+                            preset_files = files.get("presets", [])
+                            zip_file = files.get("zip_file", "")
+                            
+                            # Test ZIP download
+                            if zip_url:
+                                zip_download_url = f"{self.base_url}{zip_url}"
+                                zip_response = requests.get(zip_download_url, timeout=30)
+                                
+                                if zip_response.status_code == 200:
+                                    zip_size = len(zip_response.content)
+                                    
+                                    # Verify it's actually a ZIP file
+                                    if zip_response.content.startswith(b'PK'):
+                                        zip_success = True
+                                        zip_details = f"ZIP downloaded: {zip_size} bytes"
+                                    else:
+                                        zip_success = False
+                                        zip_details = "Invalid ZIP content"
+                                else:
+                                    zip_success = False
+                                    zip_details = f"ZIP download failed: {zip_response.status_code}"
+                            else:
+                                zip_success = False
+                                zip_details = "No ZIP URL provided"
+                            
+                            # CRITICAL EVALUATION: Parameter Mapping Fix Success
+                            if parameter_success_count == total_plugins and parameter_success_count > 0:
+                                # Perfect success - all plugins applied parameters
+                                self.log_test("🎯 CRITICAL: Parameter Mapping Fix", True, 
+                                            f"✅ ALL PLUGINS FIXED! {parameter_success_count}/{total_plugins} plugins applied parameters correctly")
+                                
+                                # Log specific success for previously failing plugins
+                                previously_failing_fixed = [p for p in successful_plugins if p["previously_failing"]]
+                                if previously_failing_fixed:
+                                    plugin_names = [p["name"] for p in previously_failing_fixed]
+                                    self.log_test("Previously Failing Plugins Fixed", True, 
+                                                f"✅ Fixed: {', '.join(plugin_names)}")
+                                
+                            elif parameter_success_count > total_plugins * 0.7:
+                                # Partial success - most plugins working
+                                failing_names = [p["name"] for p in failing_plugins]
+                                self.log_test("🎯 CRITICAL: Parameter Mapping Fix", False, 
+                                            f"⚠️ PARTIAL SUCCESS: {parameter_success_count}/{total_plugins} plugins fixed. Still failing: {', '.join(failing_names)}")
+                                
+                            elif parameter_success_count == 0:
+                                # Complete failure - no plugins applying parameters
+                                self.log_test("🎯 CRITICAL: Parameter Mapping Fix", False, 
+                                            f"❌ CRITICAL ISSUE PERSISTS: ALL plugins still applying 0 parameters - fix not working")
+                                
+                            else:
+                                # Mixed results
+                                failing_names = [p["name"] for p in failing_plugins]
+                                self.log_test("🎯 CRITICAL: Parameter Mapping Fix", False, 
+                                            f"❌ INCONSISTENT: {parameter_success_count}/{total_plugins} plugins working. Failing: {', '.join(failing_names)}")
+                            
+                            # Test ZIP file generation
+                            if zip_success and len(preset_files) > 0:
+                                self.log_test("Auto Chain ZIP Generation", True, 
+                                            f"Generated {len(preset_files)} presets | {zip_details}")
+                            else:
+                                self.log_test("Auto Chain ZIP Generation", False, 
+                                            f"ZIP generation issues | {zip_details}")
+                            
+                            # Overall Auto Chain Generation Test
+                            overall_success = (parameter_success_count > 0 and 
+                                             zip_success and 
+                                             processing_time_gen < 60)
+                            
+                            if overall_success:
+                                self.log_test("Auto Chain Generation - Overall", True, 
+                                            f"Complete pipeline success in {processing_time_gen:.1f}s")
+                            else:
+                                issues = []
+                                if parameter_success_count == 0:
+                                    issues.append("no parameters applied")
+                                if not zip_success:
+                                    issues.append("ZIP generation failed")
+                                if processing_time_gen >= 60:
+                                    issues.append(f"slow processing ({processing_time_gen:.1f}s)")
+                                
+                                self.log_test("Auto Chain Generation - Overall", False, 
+                                            f"Issues: {', '.join(issues)}")
+                            
+                        else:
+                            self.log_test("🎯 CRITICAL: Parameter Mapping Fix", False, 
+                                        f"Auto chain generation failed: {generate_data.get('message')}")
+                    else:
+                        self.log_test("🎯 CRITICAL: Parameter Mapping Fix", False, 
+                                    f"Auto chain generate API failed: {generate_response.status_code}")
+                        
+                else:
+                    self.log_test("Auto Chain Analysis", False, 
+                                f"Analysis failed: {analyze_data.get('message')}")
+            else:
+                self.log_test("Auto Chain Analysis", False, 
+                            f"Analysis API failed: {analyze_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Auto Chain Parameter Mapping Fix", False, f"Exception: {str(e)}")
+
     def test_auto_chain_endpoint_registration_fix(self):
         """
         CRITICAL TEST: Auto Chain Endpoint Registration Fix
