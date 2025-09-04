@@ -500,50 +500,61 @@ function App() {
   };
 
   const generateRecommendation = (analysis) => {
-    // Generate intelligent chain archetype recommendation based on analysis
+    // Enhanced AI chain archetype recommendation based on professional analysis
     const { audio_features, vocal_features } = analysis;
     
     let recommendedArchetype = 'balanced';
     let explanation = '';
     let confidence = 0;
-
-    if (audio_features) {
-      const { tempo, loudness, key, timbre } = audio_features;
+    
+    // Enhanced recommendation logic using professional analysis
+    if (audio_features && vocal_features) {
+      const { bpm, lufs_i, brightness_index, spectral_tilt, low_end_dominance } = audio_features;
+      const { f0_median, gender_profile, sibilance_centroid, mud_ratio, plosive_index, intensity } = vocal_features;
       
-      // Determine archetype based on audio characteristics
-      if (tempo && tempo > 140 && loudness && loudness.lufs > -12) {
+      // Genre and style detection based on multiple factors
+      const isHighEnergy = bpm > 130 && lufs_i > -15 && intensity > 0.7;
+      const isLowEnergy = bpm < 90 && intensity < 0.4;
+      const isBright = brightness_index > 1.0 && spectral_tilt > -4;
+      const isDark = brightness_index < 0.7 && spectral_tilt < -8;
+      const isVocalHeavy = intensity > 0.6 && mud_ratio < 0.25;
+      const needsSibilanceControl = sibilance_centroid > 7000 || brightness_index > 1.1;
+      const needsMudControl = mud_ratio > 0.35;
+      const needsPlosiveControl = plosive_index > 0.3;
+      
+      // Professional archetype recommendation
+      if (isHighEnergy && isBright && needsSibilanceControl) {
         recommendedArchetype = 'aggressive-rap';
-        explanation = 'High energy track with loud master and fast tempo suggests aggressive rap processing';
-        confidence = 0.85;
-      } else if (tempo && tempo < 80 && timbre && timbre.warmth > 0.6) {
+        explanation = `High energy track (${bpm.toFixed(0)} BPM, ${lufs_i.toFixed(1)} LUFS) with bright spectrum needs aggressive processing. Sibilance control required at ${sibilance_centroid.toFixed(0)} Hz.`;
+        confidence = 0.9;
+      } else if (isLowEnergy && intensity < 0.5 && f0_median > 180) {
         recommendedArchetype = 'intimate-rnb';
-        explanation = 'Slow tempo with warm timbral characteristics suggests intimate R&B processing';
-        confidence = 0.8;
-      } else if (timbre && timbre.brightness > 0.7) {
+        explanation = `Intimate vocal style (${f0_median.toFixed(0)} Hz ${gender_profile}) with low energy (${bpm.toFixed(0)} BPM) suggests R&B processing with gentle dynamics.`;
+        confidence = 0.85;
+      } else if (isBright && needsSibilanceControl && bpm > 100 && bpm < 140) {
         recommendedArchetype = 'pop-airy';
-        explanation = 'Bright spectral characteristics suggest pop-airy processing with high-frequency emphasis';
-        confidence = 0.75;
-      } else if (timbre && timbre.warmth > 0.5) {
+        explanation = `Bright pop vocal (brightness: ${brightness_index.toFixed(2)}) needs airy processing with controlled sibilance at ${sibilance_centroid.toFixed(0)} Hz.`;
+        confidence = 0.8;
+      } else if (isDark || spectral_tilt < -6) {
         recommendedArchetype = 'warm-analog';
-        explanation = 'Warm timbral qualities suggest analog-style processing with rich harmonics';
+        explanation = `Dark spectral tilt (${spectral_tilt.toFixed(1)} dB) suggests warm analog processing to add brightness and character.`;
+        confidence = 0.75;
+      } else if (needsMudControl || needsPlosiveControl) {
+        recommendedArchetype = 'clean';
+        explanation = `Clean processing needed - mud control (${(mud_ratio * 100).toFixed(0)}%) and plosive management (${(plosive_index * 100).toFixed(0)}%).`;
         confidence = 0.7;
       } else {
-        recommendedArchetype = 'clean';
-        explanation = 'Balanced characteristics suggest clean processing to preserve natural dynamics';
+        recommendedArchetype = 'balanced';
+        explanation = `Balanced characteristics across all parameters suggest versatile processing approach.`;
         confidence = 0.65;
       }
-    }
-
-    // Adjust based on vocal characteristics if present
-    if (vocal_features && vocal_features.vocal_intensity) {
-      if (vocal_features.vocal_intensity > 0.8) {
-        recommendedArchetype = 'aggressive-rap';
-        explanation += ' (adjusted for high vocal intensity)';
-        confidence = Math.min(confidence + 0.1, 0.95);
-      } else if (vocal_features.vocal_intensity < 0.3) {
-        recommendedArchetype = 'intimate-rnb';
-        explanation += ' (adjusted for gentle vocal delivery)';
-        confidence = Math.min(confidence + 0.1, 0.95);
+      
+      // Adjust confidence based on analysis quality
+      if (audio_features.key && audio_features.key.confidence > 0.8) {
+        confidence = Math.min(confidence + 0.05, 0.95);
+      }
+      if (vocal_features.intensity > 0.8) {
+        confidence = Math.min(confidence + 0.05, 0.95);
       }
     }
 
@@ -551,7 +562,12 @@ function App() {
       archetype: recommendedArchetype,
       explanation,
       confidence,
-      suggested_plugins: getArchetypePlugins(recommendedArchetype)
+      suggested_plugins: getArchetypePlugins(recommendedArchetype),
+      analysis_quality: {
+        spectral_analysis: audio_features?.brightness_index ? 'high' : 'medium',
+        vocal_analysis: vocal_features?.f0_median ? 'high' : 'medium',
+        key_confidence: audio_features?.key?.confidence || 0.5
+      }
     });
   };
 
