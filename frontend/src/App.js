@@ -500,6 +500,63 @@ function App() {
     }
   };
 
+  const analyzeAutoChainAudio = async () => {
+    if (!autoChainUrl.trim()) {
+      toast({
+        title: "Missing Audio URL",
+        description: "Please enter a valid audio URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAutoChainAnalyzing(true);
+    setAutoChainAnalysis(null);
+    setAutoChainRecommendation(null);
+
+    try {
+      const requestBody = {
+        input_source: autoChainUrl.trim()
+      };
+
+      console.log('🎯 DEBUG: About to call URL analysis endpoint');
+      console.log('🎯 DEBUG: URL:', `${BACKEND_URL}/api/auto-chain-url`);
+      console.log('🎯 DEBUG: Audio URL:', autoChainUrl.trim());
+      
+      const response = await fetch(`${BACKEND_URL}/api/auto-chain-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+      
+      console.log('🎯 DEBUG: Response status:', response.status);
+      
+      const result = await response.json();
+      console.log('🎯 DEBUG: Response body:', result);
+      
+      if (result.success) {
+        setAutoChainAnalysis(result.analysis);
+        generateRecommendation(result.analysis);
+        toast({
+          title: "✅ Analysis Complete!",
+          description: `Analyzed audio from URL successfully`,
+          className: "border-green-200 bg-green-50"
+        });
+      } else {
+        throw new Error(result.message || 'Analysis failed');
+      }
+    } catch (error) {
+      console.error('URL Analysis error:', error);
+      toast({
+        title: "Analysis Error",
+        description: error.message || "Failed to analyze audio from URL",
+        variant: "destructive"
+      });
+    } finally {
+      setAutoChainAnalyzing(false);
+    }
+  };
+
   const generateRecommendation = (analysis) => {
     // Enhanced AI chain archetype recommendation based on professional analysis
     const { audio_features, vocal_features } = analysis;
