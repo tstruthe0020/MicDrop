@@ -704,6 +704,11 @@ function App() {
         stack: error.stack
       });
       
+      // Check if this is a network timeout or fetch error
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        console.error('🎯 DEBUG: This appears to be a network/fetch error');
+      }
+      
       // Fallback to existing preset generation system
       toast({
         title: "Using Fallback System",
