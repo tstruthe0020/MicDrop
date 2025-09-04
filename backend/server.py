@@ -428,7 +428,7 @@ def convert_parameters(backend_params, plugin_name=None):
         
         return converted
     
-    # MCompressor uses parameter numbers from MCompressor.map.json  
+    # MCompressor uses numeric parameter indices from MCompressor.map.json  
     elif plugin_name == "MCompressor":
         param_name_mapping = {
             "input_gain": "0",             # Input_Gain
@@ -443,6 +443,28 @@ def convert_parameters(backend_params, plugin_name=None):
             "link_channels": "9",          # Link_Channels
             "maximize_to_0db": "10",       # Maximize_To_0dB
             "custom_shape": "11"           # Custom_Shape
+        }
+        
+        for key, value in backend_params.items():
+            if key == "bypass":
+                continue
+                
+            mapped_name = param_name_mapping.get(key, key)
+            if mapped_name in param_name_mapping.values():
+                converted[mapped_name] = float(value)
+        
+        return converted
+    
+    # MConvolutionEZ uses numeric parameter indices from MConvolutionEZ.map.json
+    elif plugin_name == "MConvolutionEZ":
+        param_name_mapping = {
+            "dry_wet": "0",               # Dry_Wet
+            "widening": "1",              # Widening
+            "high_pass": "2",             # High_Pass
+            "low_pass": "3",              # Low_Pass
+            "ir_file": "4",               # IR_File
+            "normalize_ir": "7",          # Normalize_IR
+            "predelay": "8"               # Predelay
         }
         
         for key, value in backend_params.items():
