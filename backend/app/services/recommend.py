@@ -427,6 +427,8 @@ def recommend_chain(analysis: Analysis) -> Targets:
         '1176Compressor': professional_targets.get('1176 Compressor', {}),
         'LALA': professional_targets.get('LA-LA', {}),
         'FreshAir': professional_targets.get('Fresh Air', {}),
+        'MEqualizer': professional_targets.get('MEqualizer', {}),
+        'MCompressor': professional_targets.get('MCompressor', {}),
         'MConvolutionEZ': professional_targets.get('MConvolutionEZ', {}),
         
         # Add enhanced analysis data
