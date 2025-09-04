@@ -53,7 +53,8 @@ class PresetsBridge:
         ]
         
         for i, plugin in enumerate(plugin_order, 1):
-            if plugin in targets and targets[plugin].get('enabled', True):
+            if plugin in targets and targets[plugin] is not None:
+                logger.info(f"Processing plugin {plugin}, type: {type(targets[plugin])}")
                 try:
                     preset_name = f"{chain_name}_{i:02d}_{plugin}"
                     plugin_params = self._convert_targets_to_params(plugin, targets[plugin])
@@ -80,9 +81,11 @@ class PresetsBridge:
                             
                 except Exception as e:
                     logger.error(f"❌ Exception generating {plugin}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     continue
             else:
-                logger.info(f"⏭️ Skipping {plugin} (disabled or not configured)")
+                logger.info(f"⏭️ Skipping {plugin} (not in targets or None)")
         
         logger.info(f"Generated {len(generated_files)} preset files")
         return generated_files
