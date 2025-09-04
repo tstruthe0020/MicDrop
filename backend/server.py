@@ -1111,6 +1111,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Configure logging FIRST
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Import Auto Vocal Chain components
 logger.info("🎯 DEBUG: Attempting to import auto_chain_router...")
 try:
