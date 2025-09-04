@@ -1103,34 +1103,61 @@ function App() {
                         </div>
                       </div>
 
-                      {/* Vocal Features */}
+                      {/* Enhanced Vocal Features */}
                       {autoChainAnalysis.vocal_features && (
                         <div className="mt-4 p-3 bg-white/40 rounded-lg">
-                          <h4 className="font-semibold mb-2 text-indigo-700">Vocal Analysis</h4>
+                          <h4 className="font-semibold mb-3 text-indigo-700">🎤 Advanced Vocal Analysis</h4>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                            {autoChainAnalysis.vocal_features.vocal_intensity !== undefined && (
+                            {autoChainAnalysis.vocal_features.f0_median !== undefined && (
                               <div>
-                                <span className="text-slate-600">Intensity:</span>
-                                <span className="ml-1 font-medium">
-                                  {(autoChainAnalysis.vocal_features.vocal_intensity * 100).toFixed(0)}%
+                                <span className="text-slate-600">F0 Median:</span>
+                                <span className="ml-1 font-medium text-purple-600">
+                                  {autoChainAnalysis.vocal_features.f0_median.toFixed(0)} Hz ({autoChainAnalysis.vocal_features.gender_profile})
                                 </span>
                               </div>
                             )}
                             
-                            {autoChainAnalysis.vocal_features.breathiness !== undefined && (
+                            {autoChainAnalysis.vocal_features.sibilance_centroid !== undefined && (
                               <div>
-                                <span className="text-slate-600">Breathiness:</span>
-                                <span className="ml-1 font-medium">
-                                  {(autoChainAnalysis.vocal_features.breathiness * 100).toFixed(0)}%
+                                <span className="text-slate-600">Sibilance:</span>
+                                <span className="ml-1 font-medium text-yellow-600">
+                                  {autoChainAnalysis.vocal_features.sibilance_centroid.toFixed(0)} Hz
                                 </span>
                               </div>
                             )}
                             
-                            {autoChainAnalysis.vocal_features.roughness !== undefined && (
+                            {autoChainAnalysis.vocal_features.mud_ratio !== undefined && (
                               <div>
-                                <span className="text-slate-600">Roughness:</span>
-                                <span className="ml-1 font-medium">
-                                  {(autoChainAnalysis.vocal_features.roughness * 100).toFixed(0)}%
+                                <span className="text-slate-600">Mud (200-500Hz):</span>
+                                <span className="ml-1 font-medium text-red-600">
+                                  {(autoChainAnalysis.vocal_features.mud_ratio * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            )}
+                            
+                            {autoChainAnalysis.vocal_features.nasal_ratio !== undefined && (
+                              <div>
+                                <span className="text-slate-600">Nasal (900-2kHz):</span>
+                                <span className="ml-1 font-medium text-orange-600">
+                                  {(autoChainAnalysis.vocal_features.nasal_ratio * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            )}
+                            
+                            {autoChainAnalysis.vocal_features.plosive_index !== undefined && (
+                              <div>
+                                <span className="text-slate-600">Plosives:</span>
+                                <span className="ml-1 font-medium text-blue-600">
+                                  {(autoChainAnalysis.vocal_features.plosive_index * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            )}
+                            
+                            {autoChainAnalysis.vocal_features.intensity !== undefined && (
+                              <div>
+                                <span className="text-slate-600">Vocal Intensity:</span>
+                                <span className="ml-1 font-medium text-green-600">
+                                  {(autoChainAnalysis.vocal_features.intensity * 100).toFixed(0)}%
                                 </span>
                               </div>
                             )}
