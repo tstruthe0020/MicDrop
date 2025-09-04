@@ -3911,9 +3911,20 @@ class VocalChainAPITester:
             print("\n❌ Health check failed - stopping tests")
             return False
         
-        # PRIORITY TESTS: AUTO VOCAL CHAIN BACKEND (Review Request)
+        # PRIORITY TESTS: AUTO CHAIN ENDPOINT REGISTRATION AND PROFESSIONAL PARAMETER MAPPING (Review Request)
+        print("\n" + "🎯" * 60)
+        print("🎯 PRIORITY TESTS: AUTO CHAIN ENDPOINT REGISTRATION & PROFESSIONAL PARAMETER MAPPING")
+        print("🎯" * 60)
+        print("Testing Auto Chain endpoint registration fix (no 404 errors)...")
+        self.test_auto_chain_endpoint_registration_fix()
+        print("Testing professional parameter flow pipeline...")
+        self.test_professional_parameter_flow()
+        print("Testing parameter mapping verification...")
+        self.test_parameter_mapping_verification()
+        
+        # EXISTING AUTO VOCAL CHAIN BACKEND TESTS
         print("\n" + "🎵" * 60)
-        print("🎵 AUTO VOCAL CHAIN BACKEND TESTING (REVIEW REQUEST PRIORITY)")
+        print("🎵 AUTO VOCAL CHAIN BACKEND TESTING (EXISTING TESTS)")
         print("🎵" * 60)
         print("Testing Auto Vocal Chain /api/analyze endpoint as requested...")
         self.test_auto_chain_analyze_endpoint()
