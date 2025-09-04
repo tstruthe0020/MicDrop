@@ -958,10 +958,19 @@ class AUPresetGenerator:
                 generated_presets = []
                 errors = []
                 
+                # DEBUG: Log all received plugins
+                logger.info(f"🔍 DEBUG generate_chain_zip: Received {len(plugins_data)} plugins:")
+                for i, plugin_data in enumerate(plugins_data):
+                    plugin_name = plugin_data.get('plugin', f'Unknown_{i}')
+                    logger.info(f"  Plugin {i+1}: {plugin_name}")
+                
                 for i, plugin_data in enumerate(plugins_data):
                     plugin_name = plugin_data.get('plugin', f'Unknown_{i}')
                     parameters = plugin_data.get('params', {})
                     preset_name = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}"
+                    
+                    logger.info(f"🔄 DEBUG: Processing plugin {i+1}/{len(plugins_data)}: {plugin_name}")
+                    logger.info(f"  Params: {list(parameters.keys())}")
                     
                     # Convert parameters using plugin-specific conversion
                     def convert_parameters(backend_params, plugin_name=None):
