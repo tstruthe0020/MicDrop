@@ -690,7 +690,7 @@ function App() {
         
         toast({
           title: "✅ Auto Chain Generated!",
-          description: `Generated presets based on AI analysis (${autoChainRecommendation.archetype} style). Processing time: ${result.processing_time_s.toFixed(1)}s`,
+          description: `Generated presets based on AI analysis (${autoChainRecommendation.archetype} style)${result.processing_time_s ? `. Processing time: ${result.processing_time_s.toFixed(1)}s` : ''}`,
           className: "border-green-200 bg-green-50"
         });
       } else {
