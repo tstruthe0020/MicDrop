@@ -1037,10 +1037,10 @@ function App() {
 
                     <div className="flex gap-3">
                       <button
-                        onClick={analyzeAutoChainAudio}
-                        disabled={!autoChainUrl.trim() || autoChainAnalyzing}
+                        onClick={analyzeAudio}
+                        disabled={(!autoChainFile && !autoChainUrl.trim()) || autoChainAnalyzing}
                         className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                          !autoChainUrl.trim() || autoChainAnalyzing
+                          (!autoChainFile && !autoChainUrl.trim()) || autoChainAnalyzing
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
