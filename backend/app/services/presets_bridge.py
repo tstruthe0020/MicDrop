@@ -203,98 +203,90 @@ class PresetsBridge:
             return {}
     
     def _convert_graillon3_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert professional Graillon 3 parameters"""
-        return {
-            'pitch_shift': 0.0,  # Will be controlled by key/scale
-            'correction_amount': targets.get('correction_amount', 0.4),
-            'correction_speed': targets.get('correction_speed', 20.0),
-            'key': targets.get('key', 'C'),
-            'scale': targets.get('scale_mask', 'Chromatic'),
-            'mix': 100.0
-        }
-    
-    def _convert_tdrnova_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert professional TDR Nova parameters"""
+        """Convert professional Graillon 3 parameters using actual parameter names"""
         params = {
-            'bypass': False,
-            'multiband_enabled': targets.get('multiband_enabled', True)
+            'Correction_Amount': targets.get('correction_amount', 0.4),
+            'Smooth': targets.get('correction_speed', 20.0),
+            'Pitch_Shift': 0.0,  # Use correction instead of direct pitch shift
+            'Wet_Mix': 100.0,
+            'Dry_Mix': 0.0,
+            'Correction': True,  # Enable pitch correction
+            'PTM_Enabled': True  # Enable pitch tracking
         }
         
-        # HPF
-        if 'hpf_freq' in targets:
-            params.update({
-                'crossover_1': targets['hpf_freq'],
-                'band_1_enabled': True
-            })
-        
-        # Mud dip (band 2)
-        if 'mud_center' in targets and 'mud_gain' in targets:
-            params.update({
-                'crossover_2': targets['mud_center'],
-                'band_2_threshold': targets['mud_gain'] + 10,  # Convert gain to threshold
-                'band_2_ratio': 3.0,
-                'band_2_enabled': True
-            })
-        
-        # De-esser (band 4)  
-        if 'deess_center' in targets and 'deess_threshold' in targets:
-            params.update({
-                'crossover_3': targets['deess_center'],
-                'band_4_threshold': targets['deess_threshold'],
-                'band_4_ratio': targets.get('deess_ratio', 2.5),
-                'band_4_enabled': True
-            })
-        
+        # Set scale mask if provided (Allow_C, Allow_Cs, etc.)
+        key = targets.get('key', 'C')
+        if key != 'Chromatic':
+            # Enable only the notes in the key (simplified - just root note for now)
+            note_mapping = {
+                'C': 'Allow_C', 'C#': 'Allow_Cs', 'D': 'Allow_D', 'D#': 'Allow_Ds',
+                'E': 'Allow_E', 'F': 'Allow_F', 'F#': 'Allow_Fs', 'G': 'Allow_G',
+                'G#': 'Allow_Gs', 'A': 'Allow_A', 'A#': 'Allow_As', 'B': 'Allow_B'
+            }
+            
+            # Disable all notes first
+            for note in note_mapping.values():
+                params[note] = False
+            
+            # Enable the root note
+            if key in note_mapping:
+                params[note_mapping[key]] = True
+                
         return params
     
     def _convert_1176_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert professional 1176 Compressor parameters"""
+        """Convert professional 1176 Compressor parameters using actual parameter names"""
         
-        # Convert string ratios to parameter values
+        # Convert ratio strings to numeric values for the 1176
         ratio_map = {
             '4:1': 1.0,
-            '8:1': 2.0,
+            '8:1': 2.0, 
             '12:1': 3.0,
             '20:1': 4.0
         }
         
-        # Convert attack/release strings
+        # Convert attack/release to approximate values
         attack_map = {
-            'Fast': 1.0,
-            'Medium': 5.0,
-            'Slow': 10.0
+            'Fast': 0.2,
+            'Medium': 0.5,
+            'Slow': 0.8
         }
         
         release_map = {
-            'Fast': 40.0,
-            'Medium': 100.0,
-            'Slow': 200.0
+            'Fast': 0.2,
+            'Medium': 0.5,
+            'Slow': 0.8
         }
         
+        ratio_val = ratio_map.get(targets.get('ratio', '4:1'), 1.0)
+        attack_val = attack_map.get(targets.get('attack', 'Medium'), 0.5)
+        release_val = release_map.get(targets.get('release', 'Medium'), 0.5)
+        
         return {
-            'input_gain': 5.0,
-            'output_gain': 3.0,
-            'ratio': targets.get('ratio', '4:1'),
-            'attack': targets.get('attack', 'Medium'),
-            'release': targets.get('release', 'Medium'),
-            'all_buttons': False
+            'Input': 0.5,   # 5dB input gain (normalized 0-1)
+            'Output': 0.3,  # 3dB output gain
+            'Ratio': ratio_val,
+            'Attack': attack_val,
+            'Release': release_val,
+            'Power': True   # Plugin enabled
         }
     
     def _convert_lala_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert professional LA-LA parameters"""
+        """Convert professional LA-LA parameters using actual parameter names"""
         return {
-            'target_level': -12.0,  # Standard target level
-            'dynamics': targets.get('peak_reduction', 0.25) * 100,  # Convert to percentage
-            'fast_release': False,
-            'mode': targets.get('mode', 'Normal')
+            'Gain': 0.5,  # Center position
+            'Peak_Reduction': targets.get('peak_reduction', 0.25),  # Already in 0-1 range
+            'Mode': 0.0,  # Normal mode
+            'Bypass': False
         }
     
     def _convert_fresh_air_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert professional Fresh Air parameters"""
+        """Convert professional Fresh Air parameters using actual parameter names"""
         return {
-            'presence': targets.get('mid_air', 0.2) * 100,   # Convert to percentage
-            'brilliance': targets.get('high_air', 0.3) * 100, # Convert to percentage
-            'mix': targets.get('mix', 1.0) * 100              # Convert to percentage
+            'Mid_Air': targets.get('mid_air', 0.2),      # Use exact parameter names
+            'High_Air': targets.get('high_air', 0.3),    # Use exact parameter names  
+            'Bypass': False,
+            'Trim': 0.5  # Center trim
         }
     
     def _convert_convolution_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
