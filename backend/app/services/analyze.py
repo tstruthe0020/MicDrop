@@ -47,19 +47,19 @@ def analyze_audio(audio_path: str) -> Analysis:
     reverb_result = _analyze_reverb(y, sr)
     vocal_result = _analyze_vocal(y, sr)
     
-    analysis = Analysis(
-        bpm=tempo_result,
-        key=key_result,
-        lufs_i=loudness_result['lufs_i'],
-        lufs_s=loudness_result['lufs_s'],
-        rms=dynamics_result['rms'],
-        peak_dbfs=dynamics_result['peak_dbfs'],
-        crest_db=dynamics_result['crest_db'],
-        bands=spectral_result['bands'],
-        spectral_tilt=spectral_result['tilt'],
-        reverb_tail_s=reverb_result,
-        vocal=vocal_result
-    )
+    analysis = {
+        'bpm': tempo_result,
+        'key': key_result,
+        'lufs_i': loudness_result['lufs_i'],
+        'lufs_s': loudness_result['lufs_s'],
+        'rms': dynamics_result['rms'],
+        'peak_dbfs': dynamics_result['peak_dbfs'],
+        'crest_db': dynamics_result['crest_db'],
+        'bands': spectral_result['bands'],
+        'spectral_tilt': spectral_result['tilt'],
+        'reverb_tail_s': reverb_result,
+        'vocal': vocal_result
+    }
     
     logger.info("Audio analysis complete")
     return analysis
