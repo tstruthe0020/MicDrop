@@ -460,34 +460,17 @@ function App() {
       let requestBody;
       
       if (autoChainFile) {
-        // File upload handling
-        const formData = new FormData();
-        formData.append('audio_file', autoChainFile);
-        
-        const response = await fetch(`${BACKEND_URL}/api/analyze`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-          setAutoChainAnalysis(result.analysis);
-          generateRecommendation(result.analysis);
-          toast({
-            title: "✅ Analysis Complete!",
-            description: `Analyzed ${autoChainFile.name} successfully`,
-            className: "border-green-200 bg-green-50"
-          });
-        } else {
-          throw new Error(result.message || 'Analysis failed');
-        }
+        // File upload - for now, we'll need to upload the file first
+        // Since the backend expects a URL or file path, we'll need to use a different approach
+        // For MVP, let's show an error and ask user to use URL for now
+        throw new Error('File upload not yet implemented. Please use the audio URL option for now.');
       } else {
         // URL-based analysis
         requestBody = { 
-          audio_url: autoChainUrl.trim()
+          input_source: autoChainUrl.trim()
         };
         
-        const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+        const response = await fetch(`${BACKEND_URL}/api/auto-chain/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody)
