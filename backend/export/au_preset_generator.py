@@ -1149,8 +1149,10 @@ class AUPresetGenerator:
                                     converted[key] = float(value)
                         return converted
                     converted_params = convert_parameters(parameters, plugin_name)
+                    logger.info(f"✓ DEBUG: Converted {len(converted_params)} parameters for {plugin_name}")
                     
                     # Generate individual preset (disable cleanup during chain generation)
+                    logger.info(f"🚀 DEBUG: Calling generate_preset for {plugin_name}")
                     success, stdout, stderr = self.generate_preset(
                         plugin_name=plugin_name,
                         parameters=converted_params,
@@ -1158,6 +1160,10 @@ class AUPresetGenerator:
                         output_dir=temp_dir,
                         verbose=verbose
                     )
+                    
+                    logger.info(f"📝 DEBUG: generate_preset result for {plugin_name}: success={success}")
+                    if not success:
+                        logger.error(f"❌ DEBUG: generate_preset failed for {plugin_name}: {stderr}")
                     
                     if success:
                         # Look for the generated preset file (search recursively)
