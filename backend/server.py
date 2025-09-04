@@ -1102,6 +1102,11 @@ except ImportError as e:
     AUTO_CHAIN_AVAILABLE = False
     logger.warning(f"Auto Vocal Chain module not available: {e}")
 
+# Include Auto Vocal Chain router if available
+if AUTO_CHAIN_AVAILABLE:
+    app.include_router(auto_chain_router)
+    logger.info("Auto Vocal Chain routes registered")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
