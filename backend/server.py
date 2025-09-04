@@ -391,7 +391,7 @@ def convert_parameters(backend_params, plugin_name=None):
         
         return converted
     
-    # MEqualizer uses parameter numbers from MEqualizer.map.json
+    # MEqualizer uses numeric parameter indices from MEqualizer.map.json
     elif plugin_name == "MEqualizer":
         param_name_mapping = {
             "mix": "0",                    # Mix
