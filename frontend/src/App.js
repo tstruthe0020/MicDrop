@@ -34,6 +34,14 @@ function App() {
   const [configLoading, setConfigLoading] = useState(false);
   const [pluginPaths, setPluginPaths] = useState(null);
   
+  // Auto Chain State
+  const [autoChainUrl, setAutoChainUrl] = useState('https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav');
+  const [autoChainFile, setAutoChainFile] = useState(null);
+  const [autoChainAnalysis, setAutoChainAnalysis] = useState(null);
+  const [autoChainRecommendation, setAutoChainRecommendation] = useState(null);
+  const [autoChainLoading, setAutoChainLoading] = useState(false);
+  const [autoChainPresetName, setAutoChainPresetName] = useState('Auto_Vocal_Chain');
+  
   const beatInputRef = useRef(null);
   const vocalInputRef = useRef(null);
 
