@@ -1226,7 +1226,13 @@ class AUPresetGenerator:
                             
                             errors.append(f"Preset file not found for {plugin_name}")
                     else:
+                        logger.error(f"❌ DEBUG: generate_preset failed for {plugin_name}")
                         errors.append(f"Failed to generate {plugin_name}: {stderr}")
+                
+                logger.info(f"🎯 DEBUG generate_chain_zip: Final result - {len(generated_presets)} successful out of {len(plugins_data)} plugins")
+                logger.info(f"📊 DEBUG: Generated presets: {[p['plugin'] for p in generated_presets]}")
+                if errors:
+                    logger.error(f"❌ DEBUG: Errors: {errors}")
                 
                 if generated_presets:
                     # Create final ZIP with Logic Pro structure using ditto (if on macOS) or zipfile
