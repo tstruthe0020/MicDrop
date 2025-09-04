@@ -517,48 +517,71 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"🔗 VOCAL CHAIN ORDER: {' → '.join(chain_order)}")
         logger.info(f"🔗 Total plugins in chain: {len(chain_order)}")
         
-        # Generate parameters for each plugin using existing chain generator
+        # Generate parameters for each plugin using WORKING PLUGINS ONLY
         generated_params = {}
-        for i, plugin_name in enumerate(chain_order, 1):
-            logger.info(f"\n🎛️  === PLUGIN {i}/8: {plugin_name} ===")
-            
-            # Use the existing chain generator to get plugin configuration
-            mock_features = {
-                "bpm": 120.0,
-                "lufs": -14.0,
-                "crest": 12.0,
-                "spectral": {"centroid": 2000.0, "rolloff": 8000.0}
-            }
-            
-            # Get full chain and extract this plugin's parameters
-            full_chain = chain_generator.generate_chain(mock_features, vibe)
-            plugin_params = {}
-            
-            # Find this plugin in the generated chain
-            if "plugins" in full_chain:
-                for plugin_config in full_chain["plugins"]:
-                    if plugin_config.get("plugin") == plugin_name:
-                        plugin_params = plugin_config.get("params", {})
-                        break
-            
-            generated_params[plugin_name] = plugin_params
-            
-            # Convert parameters using the existing parameter mapping
-            converted_params = convert_parameters(plugin_params, plugin_name)
-            
-            # Log both original and converted parameters
-            logger.info(f"📊 Original parameters for {plugin_name}:")
-            for param, value in plugin_params.items():
-                logger.info(f"     {param}: {value}")
-                
-            logger.info(f"🔧 Converted parameters for {plugin_name}:")
-            for param, value in converted_params.items():
-                logger.info(f"     {param}: {value}")
-                
-            if not converted_params:
-                logger.warning(f"⚠️  No converted parameters for {plugin_name}!")
-            else:
-                logger.info(f"✅ {plugin_name}: {len(converted_params)} parameters converted")
+        
+        # Plugin 1: TDR Nova (High-pass + De-essing)
+        logger.info(f"\n🎛️  === PLUGIN 1/4: TDR Nova (High-pass + De-ess) ===")
+        plugin_params_1 = {
+            'bypass_master': 0.0,       # Enable
+            'bandActive_1': 1.0,        # Enable band 1
+            'bandFreq_1': 100.0,        # High-pass at 100Hz
+            'bandGain_1': -3.0,         # Cut low end
+            'bandDynActive_3': 1.0,     # Enable de-esser on band 3
+            'bandFreq_3': 6000.0,       # De-ess frequency
+            'bandDynThreshold_3': -20.0, # De-ess threshold
+            'bandDynRatio_3': 3.0       # De-ess ratio
+        }
+        converted_params_1 = convert_parameters(plugin_params_1, "TDR Nova")
+        logger.info(f"🔧 TDR Nova (1) converted parameters: {converted_params_1}")
+        
+        # Plugin 2: 1176 Compressor (Character)  
+        logger.info(f"\n🎛️  === PLUGIN 2/4: 1176 Compressor (Character) ===")
+        plugin_params_2 = {
+            '48': 0.6,  # Input gain
+            '49': 0.4,  # Output gain
+            '50': 0.3,  # Attack (medium-fast)
+            '51': 0.6,  # Release (medium)
+            '52': 2.0,  # Ratio (4:1)
+            '54': 1.0   # Power on
+        }
+        converted_params_2 = convert_parameters(plugin_params_2, "1176 Compressor")
+        logger.info(f"🔧 1176 Compressor (1) converted parameters: {converted_params_2}")
+        
+        # Plugin 3: TDR Nova (Dynamic EQ)
+        logger.info(f"\n🎛️  === PLUGIN 3/4: TDR Nova (Dynamic EQ) ===")
+        plugin_params_3 = {
+            'bypass_master': 0.0,       # Enable
+            'bandActive_2': 1.0,        # Enable band 2
+            'bandFreq_2': 3000.0,       # Presence frequency
+            'bandGain_2': 2.0,          # Boost presence
+            'bandActive_4': 1.0,        # Enable band 4
+            'bandFreq_4': 10000.0,      # Air frequency
+            'bandGain_4': 1.5           # Boost air
+        }
+        converted_params_3 = convert_parameters(plugin_params_3, "TDR Nova")
+        logger.info(f"🔧 TDR Nova (2) converted parameters: {converted_params_3}")
+        
+        # Plugin 4: 1176 Compressor (Glue)
+        logger.info(f"\n🎛️  === PLUGIN 4/4: 1176 Compressor (Glue) ===")
+        plugin_params_4 = {
+            '48': 0.4,  # Input gain (lower)
+            '49': 0.6,  # Output gain (higher)
+            '50': 0.7,  # Attack (slower)
+            '51': 0.8,  # Release (slower)
+            '52': 1.0,  # Ratio (2:1 - gentle)
+            '54': 1.0   # Power on
+        }
+        converted_params_4 = convert_parameters(plugin_params_4, "1176 Compressor")
+        logger.info(f"🔧 1176 Compressor (2) converted parameters: {converted_params_4}")
+        
+        # Store all parameters
+        generated_params = {
+            "TDR Nova (High-pass)": converted_params_1,
+            "1176 Compressor (Character)": converted_params_2,  
+            "TDR Nova (Dynamic EQ)": converted_params_3,
+            "1176 Compressor (Glue)": converted_params_4
+        }
         
         logger.info(f"\n🏁 PARAMETER GENERATION COMPLETE")
         logger.info(f"📈 Total plugins processed: {len(generated_params)}")
