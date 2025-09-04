@@ -3271,6 +3271,11 @@ class VocalChainAPITester:
             print("✅ Individual preset installation working!")
         else:
             print("❌ Individual preset installation has issues!")
+            
+        if comprehensive_success:
+            print("✅ Comprehensive individual plugin testing successful!")
+        else:
+            print("❌ Comprehensive individual plugin testing has issues!")
         
         if self.tests_passed == self.tests_run:
             print("\n🎉 All tests passed!")
