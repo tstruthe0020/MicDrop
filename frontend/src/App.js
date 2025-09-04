@@ -665,15 +665,26 @@ function App() {
       console.log('🎯 DEBUG: Backend URL:', BACKEND_URL);
       console.log('🎯 DEBUG: Full URL:', `${BACKEND_URL}/api/auto-chain/generate`);
 
+      // Create an AbortController for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
       const response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       console.log('🎯 DEBUG: Response status:', response.status);
       console.log('🎯 DEBUG: Response ok:', response.ok);
       console.log('🎯 DEBUG: Response headers:', [...response.headers.entries()]);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const result = await response.json();
       console.log('🎯 DEBUG: Response result:', result);
