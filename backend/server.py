@@ -1162,47 +1162,78 @@ async def auto_chain_upload(audio_file: UploadFile = File(...)):
         
         # Basic audio analysis using librosa
         try:
+            logger.info("🎯 Step 1: Loading audio with librosa")
             y, sr = librosa.load(temp_path, sr=48000, duration=30)  # Analyze first 30 seconds
+            logger.info(f"🎯 Step 1 complete: Loaded {len(y)} samples at {sr}Hz")
             
             if len(y) == 0:
                 raise ValueError("Audio file is empty or invalid")
             
             # Extract features with error handling
             try:
+                logger.info("🎯 Step 2: Beat tracking")
                 tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
-            except:
+                tempo = float(tempo)  # Ensure it's a Python float
+                logger.info(f"🎯 Step 2 complete: BPM = {tempo}")
+            except Exception as e:
+                logger.warning(f"🎯 Step 2 failed: {e}")
                 tempo = 120.0  # Default BPM
                 
             # Key detection (simplified)
             try:
+                logger.info("🎯 Step 3: Key detection")
                 chroma = librosa.feature.chroma_stft(y=y, sr=sr)
-                key_idx = np.argmax(np.sum(chroma, axis=1))
+                key_idx = int(np.argmax(np.sum(chroma, axis=1)))  # Convert to Python int first
                 keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
                 estimated_key = keys[key_idx]
-            except:
+                logger.info(f"🎯 Step 3 complete: Key = {estimated_key}")
+            except Exception as e:
+                logger.warning(f"🎯 Step 3 failed: {e}")
                 estimated_key = 'C'  # Default key
             
             # Loudness (RMS as proxy)
-            rms = librosa.feature.rms(y=y)[0]
-            avg_rms = float(np.mean(rms))
-            lufs_estimate = 20 * np.log10(avg_rms) - 10 if avg_rms > 0 else -60
+            try:
+                logger.info("🎯 Step 4: Loudness analysis")
+                rms = librosa.feature.rms(y=y)[0]
+                avg_rms = float(np.mean(rms))
+                lufs_estimate = float(20 * np.log10(avg_rms) - 10) if avg_rms > 0 else -60.0
+                logger.info(f"🎯 Step 4 complete: LUFS estimate = {lufs_estimate}")
+            except Exception as e:
+                logger.warning(f"🎯 Step 4 failed: {e}")
+                avg_rms = 0.1
+                lufs_estimate = -20.0
             
             # Dynamics (crest factor)
-            peak = float(np.max(np.abs(y)))
-            crest_factor = 20 * np.log10(peak / avg_rms) if avg_rms > 0 else 20
+            try:
+                logger.info("🎯 Step 5: Dynamics analysis")
+                peak = float(np.max(np.abs(y)))
+                crest_factor = float(20 * np.log10(peak / avg_rms)) if avg_rms > 0 else 20.0
+                logger.info(f"🎯 Step 5 complete: Crest factor = {crest_factor}")
+            except Exception as e:
+                logger.warning(f"🎯 Step 5 failed: {e}")
+                peak = 0.5
+                crest_factor = 12.0
             
             # Mock vocal detection
-            spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
-            vocal_present = float(np.mean(spectral_centroid)) > 2000  # Simple heuristic
+            try:
+                logger.info("🎯 Step 6: Vocal detection")
+                spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+                vocal_present = bool(float(np.mean(spectral_centroid)) > 2000)  # Simple heuristic
+                logger.info(f"🎯 Step 6 complete: Vocal present = {vocal_present}")
+            except Exception as e:
+                logger.warning(f"🎯 Step 6 failed: {e}")
+                vocal_present = True
             
+            # Build analysis dict with careful type conversion
+            logger.info("🎯 Step 7: Building analysis response")
             analysis = {
-                "bpm": float(tempo),
+                "bpm": tempo,
                 "key": {"tonic": estimated_key, "mode": "major", "confidence": 0.7},
-                "lufs_i": float(lufs_estimate),
-                "lufs_s": float(lufs_estimate),
-                "rms": float(20 * np.log10(avg_rms)) if avg_rms > 0 else -60,
-                "peak_dbfs": float(20 * np.log10(peak)) if peak > 0 else -60,
-                "crest_db": float(crest_factor),
+                "lufs_i": lufs_estimate,
+                "lufs_s": lufs_estimate,
+                "rms": float(20 * np.log10(avg_rms)) if avg_rms > 0 else -60.0,
+                "peak_dbfs": float(20 * np.log10(peak)) if peak > 0 else -60.0,
+                "crest_db": crest_factor,
                 "bands": {
                     "rumble": 0.1,
                     "mud": 0.15,
@@ -1213,12 +1244,13 @@ async def auto_chain_upload(audio_file: UploadFile = File(...)):
                 "spectral_tilt": float(np.random.uniform(-2, 2)),
                 "reverb_tail_s": float(np.random.uniform(0.5, 2.0)),
                 "vocal": {
-                    "present": bool(vocal_present),
+                    "present": vocal_present,
                     "sibilance_idx": 0.12,
                     "plosive_idx": 0.2,
                     "note_stability": float(np.random.uniform(0.3, 0.8))
                 }
             }
+            logger.info("🎯 Step 7 complete: Analysis dict built")
             
             # Clean up temp file
             os.unlink(temp_path)
