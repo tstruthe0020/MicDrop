@@ -16,6 +16,7 @@ import uuid
 from datetime import datetime
 import json
 import numpy as np
+import librosa  # Add librosa import for audio analysis
 
 # Import our custom modules
 import sys
