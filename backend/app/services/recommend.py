@@ -239,7 +239,7 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
             'key': graillon_key,
             'correction_amount': correction_amount,
             'correction_speed': correction_speed,
-            'scale_mask': scale_mask(graillon_key) if graillon_key != 'Chromatic' else None
+            'scale_mask': scale_mask(estimated_key, 'major', key_confidence) if graillon_key != 'Chromatic' else None
         },
         'TDR Nova': {
             'multiband_enabled': True,
