@@ -87,7 +87,7 @@ def recommend_chain(analysis: Analysis) -> Targets:
     logger.info(f"Selected chain style: {chain_style}")
     
     # Generate targets for each plugin
-    targets = Targets({
+    targets = {
         'chain_style': chain_style,
         'analysis_summary': _create_analysis_summary(analysis),
         'Graillon3': _recommend_graillon3(analysis),
@@ -99,7 +99,7 @@ def recommend_chain(analysis: Analysis) -> Targets:
         'MCompressor': _recommend_mcompressor(analysis, chain_style),
         'MConvolutionEZ': _recommend_convolution(analysis, chain_style),
         'headroom_db': settings.HEADROOM_DB
-    })
+    }
     
     logger.info("Plugin recommendations generated")
     return targets
