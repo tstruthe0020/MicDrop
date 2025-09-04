@@ -1,4 +1,4 @@
-"""Audio analysis to plugin parameter recommendation service"""
+"""Advanced audio analysis to plugin parameter recommendation service"""
 import logging
 from typing import Dict, List, Any
 import numpy as np
@@ -40,6 +40,251 @@ CHAIN_ARCHETYPES = {
         'aggressive_processing': False
     }
 }
+
+def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balanced') -> Targets:
+    """
+    Professional parameter mapping based on detailed audio analysis
+    Converts enhanced analysis into optimal plugin parameters
+    """
+    logger.info(f"🎯 PROFESSIONAL PARAMETER MAPPING: Starting for chain style '{chain_style}'")
+    
+    audio_features = analysis.audio_features
+    vocal_features = analysis.vocal_features
+    
+    # Extract key analysis metrics
+    bpm = audio_features.get('bpm', 120.0)
+    key_data = audio_features.get('key', {})
+    estimated_key = key_data.get('tonic', 'C')
+    key_confidence = key_data.get('confidence', 0.5)
+    
+    lufs_i = audio_features.get('lufs_i', -20.0)
+    crest_db = audio_features.get('crest_db', 12.0)
+    spectral_tilt = audio_features.get('spectral_tilt', -6.0)
+    brightness_index = audio_features.get('brightness_index', 0.8)
+    dynamic_spread = audio_features.get('dynamic_spread', 8.0)
+    
+    # Vocal characteristics
+    f0_median = vocal_features.get('f0_median', 180.0)
+    gender_profile = vocal_features.get('gender_profile', 'unknown')
+    sibilance_centroid = vocal_features.get('sibilance_centroid', 6500.0)
+    mud_ratio = vocal_features.get('mud_ratio', 0.3)
+    nasal_ratio = vocal_features.get('nasal_ratio', 0.5)
+    plosive_index = vocal_features.get('plosive_index', 0.2)
+    vocal_intensity = vocal_features.get('intensity', 0.6)
+    
+    logger.info(f"🎯 Analysis Summary: BPM={bpm:.1f}, Key={estimated_key}, F0={f0_median:.0f}Hz, Crest={crest_db:.1f}dB")
+    
+    # A. GRAILLON 3 (TUNING) PARAMETERS
+    logger.info("🎯 Mapping Graillon 3 parameters...")
+    
+    # Key/Scale mapping
+    graillon_key = estimated_key if key_confidence > 0.6 else 'Chromatic'
+    
+    # Correction amount based on vocal type and pitch variance
+    if chain_style in ['aggressive-rap'] or vocal_intensity > 0.8:
+        # Rap/spoken style - minimal correction
+        correction_amount = np.clip(0.05 + (plosive_index * 0.1), 0.05, 0.15)
+    else:
+        # Pop/R&B sung style - moderate correction  
+        base_correction = 0.35 if gender_profile == 'female' else 0.45
+        # Increase if pitch variance high (estimated from F0 variance)
+        correction_amount = np.clip(base_correction + (crest_db - 10) * 0.02, 0.35, 0.55)
+    
+    # Speed based on note length
+    note_16th_ms = (60 / bpm) * 1000 / 4  # 1/16 note in ms
+    correction_speed = np.clip(note_16th_ms * 0.8, 5, 60)  # Slightly faster for pop
+    
+    # B. TDR NOVA (SUBTRACTIVE EQ + DYNAMIC DE-ESS) PARAMETERS  
+    logger.info("🎯 Mapping TDR Nova parameters...")
+    
+    # HPF based on F0 and plosive index
+    if gender_profile == 'male':
+        hpf_base = 80
+    elif gender_profile == 'female':
+        hpf_base = 100
+    else:
+        hpf_base = 90
+    
+    # Adjust for plosives
+    if plosive_index > 0.25:
+        hpf_freq = hpf_base + (plosive_index * 40)  # +10-20 Hz for high plosives
+    else:
+        hpf_freq = hpf_base
+    
+    # Mud dip (200-500 Hz)
+    mud_center = 250 + (mud_ratio * 200)  # Center based on mud characteristics
+    mud_excess_db = max(0, (mud_ratio - 0.25) * 20)  # How much mud is excessive
+    mud_gain = -np.clip(mud_excess_db * 0.5, 0, 4)  # Cut 0 to -4 dB
+    mud_q = 1.0 + (mud_excess_db * 0.1)  # Q 1.0-1.4
+    
+    # Nasal dip (900-2000 Hz) 
+    nasal_center = 900 + (nasal_ratio * 1100)
+    nasal_excess = max(0, nasal_ratio - 0.4)
+    nasal_gain = -np.clip(nasal_excess * 6, 1, 3) if nasal_excess > 0 else 0  # Cut -1 to -3 dB
+    
+    # Dynamic de-esser
+    deess_center = sibilance_centroid
+    deess_q = 2.0
+    # Target 3-6 dB GR on esses, adjust if track is bright
+    target_gr = 4.0
+    if brightness_index < 0.6:
+        target_gr -= 1.5  # Less de-essing if track is dull
+    deess_threshold = -6 - target_gr  # Threshold to achieve target GR
+    
+    # C. 1176 COMPRESSOR (FAST FET) PARAMETERS
+    logger.info("🎯 Mapping 1176 Compressor parameters...")
+    
+    # Use when vocal crest factor is high or transient density high
+    use_1176 = crest_db > 10 or vocal_intensity > 0.6
+    
+    if chain_style == 'aggressive-rap':
+        ratio_1176 = '8:1' if crest_db > 14 else '4:1'
+    elif chain_style == 'intimate-rnb':
+        ratio_1176 = '4:1'
+    else:  # Pop
+        ratio_1176 = '4:1'
+    
+    # Attack: 3-8 ms (don't go minimum unless plosives are wild)
+    attack_1176 = 'Fast' if plosive_index > 0.4 else 'Medium'
+    
+    # Release: faster for rap
+    if chain_style == 'aggressive-rap':
+        release_1176 = 'Fast'  # 40-60ms
+    else:
+        release_1176 = 'Medium'  # 80-120ms
+    
+    # Target GR based on crest factor
+    if crest_db <= 10:
+        target_gr_1176 = 2.5
+    elif crest_db <= 14:
+        target_gr_1176 = 4.0
+    else:
+        target_gr_1176 = 6.0
+    
+    # D. LA-LA (OPTO LEVELER) PARAMETERS
+    logger.info("🎯 Mapping LA-LA parameters...")
+    
+    # Peak reduction based on dynamic spread
+    if dynamic_spread > 12:
+        peak_reduction = 0.4  # 3-5 dB average GR
+    else:
+        peak_reduction = 0.25  # 1-3 dB average GR
+        
+    # Gain makeup to match pre/post loudness
+    lala_gain = 0.5  # Center position
+    
+    # E. FRESH AIR (HF EXCITER) PARAMETERS
+    logger.info("🎯 Mapping Fresh Air parameters...")
+    
+    # Desired HF target based on genre
+    if chain_style == 'pop-airy':
+        target_hf_ratio = 1.05
+    elif chain_style == 'intimate-rnb':
+        target_hf_ratio = 0.90
+    elif chain_style == 'aggressive-rap':
+        target_hf_ratio = 0.95
+    else:
+        target_hf_ratio = 1.0
+    
+    # Calculate brightness gap
+    hf_gap = target_hf_ratio - brightness_index
+    
+    # Mid Air and High Air settings
+    if hf_gap > 0:
+        mid_air = np.clip(0.15 + hf_gap * 0.4, 0.15, 0.35)
+        high_air = np.clip(0.20 + hf_gap * 0.5, 0.20, 0.45)
+    else:
+        mid_air = 0.10
+        high_air = 0.15
+    
+    # Reduce if sibilance is already high or de-esser is working hard
+    if sibilance_centroid > 7500 or target_gr > 5:
+        mid_air *= 0.5
+        high_air *= 0.5
+    
+    # F. MCONVOLUTIONEZ (REVERB) PARAMETERS
+    logger.info("🎯 Mapping MConvolutionEZ parameters...")
+    
+    # Decay based on tempo and genre
+    if chain_style == 'pop-airy':
+        decay_base = 1.5
+    elif chain_style == 'intimate-rnb':
+        decay_base = 2.2
+    elif chain_style == 'aggressive-rap':
+        decay_base = 0.8
+    else:
+        decay_base = 1.4
+    
+    # Adjust for tempo (faster = shorter)
+    tempo_factor = np.clip(120 / bpm, 0.7, 1.3)
+    reverb_decay = decay_base * tempo_factor
+    
+    # Pre-delay based on tempo (1/64 to 1/32 note)
+    pre_delay = np.clip((60 / bpm) * 1000 / 32, 15, 40)  # ms
+    
+    # HF damping if track is bright
+    hf_damping_freq = 10000
+    if brightness_index > 1.1:
+        hf_damping_freq = 8000
+    
+    # Mix level (conservative start)
+    reverb_mix = 0.12  # 12% wet
+    
+    logger.info("🎯 PARAMETER MAPPING COMPLETE - Generating plugin targets...")
+    
+    # Generate plugin targets with mapped parameters
+    targets = {
+        'Graillon 3': {
+            'key': graillon_key,
+            'correction_amount': correction_amount,
+            'correction_speed': correction_speed,
+            'scale_mask': scale_mask(graillon_key) if graillon_key != 'Chromatic' else None
+        },
+        'TDR Nova': {
+            'multiband_enabled': True,
+            'hpf_freq': hpf_freq,
+            'mud_center': mud_center,
+            'mud_gain': mud_gain,
+            'mud_q': mud_q,
+            'nasal_center': nasal_center if nasal_gain < 0 else None,
+            'nasal_gain': nasal_gain if nasal_gain < 0 else None,
+            'deess_center': deess_center,
+            'deess_threshold': deess_threshold,
+            'deess_ratio': 2.5,
+            'deess_q': deess_q
+        },
+        '1176 Compressor': {
+            'ratio': ratio_1176,
+            'attack': attack_1176,
+            'release': release_1176,
+            'target_gr': target_gr_1176,
+            'enabled': use_1176
+        },
+        'LA-LA': {
+            'peak_reduction': peak_reduction,
+            'gain': lala_gain,
+            'mode': 'Normal'
+        },
+        'Fresh Air': {
+            'mid_air': mid_air,
+            'high_air': high_air,
+            'mix': 1.0  # Full wet
+        },
+        'MConvolutionEZ': {
+            'impulse_type': 'Plate',
+            'decay': reverb_decay,
+            'pre_delay': pre_delay,
+            'hf_damping': hf_damping_freq,
+            'mix': reverb_mix,
+            'low_cut': 250  # Clean up low end
+        }
+    }
+    
+    logger.info(f"🎯 Generated {len(targets)} plugin parameter sets")
+    for plugin, params in targets.items():
+        logger.info(f"   {plugin}: {len(params)} parameters")
+    
+    return targets
 
 # Chain archetype definitions
 CHAIN_ARCHETYPES = {
