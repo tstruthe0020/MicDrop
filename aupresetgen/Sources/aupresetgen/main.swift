@@ -7,10 +7,10 @@ import ArgumentParser
 struct AUPresetGen: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "aupresetgen",
-        abstract: "Generate Logic Pro .aupreset files using Audio Unit APIs",
+        abstract: "Generate Logic Pro .aupreset files using Audio Unit APIs with XML injection for JUCE plugins",
         discussion: """
         Creates valid .aupreset files by instantiating Audio Units and exporting their state.
-        This avoids reverse-engineering vendor binary formats.
+        Features enhanced XML injection for TDR Nova and other JUCE-based plugins.
         """
     )
     
