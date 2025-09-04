@@ -1093,6 +1093,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Import Auto Vocal Chain components
+try:
+    from app.api.routes_auto_chain import router as auto_chain_router
+    AUTO_CHAIN_AVAILABLE = True
+    logger.info("Auto Vocal Chain module loaded successfully")
+except ImportError as e:
+    AUTO_CHAIN_AVAILABLE = False
+    logger.warning(f"Auto Vocal Chain module not available: {e}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
