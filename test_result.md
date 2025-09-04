@@ -242,6 +242,19 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+backend:
+  - task: "Fix Parameter Name Mapping for All Plugins"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "🔧 CRITICAL PARAMETER MAPPING FIX IMPLEMENTED! Root cause identified: Backend was using human-readable parameter names (e.g., 'Mid_Air', 'band_1_enabled', 'Pitch_Shift') instead of numeric indices required by AU preset generator. Updated convert_parameters() function for all failing plugins: 1) Fresh Air: 'Mid_Air'→'0', 'High_Air'→'1', 'Trim'→'3', 2) MEqualizer: 'band_1_enabled'→'3', 'band_1_frequency'→'4', 'band_1_gain'→'5', etc., 3) Graillon 3: 'Pitch_Shift'→'15', 'Wet_Mix'→'0', 'Formant_Shift'→'51', 4) MCompressor: 'threshold'→'5', 'ratio'→'6', 'attack'→'2', 'release'→'3', 5) MConvolutionEZ: Added complete mapping for 'dry_wet'→'0', 'widening'→'1', etc., 6) LA-LA: Fixed to ensure only numeric indices are used. All mappings now use exact parameter indices from respective .map.json files. This should resolve the '0 parameters applied' issue for all failing plugins."
+
 agent_communication:
     - agent: "main"
     - message: "🎵 AUTO CHAIN FRONTEND INTEGRATION COMPLETE! Successfully added new 'Auto Chain' tab as 5th tab in React interface. Implemented comprehensive AI-powered audio analysis UI with: Audio URL input (pre-populated with test URL), file upload backup option, real-time analysis display for BPM/key/LUFS/vocal characteristics, intelligent chain archetype recommendations with confidence scores and explanations (clean, pop-airy, warm-analog, aggressive-rap, intimate-rnb, balanced), auto preset generation connected to working /analyze endpoint and existing /export/download-presets. All existing functionality preserved (4 original tabs working). Ready for frontend testing with provided Lemonade Stand.wav URL: https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav"
