@@ -360,11 +360,13 @@ def convert_parameters(backend_params, plugin_name=None):
         
     # LA-LA uses gain and dynamics parameters
     elif plugin_name == "LA-LA":
-        # Map API parameter names to LA-LA parameter names
+        # Use parameter numbers from LALA.map.json
         param_name_mapping = {
-            "target_level": "Gain",
-            "dynamics": "Peak_Reduction",
-            "fast_release": "Mode"
+            "target_level": "0",      # Gain
+            "dynamics": "1",          # Peak_Reduction
+            "fast_release": "9",      # Mode
+            "gain": "0",              # Gain
+            "peak_reduction": "1"     # Peak_Reduction
         }
         
         for key, value in backend_params.items():
