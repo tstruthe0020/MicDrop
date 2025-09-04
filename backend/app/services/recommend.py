@@ -203,6 +203,91 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
         mid_air *= 0.5
         high_air *= 0.5
     
+    # F. MCONVOLUTIONEZ (REVERB/SPACE) PARAMETERS  
+    logger.info("🎯 Mapping MConvolutionEZ parameters...")
+    
+    # Reverb amount based on genre and vocal delivery
+    if chain_style == 'intimate-rnb':
+        reverb_mix = 0.15
+    elif chain_style == 'warm-analog':
+        reverb_mix = 0.20
+    elif chain_style == 'aggressive-rap':
+        reverb_mix = 0.08
+    else:
+        reverb_mix = 0.12
+    
+    # Reverb decay time based on song BPM
+    if bpm > 130:
+        reverb_decay = 1.2  # Short for fast tracks
+    elif bpm < 80:
+        reverb_decay = 2.5  # Longer for ballads
+    else:
+        reverb_decay = audio_features.get('reverb_tail_s', 1.4) * 1.1  # Based on detected tail
+    
+    # Pre-delay based on BPM
+    pre_delay = np.clip((60 / bpm) * 1000 / 8, 15, 40)  # 1/8 note, 15-40ms range
+    
+    # HF damping based on brightness
+    if brightness_index > 0.9:
+        hf_damping_freq = 8000  # Tame bright vocals
+    else:
+        hf_damping_freq = 12000  # Keep air
+    
+    # G. MEQUALIZER (CORRECTIVE EQ) PARAMETERS
+    logger.info("🎯 Mapping MEqualizer parameters...")
+    
+    # Bass control based on mud ratio
+    if audio_features.get('bands', {}).get('mud', 0.3) > 0.35:
+        bass_cut_freq = 100
+        bass_cut_gain = -2.5
+        mud_cut_freq = 300
+        mud_cut_gain = -1.5
+    else:
+        bass_cut_freq = 80
+        bass_cut_gain = -1.0
+        mud_cut_freq = 280
+        mud_cut_gain = -0.5
+    
+    # Presence boost based on spectral balance
+    if spectral_tilt < -8:  # Dark vocal
+        presence_freq = 2800
+        presence_gain = 2.0
+    elif spectral_tilt > -3:  # Bright vocal
+        presence_freq = 3200
+        presence_gain = 0.5
+    else:
+        presence_freq = 3000
+        presence_gain = 1.2
+    
+    # Air shelf based on chain style
+    if chain_style == 'pop-airy':
+        air_freq = 10000
+        air_gain = 1.8
+    elif chain_style == 'intimate-rnb':
+        air_freq = 12000
+        air_gain = 0.8
+    else:
+        air_freq = 11000
+        air_gain = 1.2
+    
+    # H. MCOMPRESSOR (GLUE COMPRESSION) PARAMETERS
+    logger.info("🎯 Mapping MCompressor parameters...")
+    
+    # Threshold and ratio for glue compression
+    if dynamic_spread > 12:
+        comp_threshold = -12
+        comp_ratio = 2.5
+        comp_attack = 10
+        comp_release = 100
+    else:
+        comp_threshold = -8
+        comp_ratio = 1.8
+        comp_attack = 30
+        comp_release = 200
+    
+    # Makeup gain to maintain loudness
+    comp_makeup = abs(comp_threshold) * (comp_ratio - 1) / comp_ratio * 0.7
+    
     # F. MCONVOLUTIONEZ (REVERB) PARAMETERS
     logger.info("🎯 Mapping MConvolutionEZ parameters...")
     
