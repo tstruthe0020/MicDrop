@@ -447,59 +447,86 @@ function App() {
   };
 
   const analyzeAudio = async () => {
-    if (!autoChainFile) {
+    // Check if we have either file or URL
+    if (!autoChainFile && !autoChainUrl.trim()) {
       toast({
-        title: "Missing Audio File",
-        description: "Please upload an audio file",
+        title: "Missing Audio Input",
+        description: "Please upload an audio file OR enter a URL",
         variant: "destructive"
       });
       return;
     }
 
-    setAutoChainLoading(true);
+    setAutoChainAnalyzing(true);
     setAutoChainAnalysis(null);
     setAutoChainRecommendation(null);
 
     try {
-      // File upload handling
-      const formData = new FormData();
-      formData.append('audio_file', autoChainFile);
+      let response;
       
-      const analyzeUrl = `${BACKEND_URL}/api/auto-chain-upload`;
-      console.log('🎯 DEBUG: About to call file upload endpoint');
-      console.log('🎯 DEBUG: URL:', analyzeUrl); 
-      console.log('🎯 DEBUG: File:', autoChainFile.name);
-      
-      const response = await fetch(analyzeUrl, {
-        method: 'POST',
-        body: formData
-      });
+      if (autoChainFile) {
+        // FILE UPLOAD PATH
+        console.log('🎯 DEBUG: Using file upload analysis');
+        console.log('🎯 DEBUG: File:', autoChainFile.name);
+        
+        const formData = new FormData();
+        formData.append('audio_file', autoChainFile);
+        
+        response = await fetch(`${BACKEND_URL}/api/auto-chain-upload`, {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        // URL PATH  
+        console.log('🎯 DEBUG: Using URL analysis');
+        console.log('🎯 DEBUG: URL:', autoChainUrl.trim());
+        
+        const requestBody = {
+          input_source: autoChainUrl.trim()
+        };
+        
+        response = await fetch(`${BACKEND_URL}/api/auto-chain/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+      }
       
       console.log('🎯 DEBUG: Response status:', response.status);
+      console.log('🎯 DEBUG: Response ok:', response.ok);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
       const result = await response.json();
-      console.log('🎯 DEBUG: Response body:', result);
+      console.log('🎯 DEBUG: Response result:', result);
       
       if (result.success) {
         setAutoChainAnalysis(result.analysis);
         generateRecommendation(result.analysis);
+        
+        const inputDescription = autoChainFile 
+          ? `${autoChainFile.name}` 
+          : 'audio from URL';
+          
         toast({
           title: "✅ Analysis Complete!",
-          description: `Analyzed ${autoChainFile.name} successfully`,
+          description: `Analyzed ${inputDescription} successfully`,
           className: "border-green-200 bg-green-50"
         });
       } else {
         throw new Error(result.message || 'Analysis failed');
       }
     } catch (error) {
-      console.error('Analysis error:', error);
+      console.error('🎯 DEBUG: Analysis error:', error);
       toast({
         title: "Analysis Error",
         description: error.message || "Failed to analyze audio",
         variant: "destructive"
       });
     } finally {
-      setAutoChainLoading(false);
+      setAutoChainAnalyzing(false);
     }
   };
 
