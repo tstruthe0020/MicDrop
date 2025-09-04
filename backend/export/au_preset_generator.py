@@ -614,12 +614,12 @@ class AUPresetGenerator:
         mappings = {
             "TDR Nova": "Tokyo Dawn Labs",
             "MEqualizer": "MeldaProduction",
-            "MCompressor": "MeldaProduction", 
+            "MCompressor": "MeldaProduction/Untitled",  # Updated: Actual Swift CLI output
             "MAutoPitch": "MeldaProduction",
             "MConvolutionEZ": "MeldaProduction",
             "1176 Compressor": "UADx",          # Updated: UADx (not Auburn Sounds)
             "Graillon 3": "Aubn",              # Updated: Aubn (not Auburn Sounds)
-            "Fresh Air": "Slate Digital",
+            "Fresh Air": "SlDg",               # Updated: SlDg (not Slate Digital)
             "LA-LA": "Anob"                     # Updated: Anob (not Plugin Alliance)
         }
         
