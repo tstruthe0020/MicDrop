@@ -14,7 +14,7 @@ def test_zip_structure_detailed():
     print("🔍 DETAILED ZIP STRUCTURE VERIFICATION")
     print("=" * 50)
     
-    api_url = "https://au-preset-builder.preview.emergentagent.com/api"
+    api_url = "https://hybrid-plugin-gen.preview.emergentagent.com/api"
     
     # Request a ZIP file
     test_request = {
@@ -35,7 +35,7 @@ def test_zip_structure_detailed():
             
             if data.get("success"):
                 download_url = data["download"]["url"]
-                base_url = "https://au-preset-builder.preview.emergentagent.com"
+                base_url = "https://hybrid-plugin-gen.preview.emergentagent.com"
                 
                 # Download the ZIP file
                 zip_response = requests.get(f"{base_url}{download_url}", timeout=30)
