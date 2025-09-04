@@ -21,7 +21,7 @@ class PresetsBridge:
         
     def generate_presets(self, targets: Dict[str, Any], output_dir: Path, uuid_str: str) -> List[Path]:
         """
-        Generate all .aupreset files from targets
+        Generate all .aupreset files from targets (enhanced with professional parameter mapping)
         
         Args:
             targets: Plugin parameter targets from recommend.py
@@ -31,6 +31,89 @@ class PresetsBridge:
         Returns:
             List of generated preset file paths
         """
+        logger.info(f"🎯 PROFESSIONAL PRESETS BRIDGE: Starting generation")
+        logger.info(f"🎯 Available targets: {list(targets.keys())}")
+        
+        # Check if we have professional parameters
+        if 'professional_params' in targets:
+            logger.info("🎯 Using PROFESSIONAL parameter mapping")
+            return self._generate_professional_presets(targets, output_dir, uuid_str)
+        else:
+            logger.info("🎯 Using legacy parameter mapping")
+            return self._generate_legacy_presets(targets, output_dir, uuid_str)
+    
+    def _generate_professional_presets(self, targets: Dict[str, Any], output_dir: Path, uuid_str: str) -> List[Path]:
+        """Generate presets using professional parameter mapping"""
+        
+        # Create presets subdirectory
+        presets_dir = output_dir / "presets"
+        presets_dir.mkdir(parents=True, exist_ok=True)
+        
+        generated_files = []
+        chain_style = targets.get('chain_style', 'auto')
+        chain_name = f"AutoChain_{chain_style}_{uuid_str[:8]}"
+        
+        # Get professional parameters
+        professional_params = targets.get('professional_params', {})
+        
+        # Process plugins in optimal order
+        plugin_order = [
+            ('MEqualizer', 'MEqualizer'),           # EQ first 
+            ('TDR Nova', 'TDR Nova'),             # Dynamic EQ/De-ess
+            ('1176 Compressor', '1176 Compressor'), # Character compression
+            ('Graillon 3', 'Graillon 3'),         # Pitch correction
+            ('LA-LA', 'LA-LA'),                   # Leveling
+            ('Fresh Air', 'Fresh Air'),           # Presence/air
+            ('MCompressor', 'MCompressor'),       # Glue compression (if needed)
+            ('MConvolutionEZ', 'MConvolutionEZ')  # Reverb last
+        ]
+        
+        for i, (param_key, plugin_name) in enumerate(plugin_order, 1):
+            if param_key in professional_params:
+                plugin_targets = professional_params[param_key]
+                logger.info(f"🎯 Processing {param_key} with professional parameters: {list(plugin_targets.keys())}")
+                
+                try:
+                    preset_name = f"{chain_name}_{i:02d}_{plugin_name.replace(' ', '_')}"
+                    
+                    # Convert professional parameters to plugin format
+                    plugin_params = self._convert_professional_params(param_key, plugin_targets)
+                    
+                    if plugin_params:  # Only generate if we have parameters
+                        logger.info(f"🎯 Generating preset for {plugin_name} with {len(plugin_params)} parameters")
+                        
+                        success, stdout, stderr = self.generator.generate_preset(
+                            plugin_name=plugin_name,
+                            parameters=plugin_params,
+                            preset_name=preset_name,
+                            output_dir=str(presets_dir),
+                            verbose=True
+                        )
+                        
+                        if success:
+                            # Find the generated file
+                            preset_files = list(presets_dir.rglob(f"*{preset_name}*.aupreset"))
+                            if preset_files:
+                                generated_files.extend(preset_files)
+                                logger.info(f"✅ Professional preset generated: {plugin_name} -> {preset_files[0].name}")
+                            else:
+                                logger.warning(f"⚠️ {plugin_name} generation succeeded but file not found")
+                        else:
+                            logger.error(f"❌ Failed to generate {plugin_name}: {stderr}")
+                            
+                except Exception as e:
+                    logger.error(f"❌ Exception generating {plugin_name}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    continue
+            else:
+                logger.info(f"⏭️ Skipping {param_key} (not in professional params)")
+        
+        logger.info(f"🎯 PROFESSIONAL PRESETS COMPLETE: Generated {len(generated_files)} preset files")
+        return generated_files
+    
+    def _generate_legacy_presets(self, targets: Dict[str, Any], output_dir: Path, uuid_str: str) -> List[Path]:
+        """Generate presets using legacy parameter mapping (original method)"""
         logger.info(f"Generating presets for {len(targets)} plugins")
         
         # Create presets subdirectory
