@@ -239,16 +239,16 @@ def convert_parameters(backend_params, plugin_name=None):
         
         return converted
     
-    # 1176 Compressor uses special parameter name mapping and value conversion
+    # 1176 Compressor uses parameter numbers from map file
     elif plugin_name == "1176 Compressor":
-        # Map API parameter names to 1176 parameter names
+        # Use the actual parameter numbers from 1176Compressor.map.json
         param_name_mapping = {
-            "input_gain": "Input",
-            "output_gain": "Output", 
-            "attack": "Attack",
-            "release": "Release",
-            "ratio": "Ratio",
-            "all_buttons": "Power"
+            "input_gain": "48",    # Input
+            "output_gain": "49",   # Output  
+            "attack": "50",        # Attack
+            "release": "51",       # Release
+            "ratio": "52",         # Ratio
+            "all_buttons": "54"    # Power
         }
         
         for key, value in backend_params.items():
