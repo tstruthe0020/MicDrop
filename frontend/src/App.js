@@ -429,6 +429,239 @@ function App() {
     if (vocalInputRef.current) vocalInputRef.current.value = '';
   };
 
+  // Auto Chain Functions
+  const handleAutoChainFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setAutoChainFile(file);
+      setAutoChainUrl(''); // Clear URL when file is uploaded
+      toast({ 
+        title: "Audio file uploaded", 
+        description: `${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)` 
+      });
+    }
+  };
+
+  const analyzeAudio = async () => {
+    if (!autoChainUrl && !autoChainFile) {
+      toast({
+        title: "Missing Audio",
+        description: "Please provide an audio URL or upload a file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAutoChainLoading(true);
+    setAutoChainAnalysis(null);
+    setAutoChainRecommendation(null);
+
+    try {
+      let requestBody;
+      
+      if (autoChainFile) {
+        // File upload handling
+        const formData = new FormData();
+        formData.append('audio_file', autoChainFile);
+        
+        const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          setAutoChainAnalysis(result.analysis);
+          generateRecommendation(result.analysis);
+          toast({
+            title: "✅ Analysis Complete!",
+            description: `Analyzed ${autoChainFile.name} successfully`,
+            className: "border-green-200 bg-green-50"
+          });
+        } else {
+          throw new Error(result.message || 'Analysis failed');
+        }
+      } else {
+        // URL-based analysis
+        requestBody = { 
+          audio_url: autoChainUrl.trim()
+        };
+        
+        const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          setAutoChainAnalysis(result.analysis);
+          generateRecommendation(result.analysis);
+          toast({
+            title: "✅ Analysis Complete!",
+            description: "Audio analyzed successfully from URL",
+            className: "border-green-200 bg-green-50"
+          });
+        } else {
+          throw new Error(result.message || 'Analysis failed');
+        }
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast({
+        title: "Analysis Error",
+        description: error.message || "Failed to analyze audio",
+        variant: "destructive"
+      });
+    } finally {
+      setAutoChainLoading(false);
+    }
+  };
+
+  const generateRecommendation = (analysis) => {
+    // Generate intelligent chain archetype recommendation based on analysis
+    const { audio_features, vocal_features } = analysis;
+    
+    let recommendedArchetype = 'balanced';
+    let explanation = '';
+    let confidence = 0;
+
+    if (audio_features) {
+      const { tempo, loudness, key, timbre } = audio_features;
+      
+      // Determine archetype based on audio characteristics
+      if (tempo && tempo > 140 && loudness && loudness.lufs > -12) {
+        recommendedArchetype = 'aggressive-rap';
+        explanation = 'High energy track with loud master and fast tempo suggests aggressive rap processing';
+        confidence = 0.85;
+      } else if (tempo && tempo < 80 && timbre && timbre.warmth > 0.6) {
+        recommendedArchetype = 'intimate-rnb';
+        explanation = 'Slow tempo with warm timbral characteristics suggests intimate R&B processing';
+        confidence = 0.8;
+      } else if (timbre && timbre.brightness > 0.7) {
+        recommendedArchetype = 'pop-airy';
+        explanation = 'Bright spectral characteristics suggest pop-airy processing with high-frequency emphasis';
+        confidence = 0.75;
+      } else if (timbre && timbre.warmth > 0.5) {
+        recommendedArchetype = 'warm-analog';
+        explanation = 'Warm timbral qualities suggest analog-style processing with rich harmonics';
+        confidence = 0.7;
+      } else {
+        recommendedArchetype = 'clean';
+        explanation = 'Balanced characteristics suggest clean processing to preserve natural dynamics';
+        confidence = 0.65;
+      }
+    }
+
+    // Adjust based on vocal characteristics if present
+    if (vocal_features && vocal_features.vocal_intensity) {
+      if (vocal_features.vocal_intensity > 0.8) {
+        recommendedArchetype = 'aggressive-rap';
+        explanation += ' (adjusted for high vocal intensity)';
+        confidence = Math.min(confidence + 0.1, 0.95);
+      } else if (vocal_features.vocal_intensity < 0.3) {
+        recommendedArchetype = 'intimate-rnb';
+        explanation += ' (adjusted for gentle vocal delivery)';
+        confidence = Math.min(confidence + 0.1, 0.95);
+      }
+    }
+
+    setAutoChainRecommendation({
+      archetype: recommendedArchetype,
+      explanation,
+      confidence,
+      suggested_plugins: getArchetypePlugins(recommendedArchetype)
+    });
+  };
+
+  const getArchetypePlugins = (archetype) => {
+    const archetypeMap = {
+      'clean': ['MEqualizer', 'MCompressor', 'Fresh Air'],
+      'pop-airy': ['MEqualizer', 'Fresh Air', 'MCompressor', 'TDR Nova'],
+      'warm-analog': ['1176 Compressor', 'MEqualizer', 'MConvolutionEZ'],
+      'aggressive-rap': ['TDR Nova', '1176 Compressor', 'Graillon 3', 'MEqualizer'],
+      'intimate-rnb': ['MCompressor', 'MEqualizer', 'Fresh Air', 'LA-LA'],
+      'balanced': ['MEqualizer', 'MCompressor', 'TDR Nova', 'Fresh Air']
+    };
+    
+    return archetypeMap[archetype] || archetypeMap['balanced'];
+  };
+
+  const generateAutoChainPresets = async () => {
+    if (!autoChainAnalysis || !autoChainRecommendation) {
+      toast({
+        title: "Missing Analysis",
+        description: "Please analyze audio first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAutoChainLoading(true);
+    
+    try {
+      const requestBody = {
+        audio_url: autoChainUrl.trim() || null,
+        audio_file: autoChainFile ? autoChainFile.name : null, 
+        preset_name: autoChainPresetName || 'AutoChain'
+      };
+
+      // Since /auto-chain endpoint has issues in container, we'll use the working /analyze result 
+      // and the existing /export/download-presets with recommended archetype
+      const vibeMapping = {
+        'clean': 'Clean',
+        'pop-airy': 'Bright', 
+        'warm-analog': 'Warm',
+        'aggressive-rap': 'Punchy',
+        'intimate-rnb': 'Balanced',
+        'balanced': 'Balanced'
+      };
+
+      const recommendedVibe = vibeMapping[autoChainRecommendation.archetype] || 'Balanced';
+      
+      const response = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vibe: recommendedVibe,
+          genre: 'Pop', // Default, could be extracted from analysis in future
+          audio_type: 'vocal',
+          preset_name: autoChainPresetName || 'AutoChain'
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Trigger download
+        const downloadUrl = `${BACKEND_URL}${result.download.url}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = result.download.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: "✅ Auto Chain Generated!",
+          description: `Generated ${result.download.preset_count} presets based on audio analysis (${recommendedVibe} style)`,
+          className: "border-green-200 bg-green-50"
+        });
+      } else {
+        throw new Error(result.message || 'Preset generation failed');
+      }
+    } catch (error) {
+      console.error('Auto chain generation error:', error);
+      toast({
+        title: "Generation Error",
+        description: error.message || "Failed to generate auto vocal chain",
+        variant: "destructive"
+      });
+    } finally {
+      setAutoChainLoading(false);
+    }
+  };
+
   const formatFrequency = (hz) => {
     if (hz >= 1000) {
       return `${(hz / 1000).toFixed(1)}kHz`;
