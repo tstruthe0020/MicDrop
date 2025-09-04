@@ -284,7 +284,7 @@ class AUPresetGenerator:
         
         # Check if this is TDR Nova (uses XML injection)
         if plugin_name == "TDR Nova":
-            # TDR Nova uses real XML parameter names
+            # TDR Nova uses real XML parameter names and handles its own string formatting
             for param_name, value in parameters.items():
                 # Use parameter mapping if provided, otherwise map to TDR Nova XML names
                 if parameter_map and param_name in parameter_map:
@@ -292,8 +292,8 @@ class AUPresetGenerator:
                 else:
                     xml_param_name = self._map_to_tdr_nova_xml_name(param_name)
                 
-                # Convert value to float 
-                converted[xml_param_name] = float(value)
+                # For TDR Nova, pass the raw value - the Swift CLI handles On/Off formatting
+                converted[xml_param_name] = self._convert_value_safely(value)
         else:
             # Other plugins use numeric parameter IDs or standard names
             if parameter_map:
@@ -301,16 +301,38 @@ class AUPresetGenerator:
                 for param_name, value in parameters.items():
                     if param_name in parameter_map:
                         param_id = parameter_map[param_name]
-                        converted[param_id] = float(value)
+                        converted[param_id] = self._convert_value_safely(value)
                     else:
                         # Try direct mapping
-                        converted[param_name] = float(value)
+                        converted[param_name] = self._convert_value_safely(value)
             else:
                 # Direct parameter mapping
                 for param_name, value in parameters.items():
-                    converted[param_name] = float(value)
+                    converted[param_name] = self._convert_value_safely(value)
         
         return converted
+
+    def _convert_value_safely(self, value: Any) -> float:
+        """Safely convert any parameter value to float"""
+        if isinstance(value, (int, float)):
+            return float(value)
+        elif isinstance(value, str):
+            # Handle boolean strings
+            if value.lower() in ['on', 'true', 'yes', 'enabled']:
+                return 1.0
+            elif value.lower() in ['off', 'false', 'no', 'disabled']:
+                return 0.0
+            else:
+                # Try to parse as number
+                try:
+                    return float(value)
+                except ValueError:
+                    # Default to 0.0 for unparseable strings
+                    logger.warning(f"Could not convert parameter value '{value}' to float, using 0.0")
+                    return 0.0
+        else:
+            # Default fallback
+            return 0.0
 
     def _map_to_tdr_nova_xml_name(self, param_name: str) -> str:
         """Map common parameter names to TDR Nova XML format"""
