@@ -331,6 +331,25 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
             'high_air': high_air,
             'mix': 1.0  # Full wet
         },
+        'MEqualizer': {
+            'bass_cut_freq': bass_cut_freq,
+            'bass_cut_gain': bass_cut_gain,
+            'mud_cut_freq': mud_cut_freq,
+            'mud_cut_gain': mud_cut_gain,
+            'presence_freq': presence_freq,
+            'presence_gain': presence_gain,
+            'air_freq': air_freq,
+            'air_gain': air_gain,
+            'enabled': True
+        },
+        'MCompressor': {
+            'threshold': comp_threshold,
+            'ratio': comp_ratio,
+            'attack': comp_attack,
+            'release': comp_release,
+            'makeup_gain': comp_makeup,
+            'enabled': True
+        },
         'MConvolutionEZ': {
             'impulse_type': 'Plate',
             'decay': reverb_decay,
