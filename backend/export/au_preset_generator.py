@@ -96,6 +96,22 @@ class AUPresetGenerator:
         # Container path as fallback
         return Path('/app/aupreset/seeds')
     
+    def _detect_maps_dir(self) -> Path:
+        """Detect maps directory based on environment"""
+        possible_paths = [
+            Path('/app/aupreset/maps'),            # Container path
+            Path('./aupreset/maps'),               # Relative path
+            Path('../aupreset/maps'),              # Parent directory
+            Path.cwd() / 'aupreset' / 'maps'       # Current working directory
+        ]
+        
+        for path in possible_paths:
+            if path.exists() and any(path.glob('*.json')):
+                return path
+        
+        # Default fallback
+        return Path('/app/aupreset/maps')
+    
     def _load_plugin_paths(self) -> Dict[str, str]:
         """Load per-plugin path configuration"""
         config_file = Path('/tmp/plugin_paths_config.json')
