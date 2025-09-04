@@ -523,13 +523,25 @@ function App() {
       console.log('🎯 DEBUG: URL:', `${BACKEND_URL}/api/auto-chain/analyze`);
       console.log('🎯 DEBUG: Audio URL:', autoChainUrl.trim());
       
+      // Create an AbortController for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch(`${BACKEND_URL}/api/auto-chain/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       console.log('🎯 DEBUG: Response status:', response.status);
+      console.log('🎯 DEBUG: Response ok:', response.ok);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
       const result = await response.json();
       console.log('🎯 DEBUG: Response body:', result);
