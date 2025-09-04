@@ -1024,10 +1024,10 @@ function App() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        {autoChainAnalysis.audio_features?.tempo && (
+                        {autoChainAnalysis.audio_features?.bpm && (
                           <div className="text-center p-3 bg-white/60 rounded-lg">
                             <div className="text-2xl font-bold text-indigo-600">
-                              {Math.round(autoChainAnalysis.audio_features.tempo)}
+                              {Math.round(autoChainAnalysis.audio_features.bpm)}
                             </div>
                             <div className="text-sm text-slate-600">BPM</div>
                           </div>
@@ -1036,25 +1036,25 @@ function App() {
                         {autoChainAnalysis.audio_features?.key && (
                           <div className="text-center p-3 bg-white/60 rounded-lg">
                             <div className="text-2xl font-bold text-purple-600">
-                              {autoChainAnalysis.audio_features.key}
+                              {autoChainAnalysis.audio_features.key.tonic} {autoChainAnalysis.audio_features.key.mode}
                             </div>
                             <div className="text-sm text-slate-600">Key</div>
                           </div>
                         )}
                         
-                        {autoChainAnalysis.audio_features?.loudness?.lufs && (
+                        {autoChainAnalysis.audio_features?.lufs_i && (
                           <div className="text-center p-3 bg-white/60 rounded-lg">
                             <div className="text-2xl font-bold text-green-600">
-                              {autoChainAnalysis.audio_features.loudness.lufs.toFixed(1)}
+                              {autoChainAnalysis.audio_features.lufs_i.toFixed(1)}
                             </div>
                             <div className="text-sm text-slate-600">LUFS</div>
                           </div>
                         )}
                         
-                        {autoChainAnalysis.audio_features?.dynamics?.crest_factor && (
+                        {autoChainAnalysis.audio_features?.crest_db && (
                           <div className="text-center p-3 bg-white/60 rounded-lg">
                             <div className="text-2xl font-bold text-orange-600">
-                              {autoChainAnalysis.audio_features.dynamics.crest_factor.toFixed(1)}
+                              {autoChainAnalysis.audio_features.crest_db.toFixed(1)}
                             </div>
                             <div className="text-sm text-slate-600">Crest dB</div>
                           </div>
