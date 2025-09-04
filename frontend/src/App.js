@@ -639,12 +639,17 @@ function App() {
         throw new Error(result.message || 'Preset generation failed');
       }
     } catch (error) {
-      console.error('Auto chain generation error:', error);
+      console.error('🎯 DEBUG: Auto chain generation error:', error);
+      console.error('🎯 DEBUG: Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       
       // Fallback to existing preset generation system
       toast({
         title: "Using Fallback System",
-        description: "Auto Chain endpoint unavailable in container. Using existing preset system.",
+        description: `Auto Chain endpoint error: ${error.message}. Using existing preset system.`,
         variant: "default"
       });
       
