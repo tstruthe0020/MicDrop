@@ -314,6 +314,138 @@ class AUPresetGenerator:
                 
                 # For TDR Nova, pass the raw value - the Swift CLI handles On/Off formatting
                 converted[xml_param_name] = self._convert_value_safely(value)
+        
+        # 1176 Compressor uses special parameter name mapping and value conversion
+        elif plugin_name == "1176 Compressor":
+            # Map API parameter names to 1176 parameter names
+            param_name_mapping = {
+                "input_gain": "Input",
+                "output_gain": "Output", 
+                "attack": "Attack",
+                "release": "Release",
+                "ratio": "Ratio",
+                "all_buttons": "Power"
+            }
+            
+            for param_name, value in parameters.items():
+                # Skip bypass - it's handled by the Swift CLI
+                if param_name == "bypass":
+                    continue
+                    
+                # Map parameter name
+                mapped_name = param_name_mapping.get(param_name, param_name.title())
+                
+                # Convert parameter values
+                if param_name == "ratio":
+                    # Convert "8:1", "4:1", etc. to numeric values
+                    ratio_mapping = {
+                        "4:1": 1.0,
+                        "8:1": 2.0, 
+                        "12:1": 3.0,
+                        "20:1": 4.0
+                    }
+                    converted[mapped_name] = ratio_mapping.get(str(value), 2.0)
+                elif param_name == "attack":
+                    # Convert "Fast", "Medium", "Slow" to numeric values
+                    attack_mapping = {
+                        "Fast": 0.2,
+                        "Medium": 0.5,
+                        "Slow": 0.8
+                    }
+                    converted[mapped_name] = attack_mapping.get(str(value), 0.5)
+                elif param_name == "release":
+                    # Convert "Fast", "Medium", "Slow" to numeric values  
+                    release_mapping = {
+                        "Fast": 0.2,
+                        "Medium": 0.5,
+                        "Slow": 0.8
+                    }
+                    converted[mapped_name] = release_mapping.get(str(value), 0.5)
+                elif param_name in ["input_gain", "output_gain"]:
+                    # Normalize gain values to 0.0-1.0 range
+                    converted[mapped_name] = max(0.0, min(1.0, float(value) / 10.0))
+                elif param_name == "all_buttons":
+                    # Convert boolean to 0.0/1.0
+                    converted[mapped_name] = 1.0 if value else 0.0
+                else:
+                    converted[mapped_name] = self._convert_value_safely(value)
+        
+        # Fresh Air uses simple parameter mapping
+        elif plugin_name == "Fresh Air":
+            param_name_mapping = {
+                "presence": "Mid_Air",
+                "brilliance": "High_Air", 
+                "mix": "Trim"
+            }
+            
+            for param_name, value in parameters.items():
+                if param_name == "bypass":
+                    continue
+                    
+                mapped_name = param_name_mapping.get(param_name, param_name.title())
+                # Normalize 0-100 values to 0.0-1.0 range
+                if param_name in ["presence", "brilliance", "mix"]:
+                    converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+                else:
+                    converted[mapped_name] = self._convert_value_safely(value)
+        
+        # Graillon 3 uses complex parameter mapping
+        elif plugin_name == "Graillon 3":
+            param_name_mapping = {
+                "pitch_shift": "Pitch_Shift",
+                "formant_shift": "Formant_Shift", 
+                "octave_mix": "Wet_Mix",
+                "bitcrusher": "FX_Enabled",
+                "mix": "Output_Gain"
+            }
+            
+            for param_name, value in parameters.items():
+                if param_name == "bypass":
+                    continue
+                    
+                mapped_name = param_name_mapping.get(param_name, param_name.title())
+                
+                if param_name == "pitch_shift":
+                    # Pitch shift in semitones, normalize to 0.0-1.0 range
+                    converted[mapped_name] = max(0.0, min(1.0, (float(value) + 12) / 24.0))
+                elif param_name == "formant_shift":
+                    # Formant shift, normalize -12 to +12 semitones
+                    converted[mapped_name] = max(0.0, min(1.0, (float(value) + 12) / 24.0))
+                elif param_name in ["octave_mix", "mix"]:
+                    # Percentage values
+                    converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+                elif param_name == "bitcrusher":
+                    # Enable/disable bitcrusher effect
+                    converted["FX_Enabled"] = 1.0 if float(value) > 0 else 0.0
+                else:
+                    converted[mapped_name] = self._convert_value_safely(value)
+            
+        # LA-LA uses gain and dynamics parameters
+        elif plugin_name == "LA-LA":
+            param_name_mapping = {
+                "target_level": "Gain",
+                "dynamics": "Peak_Reduction",
+                "fast_release": "Mode"
+            }
+            
+            for param_name, value in parameters.items():
+                if param_name == "bypass":
+                    continue
+                    
+                mapped_name = param_name_mapping.get(param_name, param_name.title())
+                
+                if param_name == "target_level":
+                    # Target level in dB, normalize to 0.0-1.0 range
+                    converted[mapped_name] = max(0.0, min(1.0, (float(value) + 20) / 40.0))
+                elif param_name == "dynamics":
+                    # Dynamics percentage
+                    converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+                elif param_name == "fast_release":
+                    # Boolean for fast release mode
+                    converted[mapped_name] = 1.0 if value else 0.0
+                else:
+                    converted[mapped_name] = self._convert_value_safely(value)
+        
         else:
             # Other plugins use numeric parameter IDs or standard names
             if parameter_map:
