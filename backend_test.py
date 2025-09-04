@@ -2951,6 +2951,12 @@ class VocalChainAPITester:
         print("🔍 Testing error handling for Swift CLI features...")
         self.test_error_handling_swift_cli_features()
         
+        # 🎯 NEW: COMPREHENSIVE INDIVIDUAL PLUGIN TESTING (Review Request Focus)
+        print("\n🎯 COMPREHENSIVE INDIVIDUAL PLUGIN TESTING - ALL 9 PLUGINS")
+        print("=" * 60)
+        print("Testing all 9 plugins with varied realistic parameters as requested in review...")
+        comprehensive_success = self.test_comprehensive_individual_plugin_testing()
+        
         # Test 10: Logic export (legacy)
         self.test_export_endpoint(chain)
         
