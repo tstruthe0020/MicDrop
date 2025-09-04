@@ -1015,10 +1015,63 @@ function App() {
                   🎵 Auto Vocal Chain
                 </CardTitle>
                 <CardDescription>
-                  AI-powered audio analysis and intelligent vocal chain generation
+                  AI-powered vocal chain generation. Analyze audio from URL and generate professional presets automatically.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* URL Input Section */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="text-lg font-medium text-blue-900 mb-2">🎵 Auto Vocal Chain</h3>
+                  <p className="text-blue-700 mb-4">
+                    AI-powered vocal chain generation. Analyze audio from URL and generate professional presets automatically.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="autoChainUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                        Audio URL <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="autoChainUrl"
+                        type="url"
+                        value={autoChainUrl}
+                        onChange={(e) => setAutoChainUrl(e.target.value)}
+                        placeholder="https://example.com/audio.wav"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Enter a direct URL to an audio file (WAV, MP3, etc.)
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={analyzeAutoChainAudio}
+                        disabled={!autoChainUrl.trim() || autoChainAnalyzing}
+                        className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                          !autoChainUrl.trim() || autoChainAnalyzing
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                      >
+                        {autoChainAnalyzing ? 'Analyzing...' : '🎯 Analyze Audio'}
+                      </button>
+
+                      <button
+                        onClick={generateAutoChainPresets}
+                        disabled={!autoChainAnalysis || !autoChainRecommendation || autoChainLoading}
+                        className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                          !autoChainAnalysis || !autoChainRecommendation || autoChainLoading
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                      >
+                        {autoChainLoading ? 'Generating...' : '✨ Generate Auto Chain Presets'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Audio Input Section */}
                 <div className="space-y-4">
                   <div className="space-y-2">
