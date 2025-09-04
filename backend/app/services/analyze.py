@@ -4,8 +4,14 @@ import librosa
 import soundfile as sf
 import pyloudnorm as pyln
 from scipy import signal
-from typing import Dict, TypedDict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 import logging
+
+# Use typing_extensions for Python < 3.12 compatibility
+try:
+    from typing_extensions import TypedDict
+except ImportError:
+    from typing import TypedDict
 
 from ..core.config import settings
 
