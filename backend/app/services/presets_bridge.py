@@ -138,23 +138,34 @@ class PresetsBridge:
             'bypass': False,
         }
         
+        # Handle case where targets might be a dict instead of list
+        if isinstance(targets, dict):
+            # If it's a dict with enabled=False, return bypass
+            if not targets.get('enabled', True):
+                params['bypass'] = True
+                return params
+            # Otherwise assume it's a single EQ move
+            targets = [targets]
+        
         # Process each EQ move
+        band_count = 0
         for i, eq_move in enumerate(targets):
-            if eq_move['type'] == 'HPF':
+            if eq_move.get('type') == 'HPF':
                 params.update({
                     'high_pass_enabled': True,
                     'high_pass_freq': eq_move['freq'],
                     'high_pass_q': eq_move.get('Q', 0.7)
                 })
-            elif eq_move['type'] == 'bell' and i < 4:  # Limit to available bands
-                band_num = i
+            elif eq_move.get('type') == 'bell' and band_count < 4:  # Limit to available bands
+                band_num = band_count + 1
                 params.update({
-                    f'band_{band_num + 1}_enabled': True,
-                    f'band_{band_num + 1}_freq': eq_move['freq'],
-                    f'band_{band_num + 1}_gain': eq_move['gain_db'],
-                    f'band_{band_num + 1}_q': eq_move.get('Q', 1.0),
-                    f'band_{band_num + 1}_type': 'bell'
+                    f'band_{band_num}_enabled': True,
+                    f'band_{band_num}_freq': eq_move['freq'],
+                    f'band_{band_num}_gain': eq_move['gain_db'],
+                    f'band_{band_num}_q': eq_move.get('Q', 1.0),
+                    f'band_{band_num}_type': 'bell'
                 })
+                band_count += 1
         
         return params
     
