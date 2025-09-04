@@ -721,7 +721,12 @@ function App() {
                 key: autoChainAnalysis.key?.tonic || 'C',
                 lufs: autoChainAnalysis.lufs_i,
                 vibe: autoChainRecommendation.archetype,
-                presetName: autoChainPresetName
+                presetName: autoChainPresetName,
+                // Add professional parameter mapping flag
+                use_professional_params: true,
+                // Pass the full audio analysis for better parameter calculation
+                audio_features: autoChainAnalysis,
+                vocal_features: autoChainAnalysis.vocal_features || {}
               }
             })
           });
