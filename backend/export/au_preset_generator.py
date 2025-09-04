@@ -211,60 +211,32 @@ class AUPresetGenerator:
         output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
         verbose: bool
     ) -> Tuple[bool, str, str]:
-        """Generate preset using Swift CLI with new command structure"""
+        """Generate preset using enhanced Swift CLI with hybrid XML injection approach"""
         
-        # Get plugin component identifiers from seed file
-        component_info = self._get_component_info_from_seed(seed_file)
-        if not component_info:
-            return False, "", "Could not extract component info from seed file"
+        # Convert parameters for enhanced Swift CLI
+        temp_values = self._convert_parameters_for_swift_cli(plugin_name, parameters, parameter_map)
         
-        type_str, subtype_str, manufacturer_str = component_info
-        
-        # Create temporary values file in new format (direct parameter mapping)
-        temp_values = {}
-        if parameter_map:
-            # Use parameter mapping to convert names to IDs
-            for param_name, value in parameters.items():
-                if param_name in parameter_map:
-                    param_id = parameter_map[param_name]
-                    temp_values[param_id] = value
-                else:
-                    # Try direct mapping
-                    temp_values[param_name] = value
-        else:
-            temp_values = parameters
-            
-        values_data = temp_values
+        # Create values JSON file in enhanced Swift CLI format
+        values_data = {"params": temp_values}
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump(values_data, f, indent=2)
             values_path = f.name
         
         try:
-            # Create ZIP path with Logic Pro mirroring structure
-            zip_filename = f"{plugin_name}_Presets.zip"
-            zip_path = Path(output_dir) / zip_filename
-            
-            # Use new CLI format with enhanced ZIP packaging
+            # Use enhanced Swift CLI format (no subcommands)
             cmd = [
                 self.aupresetgen_path,
-                "save-preset",
-                "--type", type_str,
-                "--subtype", subtype_str, 
-                "--manufacturer", manufacturer_str,
+                "--seed", str(seed_file),
                 "--values", values_path,
                 "--preset-name", preset_name,
-                "--out-dir", output_dir,
-                "--plugin-name", plugin_name,
-                "--make-zip",
-                "--zip-path", str(zip_path),
-                "--bundle-root", "Audio Music Apps"
+                "--out-dir", output_dir
             ]
             
             if verbose:
                 cmd.append("--verbose")
             
-            # Run the Swift CLI
+            # Run the enhanced Swift CLI
             result = subprocess.run(
                 cmd, 
                 capture_output=True, 
@@ -275,23 +247,24 @@ class AUPresetGenerator:
             success = result.returncode == 0
             
             if success:
-                # Look for generated files (both individual preset and ZIP)
-                preset_file = Path(output_dir) / f"{preset_name}.aupreset"
+                # Look for generated preset file using Logic Pro structure
+                preset_paths = [
+                    # Enhanced Swift CLI uses Logic Pro directory structure  
+                    Path(output_dir) / "Presets" / self._get_manufacturer_name(plugin_name) / plugin_name / f"{preset_name}.aupreset",
+                    # Fallback to direct output
+                    Path(output_dir) / f"{preset_name}.aupreset"
+                ]
                 
-                # Check for ZIP with Logic Pro structure
-                if zip_path.exists():
-                    if verbose:
-                        logger.info(f"✅ Swift CLI: Generated preset with Logic Pro ZIP structure for {plugin_name}")
-                    return True, f"✅ Generated preset with Logic Pro ZIP: {zip_path}", ""
-                elif preset_file.exists():
-                    if verbose:
-                        logger.info(f"✅ Swift CLI: Successfully generated individual preset for {plugin_name}")
-                    return True, f"✅ Generated preset: {preset_file}", ""
-                else:
-                    return False, result.stdout, "No preset or ZIP file found after generation"
+                for preset_path in preset_paths:
+                    if preset_path.exists():
+                        if verbose:
+                            logger.info(f"✅ Enhanced Swift CLI: Successfully generated preset for {plugin_name}")
+                        return True, f"✅ Generated preset: {preset_path}", ""
+                
+                return False, result.stdout, "No preset file found after generation"
             else:
                 if verbose:
-                    logger.error(f"❌ Swift CLI failed for {plugin_name}: {result.stderr}")
+                    logger.error(f"❌ Enhanced Swift CLI failed for {plugin_name}: {result.stderr}")
                 return False, result.stdout, result.stderr
                 
         finally:
