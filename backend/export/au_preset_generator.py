@@ -1153,6 +1153,8 @@ class AUPresetGenerator:
                     
                     # Generate individual preset (disable cleanup during chain generation)
                     logger.info(f"🚀 DEBUG: Calling generate_preset for {plugin_name}")
+                    logger.info(f"  Parameters being passed: {list(converted_params.keys())} ({len(converted_params)} total)")
+                    
                     success, stdout, stderr = self.generate_preset(
                         plugin_name=plugin_name,
                         parameters=converted_params,
@@ -1162,6 +1164,10 @@ class AUPresetGenerator:
                     )
                     
                     logger.info(f"📝 DEBUG: generate_preset result for {plugin_name}: success={success}")
+                    if stdout:
+                        logger.info(f"  📤 Swift CLI stdout: {stdout[:200]}...")  # First 200 chars
+                    if stderr:
+                        logger.error(f"  📥 Swift CLI stderr: {stderr[:200]}...")  # First 200 chars
                     if not success:
                         logger.error(f"❌ DEBUG: generate_preset failed for {plugin_name}: {stderr}")
                     
