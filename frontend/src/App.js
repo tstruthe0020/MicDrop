@@ -447,6 +447,18 @@ function App() {
     }
   };
 
+  const handleAutoChainFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAutoChainFile(file);
+      setAutoChainUrl(''); // Clear URL when file is uploaded
+      toast({ 
+        title: "Audio file uploaded", 
+        description: `${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)` 
+      });
+    }
+  };
+
   const analyzeAudio = async () => {
     // Check if we have either file or URL
     if (!autoChainFile && !autoChainUrl.trim()) {
