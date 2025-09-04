@@ -1127,6 +1127,19 @@ if AUTO_CHAIN_AVAILABLE:
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+@app.get("/debug/routes")
+async def debug_routes():
+    """Debug endpoint to see all registered routes"""
+    routes = []
+    for route in app.router.routes:
+        if hasattr(route, 'path'):
+            routes.append({
+                "path": route.path,
+                "methods": getattr(route, 'methods', []),
+                "name": getattr(route, 'name', '')
+            })
+    return {"routes": routes}
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "Backend is running"}
