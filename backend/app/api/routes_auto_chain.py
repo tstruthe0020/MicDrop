@@ -20,7 +20,7 @@ from ..services.report import generate_mix_report, write_mix_report
 from ..services.zipper import create_preset_zip
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/auto-chain", tags=["auto-chain"])
+router = APIRouter(tags=["auto-chain"])  # Remove prefix, will be added when mounting
 
 # Thread pool for CPU-intensive tasks
 executor = ThreadPoolExecutor(max_workers=2)
