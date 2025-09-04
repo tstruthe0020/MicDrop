@@ -4,32 +4,15 @@ import librosa
 import soundfile as sf
 import pyloudnorm as pyln
 from scipy import signal
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any
 import logging
-
-# Use typing_extensions for Python < 3.12 compatibility
-try:
-    from typing_extensions import TypedDict
-except ImportError:
-    from typing import TypedDict
 
 from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
-class Analysis(TypedDict):
-    """Analysis result structure"""
-    bpm: float
-    key: Dict[str, any]  # {tonic: str, mode: str, confidence: float}
-    lufs_i: float
-    lufs_s: float
-    rms: float
-    peak_dbfs: float
-    crest_db: float
-    bands: Dict[str, float]  # {rumble, mud, boxy, harsh, sibilance}
-    spectral_tilt: float
-    reverb_tail_s: float
-    vocal: Dict[str, any]  # {present: bool, sibilance_idx: float, plosive_idx: float, note_stability: float}
+# Use regular Dict instead of TypedDict for compatibility
+Analysis = Dict[str, Any]
 
 def analyze_audio(audio_path: str) -> Analysis:
     """
