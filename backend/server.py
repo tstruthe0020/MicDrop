@@ -1164,14 +1164,23 @@ async def auto_chain_upload(audio_file: UploadFile = File(...)):
         try:
             y, sr = librosa.load(temp_path, sr=48000, duration=30)  # Analyze first 30 seconds
             
-            # Extract features
-            tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+            if len(y) == 0:
+                raise ValueError("Audio file is empty or invalid")
             
+            # Extract features with error handling
+            try:
+                tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+            except:
+                tempo = 120.0  # Default BPM
+                
             # Key detection (simplified)
-            chroma = librosa.feature.chroma_stft(y=y, sr=sr)
-            key_idx = np.argmax(np.sum(chroma, axis=1))
-            keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-            estimated_key = keys[key_idx]
+            try:
+                chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+                key_idx = np.argmax(np.sum(chroma, axis=1))
+                keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+                estimated_key = keys[key_idx]
+            except:
+                estimated_key = 'C'  # Default key
             
             # Loudness (RMS as proxy)
             rms = librosa.feature.rms(y=y)[0]
