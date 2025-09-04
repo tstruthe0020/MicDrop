@@ -1105,65 +1105,7 @@ function App() {
                   </div>
                 </div>
 
-                {/* Audio Input Section */}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="audio-file" className="text-sm font-medium">
-                      Upload Audio File *
-                    </Label>
-                    <div 
-                      className={`border-2 border-dashed rounded-lg p-8 transition-colors cursor-pointer ${
-                        autoChainFile 
-                          ? 'border-green-300 bg-green-50' 
-                          : 'border-slate-300 bg-slate-50 hover:border-purple-400 hover:bg-purple-50'
-                      }`}
-                      onClick={() => document.getElementById('auto-chain-file-input')?.click()}
-                    >
-                      <div className="text-center">
-                        {autoChainFile ? (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-center gap-2 text-green-700">
-                              <Volume2 className="w-6 h-6" />
-                              <span className="font-medium text-lg">{autoChainFile.name}</span>
-                            </div>
-                            <Badge variant="secondary" className="text-sm">
-                              {(autoChainFile.size / 1024 / 1024).toFixed(1)}MB
-                            </Badge>
-                            <p className="text-sm text-green-600">Ready for AI analysis</p>
-                          </div>
-                        ) : (
-                          <div className="text-slate-500 space-y-3">
-                            <Upload className="w-12 h-12 mx-auto text-purple-400" />
-                            <div>
-                              <p className="text-lg font-medium">Click to upload your audio</p>
-                              <p className="text-sm">WAV, MP3 (max 50MB)</p>
-                              <p className="text-xs text-purple-600 mt-2">AI will analyze tempo, key, dynamics, and vocal characteristics</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <input
-                        id="auto-chain-file-input"
-                        type="file"
-                        accept=".wav,.mp3,.m4a,.aac"
-                        onChange={handleAutoChainFileUpload}
-                        className="hidden"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="auto-preset-name" className="text-sm font-medium">
-                      Preset Name
-                    </Label>
-                    <Input
-                      id="auto-preset-name"
-                      value={autoChainPresetName}
-                      onChange={(e) => setAutoChainPresetName(e.target.value.replace(/[^a-zA-Z0-9_]/g, '_'))}
-                      placeholder="Auto_Vocal_Chain"
-                    />
-                  </div>
-                </div>
 
                 {/* Analysis Button */}
                 <div className="flex justify-center">
