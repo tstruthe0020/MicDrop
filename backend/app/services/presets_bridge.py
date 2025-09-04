@@ -331,60 +331,63 @@ class PresetsBridge:
         }
 
     def _convert_mequalizer_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert professional MEqualizer parameters using actual parameter names"""
+        """Convert professional MEqualizer parameters using actual parameter names from map"""
         params = {
             'bypass': False,
-            'analyzer_enabled': True,
-            'input_gain': 0.0,
-            'output_gain': 0.0,
+            'Mix': 100.0,  # Full wet
+            'Output_Gain': 0.0,
             
             # Band 1: High-pass/Bass cut
-            'band_1_enabled': True,
-            'band_1_freq': targets.get('bass_cut_freq', 80),
-            'band_1_gain': targets.get('bass_cut_gain', -1.0),
-            'band_1_q': 0.7,
-            'band_1_type': 'HighPass',
+            'Band_1_Enable': True,
+            'Band_1_Frequency': targets.get('bass_cut_freq', 80),
+            'Band_1_Gain': targets.get('bass_cut_gain', -1.0),
+            'Band_1_Q': 0.7,
+            'Band_1_Type': 6,  # High-pass filter type
             
             # Band 2: Mud cut
-            'band_2_enabled': True,
-            'band_2_freq': targets.get('mud_cut_freq', 300),
-            'band_2_gain': targets.get('mud_cut_gain', -1.0),
-            'band_2_q': 2.0,
-            'band_2_type': 'Bell',
+            'Band_2_Enable': True,
+            'Band_2_Frequency': targets.get('mud_cut_freq', 300),
+            'Band_2_Gain': targets.get('mud_cut_gain', -1.0),
+            'Band_2_Q': 2.0,
+            'Band_2_Type': 0,  # Bell filter type
             
-            # Band 3: Presence boost
-            'band_3_enabled': True,
-            'band_3_freq': targets.get('presence_freq', 3000),
-            'band_3_gain': targets.get('presence_gain', 1.2),
-            'band_3_q': 1.5,
-            'band_3_type': 'Bell',
+            # Band 3: Presence boost  
+            'Band_3_Enable': True,
+            'Band_3_Frequency': targets.get('presence_freq', 3000),
+            'Band_3_Gain': targets.get('presence_gain', 1.2),
+            'Band_3_Q': 1.5,
+            'Band_3_Type': 0,  # Bell filter type
             
             # Band 4: Air shelf
-            'band_4_enabled': True,
-            'band_4_freq': targets.get('air_freq', 11000),
-            'band_4_gain': targets.get('air_gain', 1.2),
-            'band_4_q': 0.7,
-            'band_4_type': 'HighShelf'
+            'Band_4_Enable': True,
+            'Band_4_Frequency': targets.get('air_freq', 11000),
+            'Band_4_Gain': targets.get('air_gain', 1.2),
+            'Band_4_Q': 0.7,
+            'Band_4_Type': 4,  # High-shelf filter type
+            
+            # Disable unused bands
+            'Band_5_Enable': False
         }
         
         logger.info(f"🎯 MEqualizer professional params: {len(params)} parameters")
         return params
 
     def _convert_mcompressor_professional(self, targets: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert professional MCompressor parameters using actual parameter names"""
+        """Convert professional MCompressor parameters using actual parameter names from map"""
         params = {
             'bypass': False,
-            'threshold': targets.get('threshold', -8),
-            'ratio': targets.get('ratio', 2.0),
-            'attack': targets.get('attack', 30),  # ms
-            'release': targets.get('release', 200),  # ms
-            'makeup_gain': targets.get('makeup_gain', 2.0),
-            'knee': 2.0,  # Soft knee
-            'lookahead': 5.0,  # ms
-            'output_gain': 0.0,
-            'detector': 'Peak',
-            'style': 'Vintage',
-            'mix': 100.0  # Full wet
+            'Input_Gain': 0.0,
+            'Output_Gain': targets.get('makeup_gain', 2.0),
+            'Attack': targets.get('attack', 30),  # ms
+            'Release': targets.get('release', 200),  # ms
+            'RMS_Length': 50.0,  # RMS window
+            'Threshold': targets.get('threshold', -8),
+            'Ratio': targets.get('ratio', 2.0),
+            'Knee_Mode': 1,  # Soft knee
+            'Knee_Size': 2.0,
+            'Link_Channels': True,
+            'Maximize_To_0dB': False,
+            'Custom_Shape': 0
         }
         
         logger.info(f"🎯 MCompressor professional params: {len(params)} parameters")
