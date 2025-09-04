@@ -1038,7 +1038,7 @@ function App() {
                             <div className="text-2xl font-bold text-purple-600">
                               {autoChainAnalysis.audio_features.key.tonic} {autoChainAnalysis.audio_features.key.mode}
                             </div>
-                            <div className="text-sm text-slate-600">Key</div>
+                            <div className="text-sm text-slate-600">Key ({(autoChainAnalysis.audio_features.key.confidence * 100).toFixed(0)}%)</div>
                           </div>
                         )}
                         
@@ -1059,6 +1059,48 @@ function App() {
                             <div className="text-sm text-slate-600">Crest dB</div>
                           </div>
                         )}
+                      </div>
+
+                      {/* Advanced Spectral Analysis */}
+                      <div className="mt-4 p-3 bg-white/40 rounded-lg">
+                        <h4 className="font-semibold mb-3 text-indigo-700">🎵 Spectral Analysis</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          {autoChainAnalysis.audio_features?.spectral_tilt !== undefined && (
+                            <div>
+                              <span className="text-slate-600">Spectral Tilt:</span>
+                              <span className="ml-1 font-medium text-blue-600">
+                                {autoChainAnalysis.audio_features.spectral_tilt.toFixed(1)} dB
+                              </span>
+                            </div>
+                          )}
+                          
+                          {autoChainAnalysis.audio_features?.brightness_index !== undefined && (
+                            <div>
+                              <span className="text-slate-600">Brightness:</span>
+                              <span className="ml-1 font-medium text-yellow-600">
+                                {autoChainAnalysis.audio_features.brightness_index.toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {autoChainAnalysis.audio_features?.low_end_dominance !== undefined && (
+                            <div>
+                              <span className="text-slate-600">Low End:</span>
+                              <span className="ml-1 font-medium text-red-600">
+                                {(autoChainAnalysis.audio_features.low_end_dominance * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          )}
+                          
+                          {autoChainAnalysis.audio_features?.dynamic_spread !== undefined && (
+                            <div>
+                              <span className="text-slate-600">Dynamics:</span>
+                              <span className="ml-1 font-medium text-purple-600">
+                                {autoChainAnalysis.audio_features.dynamic_spread.toFixed(1)} dB
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Vocal Features */}
