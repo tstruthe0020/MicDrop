@@ -3174,16 +3174,25 @@ class VocalChainAPITester:
         print(f"📡 Testing endpoint: {self.api_url}")
         print("=" * 60)
         
-        # PRIORITY 1: Test the critical shutil.copy2() fix first
-        print("\n🎯 PRIORITY TEST: Verifying critical shutil.copy2() fix...")
-        self.test_critical_shutil_copy2_fix()
-        
         # Test 1: Health check
         health_ok = self.test_health_endpoint()
         
         if not health_ok:
             print("\n❌ Health check failed - stopping tests")
             return False
+        
+        # PRIORITY TESTS: AUTO VOCAL CHAIN BACKEND (Review Request)
+        print("\n" + "🎵" * 60)
+        print("🎵 AUTO VOCAL CHAIN BACKEND TESTING (REVIEW REQUEST PRIORITY)")
+        print("🎵" * 60)
+        print("Testing Auto Vocal Chain /api/analyze endpoint as requested...")
+        self.test_auto_chain_analyze_endpoint()
+        print("Testing Auto Chain backend readiness for frontend integration...")
+        self.test_auto_chain_backend_readiness()
+        
+        # PRIORITY 2: Test the critical shutil.copy2() fix
+        print("\n🎯 PRIORITY TEST: Verifying critical shutil.copy2() fix...")
+        self.test_critical_shutil_copy2_fix()
         
         # Test 2: NEW - System Information API
         print("\n🔍 NEW TEST: Testing system information and environment detection...")
