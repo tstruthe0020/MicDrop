@@ -1112,18 +1112,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import Auto Vocal Chain components
+logger.info("🎯 DEBUG: Attempting to import auto_chain_router...")
 try:
     from app.api.routes_auto_chain import router as auto_chain_router
     AUTO_CHAIN_AVAILABLE = True
-    logger.info("Auto Vocal Chain module loaded successfully")
+    logger.info("🎯 DEBUG: Auto Vocal Chain module loaded successfully")
+    logger.info(f"🎯 DEBUG: Router has {len(auto_chain_router.routes)} routes")
+    for route in auto_chain_router.routes:
+        if hasattr(route, 'path'):
+            logger.info(f"🎯 DEBUG: Route: {route.path}")
 except ImportError as e:
     AUTO_CHAIN_AVAILABLE = False
-    logger.warning(f"Auto Vocal Chain module not available: {e}")
+    logger.warning(f"🎯 DEBUG: Auto Vocal Chain module not available: {e}")
+    import traceback
+    logger.error(f"🎯 DEBUG: Full traceback: {traceback.format_exc()}")
 
 # Include Auto Vocal Chain router if available
+logger.info(f"🎯 DEBUG: AUTO_CHAIN_AVAILABLE = {AUTO_CHAIN_AVAILABLE}")
 if AUTO_CHAIN_AVAILABLE:
+    logger.info("🎯 DEBUG: Including auto_chain_router with prefix /auto-chain")
     api_router.include_router(auto_chain_router, prefix="/auto-chain")
-    logger.info("Auto Vocal Chain routes registered under /api/auto-chain")
+    logger.info("🎯 DEBUG: Auto Vocal Chain routes registered under /api/auto-chain")
+    logger.info(f"🎯 DEBUG: API router now has {len(api_router.routes)} routes")
+else:
+    logger.warning("🎯 DEBUG: Skipping auto_chain_router inclusion")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
