@@ -902,6 +902,274 @@ function App() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="auto-chain" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Music className="w-5 h-5" />
+                  🎵 Auto Vocal Chain
+                </CardTitle>
+                <CardDescription>
+                  AI-powered audio analysis and intelligent vocal chain generation
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Audio Input Section */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="audio-url" className="text-sm font-medium">
+                      Audio URL
+                    </Label>
+                    <Input
+                      id="audio-url"
+                      value={autoChainUrl}
+                      onChange={(e) => setAutoChainUrl(e.target.value)}
+                      placeholder="https://example.com/audio.wav"
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-slate-500">
+                      Paste a direct link to your audio file (WAV, MP3)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 border-t border-slate-200"></div>
+                    <span className="text-sm text-slate-500">OR</span>
+                    <div className="flex-1 border-t border-slate-200"></div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="audio-file" className="text-sm font-medium">
+                      Upload Audio File
+                    </Label>
+                    <div 
+                      className={`border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
+                        autoChainFile 
+                          ? 'border-green-300 bg-green-50' 
+                          : 'border-slate-300 bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50'
+                      }`}
+                      onClick={() => document.getElementById('auto-chain-file-input')?.click()}
+                    >
+                      <div className="text-center">
+                        {autoChainFile ? (
+                          <div className="flex items-center justify-center gap-2 text-green-700">
+                            <Volume2 className="w-5 h-5" />
+                            <span className="font-medium">{autoChainFile.name}</span>
+                            <Badge variant="secondary">
+                              {(autoChainFile.size / 1024 / 1024).toFixed(1)}MB
+                            </Badge>
+                          </div>
+                        ) : (
+                          <div className="text-slate-500">
+                            <Upload className="w-8 h-8 mx-auto mb-2" />
+                            <p>Click to upload audio file</p>
+                            <p className="text-xs">WAV, MP3 (max 50MB)</p>
+                          </div>
+                        )}
+                      </div>
+                      <input
+                        id="auto-chain-file-input"
+                        type="file"
+                        accept=".wav,.mp3"
+                        onChange={handleAutoChainFileUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="auto-preset-name" className="text-sm font-medium">
+                      Preset Name
+                    </Label>
+                    <Input
+                      id="auto-preset-name"
+                      value={autoChainPresetName}
+                      onChange={(e) => setAutoChainPresetName(e.target.value.replace(/[^a-zA-Z0-9_]/g, '_'))}
+                      placeholder="Auto_Vocal_Chain"
+                    />
+                  </div>
+                </div>
+
+                {/* Analysis Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    onClick={analyzeAudio}
+                    disabled={(!autoChainUrl && !autoChainFile) || autoChainLoading}
+                    size="lg"
+                    className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                  >
+                    {autoChainLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <AudioWaveform className="w-4 h-4 mr-2" />
+                        Analyze Audio
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Analysis Results */}
+                {autoChainAnalysis && (
+                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <AudioWaveform className="w-5 h-5 text-blue-600" />
+                        Audio Analysis Results
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        {autoChainAnalysis.audio_features?.tempo && (
+                          <div className="text-center p-3 bg-white/60 rounded-lg">
+                            <div className="text-2xl font-bold text-indigo-600">
+                              {Math.round(autoChainAnalysis.audio_features.tempo)}
+                            </div>
+                            <div className="text-sm text-slate-600">BPM</div>
+                          </div>
+                        )}
+                        
+                        {autoChainAnalysis.audio_features?.key && (
+                          <div className="text-center p-3 bg-white/60 rounded-lg">
+                            <div className="text-2xl font-bold text-purple-600">
+                              {autoChainAnalysis.audio_features.key}
+                            </div>
+                            <div className="text-sm text-slate-600">Key</div>
+                          </div>
+                        )}
+                        
+                        {autoChainAnalysis.audio_features?.loudness?.lufs && (
+                          <div className="text-center p-3 bg-white/60 rounded-lg">
+                            <div className="text-2xl font-bold text-green-600">
+                              {autoChainAnalysis.audio_features.loudness.lufs.toFixed(1)}
+                            </div>
+                            <div className="text-sm text-slate-600">LUFS</div>
+                          </div>
+                        )}
+                        
+                        {autoChainAnalysis.audio_features?.dynamics?.crest_factor && (
+                          <div className="text-center p-3 bg-white/60 rounded-lg">
+                            <div className="text-2xl font-bold text-orange-600">
+                              {autoChainAnalysis.audio_features.dynamics.crest_factor.toFixed(1)}
+                            </div>
+                            <div className="text-sm text-slate-600">Crest dB</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Vocal Features */}
+                      {autoChainAnalysis.vocal_features && (
+                        <div className="mt-4 p-3 bg-white/40 rounded-lg">
+                          <h4 className="font-semibold mb-2 text-indigo-700">Vocal Analysis</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                            {autoChainAnalysis.vocal_features.vocal_intensity !== undefined && (
+                              <div>
+                                <span className="text-slate-600">Intensity:</span>
+                                <span className="ml-1 font-medium">
+                                  {(autoChainAnalysis.vocal_features.vocal_intensity * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            )}
+                            
+                            {autoChainAnalysis.vocal_features.breathiness !== undefined && (
+                              <div>
+                                <span className="text-slate-600">Breathiness:</span>
+                                <span className="ml-1 font-medium">
+                                  {(autoChainAnalysis.vocal_features.breathiness * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            )}
+                            
+                            {autoChainAnalysis.vocal_features.roughness !== undefined && (
+                              <div>
+                                <span className="text-slate-600">Roughness:</span>
+                                <span className="ml-1 font-medium">
+                                  {(autoChainAnalysis.vocal_features.roughness * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* AI Recommendation */}
+                {autoChainRecommendation && (
+                  <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-green-600" />
+                        AI Chain Recommendation
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary" className="text-lg px-3 py-1">
+                            {autoChainRecommendation.archetype.replace('-', ' ').toUpperCase()}
+                          </Badge>
+                          <div className="text-sm text-green-700">
+                            Confidence: {(autoChainRecommendation.confidence * 100).toFixed(0)}%
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-slate-700 bg-white/60 p-3 rounded-lg">
+                          <strong>Why this chain:</strong> {autoChainRecommendation.explanation}
+                        </p>
+                        
+                        <div>
+                          <h4 className="font-semibold mb-2 text-green-700">Recommended Plugins:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {autoChainRecommendation.suggested_plugins.map((plugin, idx) => (
+                              <Badge key={idx} variant="outline" className="bg-white/60">
+                                {plugin}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-center pt-4">
+                          <Button 
+                            onClick={generateAutoChainPresets}
+                            disabled={autoChainLoading}
+                            size="lg"
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                          >
+                            {autoChainLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-4 h-4 mr-2" />
+                                Generate Auto Chain Presets
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {!autoChainUrl && !autoChainFile && (
+                  <Alert>
+                    <Upload className="h-4 w-4" />
+                    <AlertDescription>
+                      Provide an audio URL or upload a file to begin AI-powered analysis
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="results" className="space-y-6">
             {features && (
               <Card>
