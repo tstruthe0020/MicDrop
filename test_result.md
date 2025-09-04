@@ -397,3 +397,15 @@ agent_communication:
         - agent: "testing"
         - comment: "🎯 MANUFACTURER DIRECTORY MAPPING FIX VERIFIED! Comprehensive testing confirms the manufacturer directory mapping fix has completely resolved the 'failing plugins' issue: ✅ ALL 3 previously failing plugins now work perfectly: 1176 Compressor (UADx manufacturer), Graillon 3 (Aubn manufacturer), LA-LA (Anob manufacturer), ✅ Complete vocal chain generation with Punchy vibe generates 7 presets successfully with no 'No preset file found' errors, ✅ Multiple vibes consistency test shows all vibes (Clean=7, Warm=8, Punchy=7 presets) working with average 7.3 presets per chain, ✅ File path verification confirms Swift CLI output matches expected manufacturer directories, ✅ All 9 plugins tested individually show 100% success rate. CRITICAL FINDING: The plugins were never actually failing - they were being generated in wrong directory paths due to incorrect manufacturer mappings. The fix updated manufacturer mappings from Auburn Sounds/Plugin Alliance to correct UADx/Aubn/Anob directories. System is fully production-ready with manufacturer directory mapping fix successfully implemented."
 
+  - task: "Manufacturer Directory Mapping Fix for MCompressor and Fresh Air"
+    implemented: true
+    working: true
+    file: "/app/backend/export/au_preset_generator.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "🎯 MCOMPRESSOR & FRESH AIR DIRECTORY FIX VERIFIED! Comprehensive testing of the specific plugins mentioned in the review request confirms the manufacturer directory mapping fix is working correctly: ✅ MCompressor: Successfully finds preset in 'MeldaProduction/Untitled/' directory as expected, ✅ Fresh Air: Successfully finds preset in 'SlDg/Fresh Air/' directory as expected, ✅ Individual preset generation working for both plugins with proper parameter application, ✅ Full vocal chain generation with Clean vibe generates 7 presets successfully (target achieved), ✅ 'No preset file found after generation' errors completely resolved, ✅ ZIP files now contain 7 presets instead of 5 (issue fixed). The manufacturer directory mapping in _get_manufacturer_name() method correctly maps: MCompressor → MeldaProduction (with Untitled subdirectory), Fresh Air → SlDg (with Fresh Air subdirectory). Both plugins are now working perfectly with the corrected manufacturer directory paths."
+
