@@ -285,16 +285,3 @@ def _apply_overrides(targets: Targets, overrides: Dict[str, Any]):
             if isinstance(targets[plugin], dict):
                 targets[plugin].update(plugin_overrides)
             logger.info(f"Applied overrides to {plugin}: {plugin_overrides}")
-
-# Error handlers
-@router.exception_handler(Exception)
-async def general_exception_handler(request, exc):
-    logger.error(f"Unhandled exception in auto chain: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={
-            "success": False,
-            "message": "An unexpected error occurred during processing",
-            "detail": str(exc)
-        }
-    )
