@@ -169,7 +169,9 @@ async def analyze_only(request: AnalyzeRequest, background_tasks: BackgroundTask
     start_time = time.time()
     uuid_str = str(uuid.uuid4())
     
-    logger.info(f"Starting analysis-only for {uuid_str}")
+    logger.info(f"🎯 DEBUG: ANALYZE ENDPOINT HIT! UUID: {uuid_str}")
+    logger.info(f"🎯 DEBUG: Request input_source: {request.input_source}")
+    logger.info(f"🎯 DEBUG: Starting analysis-only for {uuid_str}")
     
     try:
         # Step 1: Download/fetch audio
