@@ -137,25 +137,30 @@ def _download_http(url: str) -> str:
 def _convert_to_wav(input_path: str, output_path: Path, channels: int = 2):
     """Convert audio to WAV using ffmpeg"""
     try:
-        stream = ffmpeg.input(input_path)
-        
-        # Apply audio filters
-        audio = stream.audio
+        # For mono conversion, use a simpler approach
         if channels == 1:
-            # Simpler mono conversion
-            audio = audio.filter('pan', 'mono|c0=0.5*FL+0.5*FR')
-        
-        # Convert to WAV
-        out = ffmpeg.output(
-            audio,
-            str(output_path),
-            acodec='pcm_s16le',
-            ar=settings.SAMPLE_RATE,
-            ac=channels,
-            y=None  # Don't overwrite without asking
-        )
-        
-        ffmpeg.run(out, quiet=True, overwrite_output=True)
+            # Use ffmpeg command line directly for mono
+            cmd = [
+                'ffmpeg', '-i', input_path,
+                '-ar', str(settings.SAMPLE_RATE),
+                '-ac', '1',
+                '-c:a', 'pcm_s16le',
+                '-y', str(output_path)
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                raise RuntimeError(f"FFmpeg mono conversion failed: {result.stderr}")
+        else:
+            # Use ffmpeg-python for stereo
+            stream = ffmpeg.input(input_path)
+            out = ffmpeg.output(
+                stream,
+                str(output_path),
+                acodec='pcm_s16le',
+                ar=settings.SAMPLE_RATE,
+                ac=channels
+            )
+            ffmpeg.run(out, quiet=True, overwrite_output=True)
         
     except ffmpeg.Error as e:
         stderr = e.stderr.decode('utf-8') if e.stderr else "Unknown ffmpeg error"
