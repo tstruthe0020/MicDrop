@@ -1107,27 +1107,7 @@ function App() {
 
 
 
-                {/* Analysis Button */}
-                <div className="flex justify-center">
-                  <Button 
-                    onClick={analyzeAudio}
-                    disabled={!autoChainFile || autoChainLoading}
-                    size="lg"
-                    className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                  >
-                    {autoChainLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <AudioWaveform className="w-4 h-4 mr-2" />
-                        Analyze Audio with AI
-                      </>
-                    )}
-                  </Button>
-                </div>
+
 
                 {/* Analysis Results */}
                 {autoChainAnalysis && (
