@@ -14,11 +14,11 @@ import { toast } from './hooks/use-toast';
 import { Toaster } from './components/ui/toaster';
 import { Upload, Music, Settings, Download, AudioWaveform, Zap, Volume2, Play, Pause } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Force external backend URL for testing
+const BACKEND_URL = "https://auto-preset-debug.preview.emergentagent.com";
 
 // Debug the backend URL
-console.log('🎯 DEBUG: BACKEND_URL from env:', BACKEND_URL);
-console.log('🎯 DEBUG: All env vars:', process.env);
+console.log('🎯 DEBUG: BACKEND_URL (forced external):', BACKEND_URL);
 const API = `${BACKEND_URL}/api`;
 
 function App() {
