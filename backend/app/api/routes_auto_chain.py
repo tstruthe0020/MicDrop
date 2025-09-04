@@ -130,8 +130,8 @@ async def auto_chain(request: AutoChainRequest, background_tasks: BackgroundTask
             chain_style=targets['chain_style']
         )
         
-        # Generate download URL (relative to output directory)
-        zip_url = f"/api/download/{uuid_str}/{zip_path.name}"
+        # Generate download URL (use auto-chain specific endpoint)
+        zip_url = f"/api/auto-chain/download/{uuid_str}/{zip_path.name}"
         
         # Schedule cleanup
         background_tasks.add_task(cleanup_temp_files, uuid_str)
