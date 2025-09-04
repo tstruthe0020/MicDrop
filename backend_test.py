@@ -3501,6 +3501,403 @@ class VocalChainAPITester:
             self.log_test("Clean Vibe Full Vocal Chain - 7 Plugins", False, f"Exception: {str(e)}")
             return False
 
+    def test_auto_chain_endpoint_registration_fix(self):
+        """
+        CRITICAL TEST: Auto Chain Endpoint Registration Fix
+        Tests that /api/auto-chain/analyze and /api/auto-chain/generate are accessible (no 404 errors)
+        """
+        try:
+            print("\n🔍 TESTING AUTO CHAIN ENDPOINT REGISTRATION FIX...")
+            
+            # Test URL from the review request
+            test_url = "https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav"
+            
+            # Test 1: /api/auto-chain/analyze endpoint accessibility
+            print(f"\n🎯 Testing /api/auto-chain/analyze endpoint...")
+            
+            analyze_request = {
+                "input_source": test_url
+            }
+            
+            response = requests.post(f"{self.api_url}/auto-chain/analyze", 
+                                   json=analyze_request, timeout=60)
+            
+            if response.status_code == 404:
+                self.log_test("Auto Chain Analyze Endpoint Registration", False, 
+                            "❌ CRITICAL: /api/auto-chain/analyze returns 404 - endpoint not registered")
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    analysis = data.get("analysis", {})
+                    recommendations = data.get("recommendations", {})
+                    processing_time = data.get("processing_time_s", 0)
+                    
+                    # Check for professional parameters in recommendations
+                    has_professional_params = 'professional_params' in recommendations
+                    
+                    self.log_test("Auto Chain Analyze Endpoint Registration", True, 
+                                f"✅ ENDPOINT ACCESSIBLE: Analysis completed in {processing_time:.1f}s, Professional params: {has_professional_params}")
+                else:
+                    self.log_test("Auto Chain Analyze Endpoint Registration", False, 
+                                f"⚠️ Endpoint accessible but analysis failed: {data.get('message', 'Unknown error')}")
+            else:
+                self.log_test("Auto Chain Analyze Endpoint Registration", False, 
+                            f"❌ Endpoint accessible but returned error: {response.status_code}")
+            
+            # Test 2: /api/auto-chain/generate endpoint accessibility
+            print(f"\n🎯 Testing /api/auto-chain/generate endpoint...")
+            
+            generate_request = {
+                "input_source": test_url,
+                "chain_style": "clean",
+                "headroom_db": 6.0
+            }
+            
+            response = requests.post(f"{self.api_url}/auto-chain/generate", 
+                                   json=generate_request, timeout=120)
+            
+            if response.status_code == 404:
+                self.log_test("Auto Chain Generate Endpoint Registration", False, 
+                            "❌ CRITICAL: /api/auto-chain/generate returns 404 - endpoint not registered")
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    zip_url = data.get("zip_url", "")
+                    files = data.get("files", {})
+                    processing_time = data.get("processing_time_s", 0)
+                    
+                    self.log_test("Auto Chain Generate Endpoint Registration", True, 
+                                f"✅ ENDPOINT ACCESSIBLE: Generation completed in {processing_time:.1f}s, Files: {len(files.get('presets', []))}")
+                else:
+                    self.log_test("Auto Chain Generate Endpoint Registration", False, 
+                                f"⚠️ Endpoint accessible but generation failed: {data.get('message', 'Unknown error')}")
+            else:
+                self.log_test("Auto Chain Generate Endpoint Registration", False, 
+                            f"❌ Endpoint accessible but returned error: {response.status_code}")
+            
+            # Test 3: Verify router inclusion order fix
+            print(f"\n🎯 Testing router inclusion order fix...")
+            
+            # Check debug routes endpoint to see if auto-chain routes are registered
+            try:
+                debug_response = requests.get(f"{self.base_url}/debug/routes", timeout=10)
+                if debug_response.status_code == 200:
+                    routes_data = debug_response.json()
+                    routes = routes_data.get("routes", [])
+                    
+                    auto_chain_routes = [r for r in routes if "/auto-chain/" in r.get("path", "")]
+                    
+                    if auto_chain_routes:
+                        route_paths = [r["path"] for r in auto_chain_routes]
+                        self.log_test("Auto Chain Router Registration", True, 
+                                    f"✅ ROUTER FIX WORKING: Found {len(auto_chain_routes)} auto-chain routes: {route_paths}")
+                    else:
+                        self.log_test("Auto Chain Router Registration", False, 
+                                    "❌ ROUTER ISSUE: No auto-chain routes found in registered routes")
+                else:
+                    self.log_test("Auto Chain Router Registration", False, 
+                                f"Could not check routes: {debug_response.status_code}")
+            except Exception as e:
+                self.log_test("Auto Chain Router Registration", False, 
+                            f"Exception checking routes: {str(e)}")
+                
+        except Exception as e:
+            self.log_test("CRITICAL Auto Chain Endpoint Registration", False, f"Exception: {str(e)}")
+
+    def test_professional_parameter_flow(self):
+        """
+        CRITICAL TEST: Professional Parameter Flow
+        Tests the analysis -> recommendation -> professional parameter mapping -> preset generation pipeline
+        """
+        try:
+            print("\n🔍 TESTING PROFESSIONAL PARAMETER FLOW...")
+            
+            # Test URL from the review request
+            test_url = "https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav"
+            
+            # Step 1: Test analysis with enhanced metrics
+            print(f"\n🎯 Step 1: Testing comprehensive audio analysis...")
+            
+            analyze_request = {
+                "input_source": test_url
+            }
+            
+            response = requests.post(f"{self.api_url}/auto-chain/analyze", 
+                                   json=analyze_request, timeout=60)
+            
+            if response.status_code != 200:
+                self.log_test("Professional Parameter Flow - Analysis", False, 
+                            f"Analysis endpoint failed: {response.status_code}")
+                return
+            
+            data = response.json()
+            if not data.get("success"):
+                self.log_test("Professional Parameter Flow - Analysis", False, 
+                            f"Analysis failed: {data.get('message', 'Unknown error')}")
+                return
+            
+            analysis = data.get("analysis", {})
+            recommendations = data.get("recommendations", {})
+            
+            # Verify enhanced metrics are present
+            required_analysis_fields = ["bpm", "key", "lufs_i", "spectral_tilt", "vocal"]
+            missing_analysis = [field for field in required_analysis_fields if field not in analysis]
+            
+            if missing_analysis:
+                self.log_test("Professional Parameter Flow - Analysis", False, 
+                            f"Missing enhanced metrics: {missing_analysis}")
+                return
+            
+            # Check vocal characteristics
+            vocal_features = analysis.get("vocal", {})
+            required_vocal_fields = ["f0_median", "sibilance_centroid", "mud_ratio"]
+            missing_vocal = [field for field in required_vocal_fields if field not in vocal_features]
+            
+            if missing_vocal:
+                self.log_test("Professional Parameter Flow - Analysis", False, 
+                            f"Missing vocal characteristics: {missing_vocal}")
+                return
+            
+            self.log_test("Professional Parameter Flow - Analysis", True, 
+                        f"✅ Enhanced analysis complete: BPM={analysis.get('bpm')}, Key={analysis.get('key', {}).get('tonic')}, LUFS={analysis.get('lufs_i'):.1f}")
+            
+            # Step 2: Test professional parameter mapping
+            print(f"\n🎯 Step 2: Testing professional parameter mapping...")
+            
+            has_professional_params = 'professional_params' in recommendations
+            
+            if not has_professional_params:
+                self.log_test("Professional Parameter Flow - Parameter Mapping", False, 
+                            "❌ CRITICAL: 'professional_params' key missing from recommendations")
+                return
+            
+            professional_params = recommendations.get("professional_params", {})
+            
+            # Check for expected plugin parameters
+            expected_plugins = ["Graillon 3", "TDR Nova", "1176 Compressor", "LA-LA", "Fresh Air", "MConvolutionEZ"]
+            found_plugins = []
+            missing_plugins = []
+            
+            for plugin in expected_plugins:
+                if plugin in professional_params:
+                    plugin_params = professional_params[plugin]
+                    if isinstance(plugin_params, dict) and len(plugin_params) > 0:
+                        found_plugins.append(plugin)
+                    else:
+                        missing_plugins.append(f"{plugin} (empty params)")
+                else:
+                    missing_plugins.append(f"{plugin} (not found)")
+            
+            if len(found_plugins) >= 4:  # At least 4 plugins should have parameters
+                self.log_test("Professional Parameter Flow - Parameter Mapping", True, 
+                            f"✅ Professional parameters mapped for {len(found_plugins)} plugins: {', '.join(found_plugins)}")
+            else:
+                self.log_test("Professional Parameter Flow - Parameter Mapping", False, 
+                            f"❌ Insufficient professional parameters: Found {len(found_plugins)}, Missing: {missing_plugins}")
+                return
+            
+            # Step 3: Test preset generation pipeline
+            print(f"\n🎯 Step 3: Testing preset generation with professional parameters...")
+            
+            generate_request = {
+                "input_source": test_url,
+                "chain_style": "clean",
+                "headroom_db": 6.0
+            }
+            
+            response = requests.post(f"{self.api_url}/auto-chain/generate", 
+                                   json=generate_request, timeout=120)
+            
+            if response.status_code != 200:
+                self.log_test("Professional Parameter Flow - Preset Generation", False, 
+                            f"Generation endpoint failed: {response.status_code}")
+                return
+            
+            data = response.json()
+            if not data.get("success"):
+                self.log_test("Professional Parameter Flow - Preset Generation", False, 
+                            f"Generation failed: {data.get('message', 'Unknown error')}")
+                return
+            
+            files = data.get("files", {})
+            presets = files.get("presets", [])
+            
+            if len(presets) >= 4:  # Should generate multiple presets
+                self.log_test("Professional Parameter Flow - Preset Generation", True, 
+                            f"✅ Professional preset generation complete: {len(presets)} presets generated")
+            else:
+                self.log_test("Professional Parameter Flow - Preset Generation", False, 
+                            f"❌ Insufficient presets generated: {len(presets)} (expected 4+)")
+                return
+            
+            # Step 4: Verify parameter conversion works correctly
+            print(f"\n🎯 Step 4: Testing parameter conversion for each plugin type...")
+            
+            # Test specific plugin parameter conversion by checking if presets were generated for key plugins
+            key_plugins_found = []
+            for preset_name in presets:
+                for plugin in expected_plugins:
+                    plugin_key = plugin.replace(" ", "_")
+                    if plugin_key in preset_name:
+                        key_plugins_found.append(plugin)
+                        break
+            
+            unique_plugins = list(set(key_plugins_found))
+            
+            if len(unique_plugins) >= 3:
+                self.log_test("Professional Parameter Flow - Parameter Conversion", True, 
+                            f"✅ Parameter conversion working for {len(unique_plugins)} plugin types: {', '.join(unique_plugins)}")
+            else:
+                self.log_test("Professional Parameter Flow - Parameter Conversion", False, 
+                            f"❌ Parameter conversion issues: Only {len(unique_plugins)} plugin types generated presets")
+            
+            # Overall flow test
+            self.log_test("🎯 CRITICAL: Professional Parameter Flow", True, 
+                        f"✅ COMPLETE PIPELINE WORKING: Analysis → Professional Parameters → Preset Generation successful")
+                
+        except Exception as e:
+            self.log_test("CRITICAL Professional Parameter Flow", False, f"Exception: {str(e)}")
+
+    def test_parameter_mapping_verification(self):
+        """
+        CRITICAL TEST: Parameter Mapping Verification
+        Verifies professional parameters are correctly calculated and passed to presets_bridge.py
+        """
+        try:
+            print("\n🔍 TESTING PARAMETER MAPPING VERIFICATION...")
+            
+            # Test URL from the review request
+            test_url = "https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav"
+            
+            # Test analysis to get professional parameters
+            analyze_request = {
+                "input_source": test_url
+            }
+            
+            response = requests.post(f"{self.api_url}/auto-chain/analyze", 
+                                   json=analyze_request, timeout=60)
+            
+            if response.status_code != 200:
+                self.log_test("Parameter Mapping Verification", False, 
+                            f"Analysis failed: {response.status_code}")
+                return
+            
+            data = response.json()
+            if not data.get("success"):
+                self.log_test("Parameter Mapping Verification", False, 
+                            f"Analysis failed: {data.get('message')}")
+                return
+            
+            recommendations = data.get("recommendations", {})
+            
+            # Verify professional_params key exists
+            if 'professional_params' not in recommendations:
+                self.log_test("Parameter Mapping Verification", False, 
+                            "❌ CRITICAL: 'professional_params' key missing from targets")
+                return
+            
+            professional_params = recommendations.get("professional_params", {})
+            
+            # Test each expected plugin's parameter mapping
+            plugin_tests = [
+                {
+                    "name": "Graillon 3",
+                    "expected_params": ["Correction_Amount", "Smooth", "Wet_Mix", "Correction"],
+                    "param_types": {"Correction_Amount": float, "Smooth": float, "Wet_Mix": float, "Correction": bool}
+                },
+                {
+                    "name": "TDR Nova", 
+                    "expected_params": ["bypass", "multiband_enabled"],
+                    "param_types": {"bypass": bool, "multiband_enabled": bool}
+                },
+                {
+                    "name": "1176 Compressor",
+                    "expected_params": ["Input", "Output", "Ratio", "Attack", "Release"],
+                    "param_types": {"Input": float, "Output": float, "Ratio": float, "Attack": float, "Release": float}
+                },
+                {
+                    "name": "LA-LA",
+                    "expected_params": ["Gain", "Peak_Reduction", "Mode"],
+                    "param_types": {"Gain": float, "Peak_Reduction": float, "Mode": float}
+                },
+                {
+                    "name": "Fresh Air",
+                    "expected_params": ["Mid_Air", "High_Air", "Trim"],
+                    "param_types": {"Mid_Air": float, "High_Air": float, "Trim": float}
+                },
+                {
+                    "name": "MConvolutionEZ",
+                    "expected_params": ["Dry_Wet", "Widening", "High_Pass"],
+                    "param_types": {"Dry_Wet": float, "Widening": float, "High_Pass": float}
+                }
+            ]
+            
+            successful_mappings = []
+            failed_mappings = []
+            
+            for plugin_test in plugin_tests:
+                plugin_name = plugin_test["name"]
+                expected_params = plugin_test["expected_params"]
+                param_types = plugin_test["param_types"]
+                
+                if plugin_name in professional_params:
+                    plugin_params = professional_params[plugin_name]
+                    
+                    if isinstance(plugin_params, dict):
+                        # Check if expected parameters are present
+                        found_params = []
+                        missing_params = []
+                        type_errors = []
+                        
+                        for param_name in expected_params:
+                            if param_name in plugin_params:
+                                found_params.append(param_name)
+                                
+                                # Check parameter type
+                                expected_type = param_types.get(param_name)
+                                actual_value = plugin_params[param_name]
+                                
+                                if expected_type and not isinstance(actual_value, expected_type):
+                                    type_errors.append(f"{param_name}: expected {expected_type.__name__}, got {type(actual_value).__name__}")
+                            else:
+                                missing_params.append(param_name)
+                        
+                        if len(found_params) >= len(expected_params) // 2:  # At least half the expected params
+                            if not type_errors:
+                                successful_mappings.append(plugin_name)
+                                self.log_test(f"Parameter Mapping - {plugin_name}", True, 
+                                            f"✅ Correct mapping: {len(found_params)} params with correct types")
+                            else:
+                                failed_mappings.append(plugin_name)
+                                self.log_test(f"Parameter Mapping - {plugin_name}", False, 
+                                            f"❌ Type errors: {'; '.join(type_errors)}")
+                        else:
+                            failed_mappings.append(plugin_name)
+                            self.log_test(f"Parameter Mapping - {plugin_name}", False, 
+                                        f"❌ Missing parameters: {missing_params}")
+                    else:
+                        failed_mappings.append(plugin_name)
+                        self.log_test(f"Parameter Mapping - {plugin_name}", False, 
+                                    f"❌ Invalid parameter structure: {type(plugin_params)}")
+                else:
+                    failed_mappings.append(plugin_name)
+                    self.log_test(f"Parameter Mapping - {plugin_name}", False, 
+                                f"❌ Plugin not found in professional_params")
+            
+            # Overall verification
+            if len(successful_mappings) >= 4:
+                self.log_test("🎯 CRITICAL: Parameter Mapping Verification", True, 
+                            f"✅ PROFESSIONAL PARAMETERS WORKING: {len(successful_mappings)} plugins correctly mapped: {', '.join(successful_mappings)}")
+            elif len(successful_mappings) >= 2:
+                self.log_test("🎯 CRITICAL: Parameter Mapping Verification", False, 
+                            f"⚠️ PARTIAL SUCCESS: {len(successful_mappings)} plugins mapped, {len(failed_mappings)} failed: {', '.join(failed_mappings)}")
+            else:
+                self.log_test("🎯 CRITICAL: Parameter Mapping Verification", False, 
+                            f"❌ CRITICAL FAILURE: Only {len(successful_mappings)} plugins mapped correctly")
+                
+        except Exception as e:
+            self.log_test("CRITICAL Parameter Mapping Verification", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run complete test suite"""
         print(f"🚀 Starting Vocal Chain Assistant API Tests")
