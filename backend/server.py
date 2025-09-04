@@ -36,6 +36,23 @@ db = client[os.environ['DB_NAME']]
 # Create the main app without a prefix
 app = FastAPI(title="Vocal Chain Assistant", description="Generate Logic Pro vocal chain presets from audio analysis")
 
+# Debug middleware to log all requests
+@app.middleware("http")
+async def debug_requests(request, call_next):
+    import time
+    start_time = time.time()
+    
+    # Log the incoming request
+    print(f"🎯 DEBUG REQUEST: {request.method} {request.url.path}")
+    print(f"🎯 DEBUG HEADERS: {dict(request.headers)}")
+    
+    response = await call_next(request)
+    
+    process_time = time.time() - start_time
+    print(f"🎯 DEBUG RESPONSE: {response.status_code} (took {process_time:.3f}s)")
+    
+    return response
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
