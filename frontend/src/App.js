@@ -584,50 +584,32 @@ function App() {
     
     try {
       const requestBody = {
-        audio_url: autoChainUrl.trim() || null,
-        audio_file: autoChainFile ? autoChainFile.name : null, 
-        preset_name: autoChainPresetName || 'AutoChain'
+        input_source: autoChainUrl.trim(),
+        chain_style: autoChainRecommendation.archetype,
+        headroom_db: 6.0
       };
 
-      // Since /auto-chain endpoint has issues in container, we'll use the working /analyze result 
-      // and the existing /export/download-presets with recommended archetype
-      const vibeMapping = {
-        'clean': 'Clean',
-        'pop-airy': 'Bright', 
-        'warm-analog': 'Warm',
-        'aggressive-rap': 'Punchy',
-        'intimate-rnb': 'Balanced',
-        'balanced': 'Balanced'
-      };
-
-      const recommendedVibe = vibeMapping[autoChainRecommendation.archetype] || 'Balanced';
-      
-      const response = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
+      const response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vibe: recommendedVibe,
-          genre: 'Pop', // Default, could be extracted from analysis in future
-          audio_type: 'vocal',
-          preset_name: autoChainPresetName || 'AutoChain'
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const result = await response.json();
       
       if (result.success) {
-        // Trigger download
-        const downloadUrl = `${BACKEND_URL}${result.download.url}`;
+        // Trigger download of the ZIP file
+        const downloadUrl = `${BACKEND_URL}${result.zip_url}`;
         const link = document.createElement('a');
         link.href = downloadUrl;
-        link.download = result.download.filename;
+        link.download = `auto_vocal_chain_${result.uuid}.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
         toast({
           title: "✅ Auto Chain Generated!",
-          description: `Generated ${result.download.preset_count} presets based on audio analysis (${recommendedVibe} style)`,
+          description: `Generated presets based on AI analysis (${autoChainRecommendation.archetype} style). Processing time: ${result.processing_time_s.toFixed(1)}s`,
           className: "border-green-200 bg-green-50"
         });
       } else {
@@ -635,11 +617,65 @@ function App() {
       }
     } catch (error) {
       console.error('Auto chain generation error:', error);
+      
+      // Fallback to existing preset generation system
       toast({
-        title: "Generation Error",
-        description: error.message || "Failed to generate auto vocal chain",
-        variant: "destructive"
+        title: "Using Fallback System",
+        description: "Auto Chain endpoint unavailable in container. Using existing preset system.",
+        variant: "default"
       });
+      
+      try {
+        // Use existing system as fallback
+        const vibeMapping = {
+          'clean': 'Clean',
+          'pop-airy': 'Bright', 
+          'warm-analog': 'Warm',
+          'aggressive-rap': 'Punchy',
+          'intimate-rnb': 'Balanced',
+          'balanced': 'Balanced'
+        };
+
+        const recommendedVibe = vibeMapping[autoChainRecommendation.archetype] || 'Balanced';
+        
+        const fallbackResponse = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vibe: recommendedVibe,
+            genre: 'Pop',
+            audio_type: 'vocal',
+            preset_name: autoChainPresetName || 'AutoChain'
+          })
+        });
+
+        const fallbackResult = await fallbackResponse.json();
+        
+        if (fallbackResult.success) {
+          const downloadUrl = `${BACKEND_URL}${fallbackResult.download.url}`;
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = fallbackResult.download.filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          toast({
+            title: "✅ Auto Chain Generated (Fallback)!",
+            description: `Generated ${fallbackResult.download.preset_count} presets using existing system (${recommendedVibe} style)`,
+            className: "border-green-200 bg-green-50"
+          });
+        } else {
+          throw new Error(fallbackResult.message || 'Fallback generation failed');
+        }
+      } catch (fallbackError) {
+        console.error('Fallback generation error:', fallbackError);
+        toast({
+          title: "Generation Error",
+          description: fallbackError.message || "Failed to generate presets with both systems",
+          variant: "destructive"
+        });
+      }
     } finally {
       setAutoChainLoading(false);
     }
