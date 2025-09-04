@@ -202,36 +202,102 @@ def convert_parameters(backend_params, plugin_name=None):
         
         # CRITICAL: Auto-activate required TDR Nova settings for audible changes
         # If thresholds are set, activate dynamics processing
-        for band in [1, 2, 3, 4]:
-            threshold_key = f"band_{band}_threshold"
-            if threshold_key in backend_params:
-                # Activate dynamics processing for this band
-                converted[f"bandDynActive_{band}"] = "On"
-                converted[f"bandActive_{band}"] = "On"
-                converted[f"bandSelected_{band}"] = "On"
-                # Add some EQ gain to make it audible
-                if f"band_{band}_gain" not in backend_params:
-                    converted[f"bandGain_{band}"] = -1.0  # Small cut to make it audible
+        threshold_params = [k for k in converted.keys() if 'threshold' in k.lower()]
+        if threshold_params:
+            # Auto-enable bands that have thresholds set
+            for threshold_param in threshold_params:
+                if 'band_1' in threshold_param:
+                    converted['Band_1_Selected'] = "On"
+                    converted['Band_1_Active'] = "On"
+                elif 'band_2' in threshold_param:
+                    converted['Band_2_Selected'] = "On"
+                    converted['Band_2_Active'] = "On"
+                elif 'band_3' in threshold_param:
+                    converted['Band_3_Selected'] = "On"
+                    converted['Band_3_Active'] = "On"
+                elif 'band_4' in threshold_param:
+                    converted['Band_4_Selected'] = "On"
+                    converted['Band_4_Active'] = "On"
         
-        # Ensure bypass is off
-        if "bypass" in backend_params or "bypass_master" in backend_params:
-            converted["bypass_master"] = "Off"
+        return converted
+    
+    # 1176 Compressor uses special parameter name mapping and value conversion
+    elif plugin_name == "1176 Compressor":
+        # Map API parameter names to 1176 parameter names
+        param_name_mapping = {
+            "input_gain": "Input",
+            "output_gain": "Output", 
+            "attack": "Attack",
+            "release": "Release",
+            "ratio": "Ratio",
+            "all_buttons": "Power"
+        }
+        
+        for key, value in backend_params.items():
+            # Skip bypass - it's handled by the Swift CLI
+            if key == "bypass":
+                continue
+                
+            # Map parameter name
+            mapped_name = param_name_mapping.get(key, key.title())
             
+            # Convert parameter values
+            if key == "ratio":
+                # Convert "8:1", "4:1", etc. to numeric values
+                ratio_mapping = {
+                    "4:1": 1.0,
+                    "8:1": 2.0, 
+                    "12:1": 3.0,
+                    "20:1": 4.0
+                }
+                converted[mapped_name] = ratio_mapping.get(value, 2.0)
+            elif key == "attack":
+                # Convert "Fast", "Medium", "Slow" to numeric values
+                attack_mapping = {
+                    "Fast": 0.2,
+                    "Medium": 0.5,
+                    "Slow": 0.8
+                }
+                converted[mapped_name] = attack_mapping.get(value, 0.5)
+            elif key == "release":
+                # Convert "Fast", "Medium", "Slow" to numeric values  
+                release_mapping = {
+                    "Fast": 0.2,
+                    "Medium": 0.5,
+                    "Slow": 0.8
+                }
+                converted[mapped_name] = release_mapping.get(value, 0.5)
+            elif key in ["input_gain", "output_gain"]:
+                # Normalize gain values to 0.0-1.0 range
+                converted[mapped_name] = max(0.0, min(1.0, float(value) / 10.0))
+            elif key == "all_buttons":
+                # Convert boolean to 0.0/1.0
+                converted[mapped_name] = 1.0 if value else 0.0
+            else:
+                converted[mapped_name] = float(value)
+        
+        return converted
+    
+    # Default conversion for other plugins
     else:
-        # Standard conversion for other plugins
         for key, value in backend_params.items():
             if isinstance(value, bool):
                 converted[key] = 1.0 if value else 0.0
             elif isinstance(value, str):
-                string_mappings = {
-                    'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
-                    'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
-                    'notch': 6.0
-                }
-                converted[key] = string_mappings.get(value, 0.0)
+                try:
+                    converted[key] = float(value)
+                except ValueError:
+                    # For unparseable strings, try common mappings
+                    if value.lower() in ['on', 'true', 'enabled']:
+                        converted[key] = 1.0
+                    elif value.lower() in ['off', 'false', 'disabled']:
+                        converted[key] = 0.0
+                    else:
+                        converted[key] = 0.0
             else:
                 converted[key] = float(value)
-    return converted
+        
+        return converted
 
 @api_router.post("/export/download-presets")
 async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
