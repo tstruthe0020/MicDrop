@@ -1121,8 +1121,10 @@ except ImportError as e:
 
 # Include Auto Vocal Chain router if available
 if AUTO_CHAIN_AVAILABLE:
-    app.include_router(auto_chain_router)
-    logger.info("Auto Vocal Chain routes registered")
+    # Remove the /api prefix from auto_chain_router since api_router already has it
+    auto_chain_router.prefix = "/auto-chain"  # Remove /api prefix
+    api_router.include_router(auto_chain_router)
+    logger.info("Auto Vocal Chain routes registered under /api")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
