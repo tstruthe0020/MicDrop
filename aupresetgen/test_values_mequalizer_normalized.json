@@ -1,0 +1,26 @@
+{
+  "params": {
+    "Mix": 1.0,
+    "Output_Gain": 0.5,
+    "Band_1_Enable": 1.0,
+    "Band_1_Frequency": 0.1,
+    "Band_1_Gain": 0.5,
+    "Band_1_Q": 0.7,
+    "Band_1_Type": 0.6,
+    "Band_2_Enable": 1.0,
+    "Band_2_Frequency": 0.3,
+    "Band_2_Gain": 0.25,
+    "Band_2_Q": 0.5,
+    "Band_2_Type": 0.0,
+    "Band_4_Enable": 1.0,
+    "Band_4_Frequency": 0.6,
+    "Band_4_Gain": 0.75,
+    "Band_4_Q": 0.4,
+    "Band_4_Type": 0.0,
+    "Band_5_Enable": 1.0,
+    "Band_5_Frequency": 0.8,
+    "Band_5_Gain": 0.6,
+    "Band_5_Q": 0.3,
+    "Band_5_Type": 0.2
+  }
+}

@@ -1,0 +1,103 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "1ccf0bf083c1617d8f6c3b5338d28d5f1e36d13e3ba827b33cca8cbe8efe3fad"
+build_start_time: [1756944176, 52274000]
+build_end_time: [1756944213, 689824000]
+inputs:
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Completions/BashCompletionsGenerator.swift"
+  : [1756944162, 907785726]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Completions/CompletionsGenerator.swift"
+  : [1756944162, 908130241]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Completions/FishCompletionsGenerator.swift"
+  : [1756944162, 908421477]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Completions/ZshCompletionsGenerator.swift"
+  : [1756944162, 908712330]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/Argument.swift"
+  : [1756944162, 923001785]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/ArgumentDiscussion.swift"
+  : [1756944162, 923395508]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/ArgumentHelp.swift"
+  : [1756944162, 923657561]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/ArgumentVisibility.swift"
+  : [1756944162, 923918425]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/CompletionKind.swift"
+  : [1756944162, 924252618]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/Errors.swift"
+  : [1756944162, 924523736]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/Flag.swift"
+  : [1756944162, 924888101]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/NameSpecification.swift"
+  : [1756944162, 925305834]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/Option.swift"
+  : [1756944162, 925634890]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/OptionGroup.swift"
+  : [1756944162, 925991979]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/AsyncParsableCommand.swift"
+  : [1756944162, 926743493]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/CommandConfiguration.swift"
+  : [1756944162, 927102819]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/CommandGroup.swift"
+  : [1756944162, 927361597]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/EnumerableFlag.swift"
+  : [1756944162, 927624459]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/ExpressibleByArgument.swift"
+  : [1756944162, 927912481]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/ParsableArguments.swift"
+  : [1756944162, 928249171]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/ParsableCommand.swift"
+  : [1756944162, 928562029]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ArgumentDecoder.swift"
+  : [1756944162, 928947628]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ArgumentDefinition.swift"
+  : [1756944162, 929285322]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ArgumentSet.swift"
+  : [1756944162, 929655486]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/CommandParser.swift"
+  : [1756944162, 930048236]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/InputKey.swift"
+  : [1756944162, 930479981]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/InputOrigin.swift"
+  : [1756944162, 930794441]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/Name.swift"
+  : [1756944162, 931130956]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/Parsed.swift"
+  : [1756944162, 931376694]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ParsedValues.swift"
+  : [1756944162, 931617184]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ParserError.swift"
+  : [1756944162, 931848364]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/SplitArguments.swift"
+  : [1756944162, 932225610]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/DumpHelpGenerator.swift"
+  : [1756944162, 932732955]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/HelpCommand.swift"
+  : [1756944162, 933009483]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/HelpGenerator.swift"
+  : [1756944162, 933437122]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/MessageInfo.swift"
+  : [1756944162, 933818280]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/UsageGenerator.swift"
+  : [1756944162, 934551144]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/CollectionExtensions.swift"
+  : [1756944162, 935088593]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/Mutex.swift"
+  : [1756944162, 935389999]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/Platform.swift"
+  : [1756944162, 935696659]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/SequenceExtensions.swift"
+  : [1756944162, 936053467]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/StringExtensions.swift"
+  : [1756944162, 936352240]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/SwiftExtensions.swift"
+  : [1756944162, 936609200]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/Tree.swift"
+  : [1756944162, 936892441]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/CodingKeyValidator.swift"
+  : [1756944162, 937291560]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/NonsenseFlagsValidator.swift"
+  : [1756944162, 937560843]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/ParsableArgumentsValidation.swift"
+  : [1756944162, 937808693]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/PositionalArgumentsValidator.swift"
+  : [1756944162, 938098674]
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/UniqueNamesValidator.swift"
+  : [1756944162, 938403777]

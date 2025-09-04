@@ -1,0 +1,12 @@
+{
+  "": {
+    "dependencies": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/aupresetgen.d",
+    "object": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/aupresetgen.o",
+    "swift-dependencies": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/master.swiftdeps"
+  },
+  "/Users/theostruthers/swift_cli_juce_test/aupresetgen/Sources/aupresetgen/main.swift": {
+    "object": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/main.swift.o",
+    "swiftmodule": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/main.swiftdeps"
+  }
+}

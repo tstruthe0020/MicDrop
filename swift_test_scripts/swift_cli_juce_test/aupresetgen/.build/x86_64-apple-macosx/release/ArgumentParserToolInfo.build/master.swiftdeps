@@ -1,0 +1,7 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "8fa0483f74083f3b7e639a696f915d1cc087e4ecc2f929e19667d06533955875"
+build_start_time: [1756944171, 171579000]
+build_end_time: [1756944175, 755294000]
+inputs:
+  ? "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParserToolInfo/ToolInfo.swift"
+  : [1756944162, 940302015]

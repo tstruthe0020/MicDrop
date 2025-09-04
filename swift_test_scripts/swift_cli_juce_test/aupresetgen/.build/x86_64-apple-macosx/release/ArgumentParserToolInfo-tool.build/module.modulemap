@@ -1,0 +1,4 @@
+module ArgumentParserToolInfo {
+    header "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo-tool.build/ArgumentParserToolInfo-Swift.h"
+    requires objc
+}

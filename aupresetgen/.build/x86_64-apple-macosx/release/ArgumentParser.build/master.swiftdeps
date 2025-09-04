@@ -1,0 +1,91 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "93367efab4a6f2c8b923085fe82bebd9fe0e702ae756603d8e4add66643f695c"
+build_start_time: [1756934670, 279798000]
+build_end_time: [1756934710, 278855000]
+inputs:
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Completions/BashCompletionsGenerator.swift"
+  : [1756934658, 217086344]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Completions/CompletionsGenerator.swift"
+  : [1756934658, 217389560]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Completions/FishCompletionsGenerator.swift"
+  : [1756934658, 217731285]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Completions/ZshCompletionsGenerator.swift"
+  : [1756934658, 218066921]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/Argument.swift"
+  : [1756934658, 235993319]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/ArgumentDiscussion.swift"
+  : [1756934658, 236419878]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/ArgumentHelp.swift"
+  : [1756934658, 236697583]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/ArgumentVisibility.swift"
+  : [1756934658, 236947515]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/CompletionKind.swift"
+  : [1756934658, 237352603]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/Errors.swift"
+  : [1756934658, 237641489]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/Flag.swift"
+  : [1756934658, 238027985]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/NameSpecification.swift"
+  : [1756934658, 238389550]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/Option.swift"
+  : [1756934658, 238803781]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Properties/OptionGroup.swift"
+  : [1756934658, 239248532]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/AsyncParsableCommand.swift"
+  : [1756934658, 240201871]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/CommandConfiguration.swift"
+  : [1756934658, 240566620]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/CommandGroup.swift"
+  : [1756934658, 240821107]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/EnumerableFlag.swift"
+  : [1756934658, 241092869]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/ExpressibleByArgument.swift"
+  : [1756934658, 241360336]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/ParsableArguments.swift"
+  : [1756934658, 241817309]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsable Types/ParsableCommand.swift"
+  : [1756934658, 242152497]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ArgumentDecoder.swift"
+  : [1756934658, 242615032]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ArgumentDefinition.swift"
+  : [1756934658, 243211633]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ArgumentSet.swift": [1756934658, 244112052]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/CommandParser.swift"
+  : [1756934658, 244804508]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/InputKey.swift": [1756934658, 245291550]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/InputOrigin.swift": [1756934658, 245629315]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/Name.swift": [1756934658, 246036603]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/Parsed.swift": [1756934658, 246414512]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ParsedValues.swift"
+  : [1756934658, 246842209]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/ParserError.swift": [1756934658, 247147455]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Parsing/SplitArguments.swift"
+  : [1756934658, 247574247]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/DumpHelpGenerator.swift"
+  : [1756934658, 248109939]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/HelpCommand.swift": [1756934658, 248426223]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/HelpGenerator.swift": [1756934658, 248803715]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/MessageInfo.swift": [1756934658, 249137964]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Usage/UsageGenerator.swift"
+  : [1756934658, 249936004]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/CollectionExtensions.swift"
+  : [1756934658, 250454708]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/Mutex.swift": [1756934658, 250811882]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/Platform.swift": [1756934658, 251082481]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/SequenceExtensions.swift"
+  : [1756934658, 251333421]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/StringExtensions.swift"
+  : [1756934658, 251631994]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/SwiftExtensions.swift"
+  : [1756934658, 251871360]
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Utilities/Tree.swift": [1756934658, 252122138]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/CodingKeyValidator.swift"
+  : [1756934658, 252528262]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/NonsenseFlagsValidator.swift"
+  : [1756934658, 252839226]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/ParsableArgumentsValidation.swift"
+  : [1756934658, 253169475]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/PositionalArgumentsValidator.swift"
+  : [1756934658, 253455923]
+  ? "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParser/Validators/UniqueNamesValidator.swift"
+  : [1756934658, 253745163]

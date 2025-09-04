@@ -1,0 +1,6 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "6b0be6b7456adf78b98f8d202de8f83a6df3a4afd0d98082484018cb223b8c6a"
+build_start_time: [1756944593, 831013000]
+build_end_time: [1756944599, 610978000]
+inputs:
+  "/Users/theostruthers/swift_cli_juce_test/aupresetgen/Sources/aupresetgen/main.swift": [1756944572, 708480922]

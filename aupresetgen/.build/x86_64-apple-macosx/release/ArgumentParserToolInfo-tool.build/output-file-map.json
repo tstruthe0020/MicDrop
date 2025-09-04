@@ -1,0 +1,12 @@
+{
+  "": {
+    "dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo-tool.build/ArgumentParserToolInfo.d",
+    "object": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo-tool.build/ArgumentParserToolInfo.o",
+    "swift-dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo-tool.build/master.swiftdeps"
+  },
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParserToolInfo/ToolInfo.swift": {
+    "object": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo-tool.build/ToolInfo.swift.o",
+    "swiftmodule": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo-tool.build/ToolInfo~partial.swiftmodule",
+    "swift-dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo-tool.build/ToolInfo.swiftdeps"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "": {
+    "dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/aupresetgen.d",
+    "object": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/aupresetgen.o",
+    "swift-dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/master.swiftdeps"
+  },
+  "/Users/theostruthers/MicDrop/aupresetgen/Sources/aupresetgen/main.swift": {
+    "object": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/main.swift.o",
+    "swiftmodule": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/aupresetgen.build/main.swiftdeps"
+  }
+}

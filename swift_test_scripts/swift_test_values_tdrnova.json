@@ -1,0 +1,27 @@
+{
+  "params": {
+    "Bypass": 0.0,
+    "Band_1_Selected": 1.0,
+    "Band_1_Active": 1.0,
+    "Gain_1": -2.5,
+    "Q_Factor_1": 2.0,
+    "Frequency_1": 300.0,
+    "Band_1_DynActive": 0.0,
+    
+    "Band_2_Selected": 0.0,
+    "Band_2_Active": 1.0,
+    "Gain_2": 0.0,
+    "Q_Factor_2": 1.5,
+    "Frequency_2": 1500.0,
+    "Band_2_DynActive": 0.0,
+    
+    "Band_4_DynActive": 1.0,
+    "Threshold_4": -8.0,
+    "Ratio_4": 4.0,
+    "Attack_4": 2.0,
+    "Release_4": 50.0,
+    
+    "Frequency": 80.0,
+    "Mix": 0.0
+  }
+}

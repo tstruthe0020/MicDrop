@@ -181,6 +181,58 @@ async def export_logic_presets(request: ExportRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
+def convert_parameters(backend_params, plugin_name=None):
+    """
+    Convert backend parameters to plugin-specific format
+    Handles different parameter formats for different plugins
+    """
+    converted = {}
+    
+    # TDR Nova uses special string format for boolean parameters
+    if plugin_name == "TDR Nova":
+        for key, value in backend_params.items():
+            if isinstance(value, bool):
+                # TDR Nova uses "On"/"Off" for boolean parameters
+                converted[key] = "On" if value else "Off"
+            elif isinstance(value, str):
+                # Pass string values through (they might already be "On"/"Off")
+                converted[key] = value
+            else:
+                converted[key] = float(value)
+        
+        # CRITICAL: Auto-activate required TDR Nova settings for audible changes
+        # If thresholds are set, activate dynamics processing
+        for band in [1, 2, 3, 4]:
+            threshold_key = f"band_{band}_threshold"
+            if threshold_key in backend_params:
+                # Activate dynamics processing for this band
+                converted[f"bandDynActive_{band}"] = "On"
+                converted[f"bandActive_{band}"] = "On"
+                converted[f"bandSelected_{band}"] = "On"
+                # Add some EQ gain to make it audible
+                if f"band_{band}_gain" not in backend_params:
+                    converted[f"bandGain_{band}"] = -1.0  # Small cut to make it audible
+        
+        # Ensure bypass is off
+        if "bypass" in backend_params or "bypass_master" in backend_params:
+            converted["bypass_master"] = "Off"
+            
+    else:
+        # Standard conversion for other plugins
+        for key, value in backend_params.items():
+            if isinstance(value, bool):
+                converted[key] = 1.0 if value else 0.0
+            elif isinstance(value, str):
+                string_mappings = {
+                    'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
+                    'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
+                    'notch': 6.0
+                }
+                converted[key] = string_mappings.get(value, 0.0)
+            else:
+                converted[key] = float(value)
+    return converted
+
 @api_router.post("/export/download-presets")
 async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -205,173 +257,52 @@ async def download_presets_endpoint(request: Dict[str, Any]) -> Dict[str, Any]:
         download_dir = f"/tmp/vocal_chain_downloads/{timestamp}"
         os.makedirs(download_dir, exist_ok=True)
         
-        def convert_parameters(backend_params):
-            converted = {}
-            for key, value in backend_params.items():
-                if isinstance(value, bool):
-                    converted[key] = 1.0 if value else 0.0
-                elif isinstance(value, str):
-                    string_mappings = {
-                        'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
-                        'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
-                        'notch': 6.0
-                    }
-                    converted[key] = string_mappings.get(value, 0.0)
-                else:
-                    converted[key] = float(value)
-            return converted
-        
-        # Generate presets for each plugin
+        # Generate vocal chain presets using the new ZIP generation method
         plugins = chain_result['chain']['plugins']
-        generated_files = []
-        errors = []
         
-        for i, plugin in enumerate(plugins):
-            try:
-                plugin_name = plugin['plugin']
-                converted_params = convert_parameters(plugin['params'])
-                
-                # Create consistent preset filename
-                preset_filename = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}.aupreset"
-                preset_name_only = preset_filename.replace('.aupreset', '')  # Remove extension for generation
-                
-                # Load parameter mapping if available
-                param_map = None
-                try:
-                    map_file = Path(f"/app/aupreset/maps/{plugin_name.replace(' ', '').replace('-', '')}.map.json")
-                    if map_file.exists():
-                        with open(map_file, 'r') as f:
-                            param_map = json.load(f)
-                except Exception as e:
-                    logger.warning(f"Could not load parameter map for {plugin_name}: {e}")
-                
-                # Generate preset to download directory
-                success, stdout, stderr = au_preset_generator.generate_preset(
-                    plugin_name=plugin_name,
-                    parameters=converted_params,
-                    preset_name=preset_name_only,  # Use consistent name
-                    output_dir=download_dir,  # Generate to download directory
-                    parameter_map=param_map,
-                    verbose=True
-                )
-                
-                if success:
-                    # Look for the file in multiple locations
-                    preset_path = None
-                    # First, check direct location
-                    direct_path = Path(download_dir) / preset_filename
-                    if direct_path.exists():
-                        preset_path = direct_path
-                    else:
-                        # Search recursively for the file
-                        matches = list(Path(download_dir).glob(f"**/{preset_filename}"))
-                        if matches:
-                            preset_path = matches[0]
-                    
-                    if preset_path and preset_path.exists():
-                        # Move file to direct location for ZIP packaging
-                        final_path = Path(download_dir) / preset_filename
-                        try:
-                            if preset_path != final_path:
-                                import shutil
-                                shutil.move(str(preset_path), str(final_path))
-                                preset_path = final_path
-                        except Exception as move_error:
-                            logger.error(f"Failed to move preset file: {move_error}")
-                            # Continue with original path if move fails
-                        
-                        generated_files.append({
-                            "plugin": plugin_name,
-                            "filename": preset_filename,
-                            "path": str(preset_path),
-                            "size": preset_path.stat().st_size
-                        })
-                        logger.info(f"✅ Generated downloadable preset: {preset_filename}")
-                    else:
-                        # Debug: list all files in the directory
-                        all_files = list(Path(download_dir).rglob("*.aupreset"))
-                        error_msg = f"Generated {plugin_name} but file not found. Available files: {[f.name for f in all_files]}"
-                        errors.append(error_msg)
-                        logger.warning(error_msg)
-                else:
-                    error_msg = f"Failed to generate {plugin_name}: {stderr}"
-                    errors.append(error_msg)
-                    logger.error(f"❌ {plugin_name} generation failed: {stderr}")
-                    
-            except Exception as e:
-                error_msg = f"Exception processing {plugin_name}: {str(e)}"
-                errors.append(error_msg)
-                logger.error(error_msg)
+        # Use the enhanced chain ZIP generation
+        success, stdout, stderr = au_preset_generator.generate_chain_zip(
+            plugins_data=plugins,
+            chain_name=chain_name,
+            output_dir=download_dir,
+            verbose=True
+        )
         
-        if generated_files:
-            # Create ZIP file containing all presets
-            zip_filename = f"{chain_name}_Presets.zip"
-            zip_path = Path(download_dir) / zip_filename
-            
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                # Add README with installation instructions
-                readme_content = f"""Vocal Chain Presets - {chain_name}
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Vibe: {vibe}
-Genre: {genre}
-
-INSTALLATION INSTRUCTIONS:
-1. Extract all .aupreset files from this ZIP
-2. Copy each preset to its corresponding Logic Pro directory:
-
-MEqualizer → /Users/[username]/Library/Audio/Presets/MeldaProduction/MEqualizer/
-MCompressor → /Users/[username]/Library/Audio/Presets/MeldaProduction/MCompressor/
-MConvolutionEZ → /Users/[username]/Library/Audio/Presets/MeldaProduction/MConvolutionEZ/
-MAutoPitch → /Users/[username]/Library/Audio/Presets/MeldaProduction/MAutoPitch/
-TDR Nova → /Users/[username]/Library/Audio/Presets/Tokyo Dawn Labs/TDR Nova/
-Fresh Air → /Users/[username]/Library/Audio/Presets/Slate Digital/Fresh Air/
-Graillon 3 → /Users/[username]/Library/Audio/Presets/Auburn Sounds/Graillon 3/
-1176 Compressor → /Users/[username]/Library/Audio/Presets/Universal Audio (UADx)/UADx 1176 FET Compressor/
-LA-LA → /Users/[username]/Library/Audio/Presets/AnalogObsession/LALA/
-
-3. Restart Logic Pro
-4. The presets will appear in each plugin's preset menu
-
-PRESET FILES INCLUDED:
-"""
-                for file_info in generated_files:
-                    readme_content += f"- {file_info['filename']} ({file_info['plugin']})\n"
-                    
-                zipf.writestr("README.txt", readme_content)
+        if success:
+            # Look for the generated ZIP file
+            zip_files = list(Path(download_dir).glob("*.zip"))
+            if zip_files:
+                zip_path = zip_files[0]
+                zip_filename = zip_path.name
                 
-                # Add all preset files
-                for file_info in generated_files:
-                    try:
-                        if Path(file_info['path']).exists():
-                            zipf.write(file_info['path'], file_info['filename'])
-                        else:
-                            logger.error(f"Preset file disappeared: {file_info['path']}")
-                            errors.append(f"File disappeared before ZIP creation: {file_info['filename']}")
-                    except Exception as zip_error:
-                        logger.error(f"Failed to add {file_info['filename']} to ZIP: {zip_error}")
-                        errors.append(f"Failed to add {file_info['filename']} to ZIP: {zip_error}")
-            
-            # Generate download URL (relative to /tmp for the container)
-            download_url = f"/api/download/{timestamp}/{zip_filename}"
-            
-            return {
-                "success": True,
-                "message": f"Generated {len(generated_files)} presets for download",
-                "vocal_chain": chain_result,
-                "download": {
-                    "url": download_url,
-                    "filename": zip_filename,
-                    "size": zip_path.stat().st_size,
-                    "preset_count": len(generated_files)
-                },
-                "generated_files": generated_files,
-                "errors": errors if errors else None
-            }
+                # Generate download URL
+                download_url = f"/api/download/{timestamp}/{zip_filename}"
+                
+                return {
+                    "success": True,
+                    "message": f"Generated vocal chain presets with Logic Pro structure",
+                    "vocal_chain": chain_result,
+                    "download": {
+                        "url": download_url,
+                        "filename": zip_filename,
+                        "size": zip_path.stat().st_size,
+                        "preset_count": len(plugins),
+                        "structure": "Logic Pro compatible - extract to ~/Music/"
+                    },
+                    "stdout": stdout,
+                    "errors": None
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "ZIP file not found after generation",
+                    "errors": [stderr]
+                }
         else:
             return {
                 "success": False,
                 "message": "No presets were generated",
-                "errors": errors
+                "errors": [stderr]
             }
             
     except Exception as e:
@@ -896,22 +827,7 @@ async def all_in_one_processing(
             # Step 3: Get vocal chain recommendation
             chain_result = recommend_vocal_chain(vibe, genre, "vocal")
             
-            # Step 4: Generate presets using our improved system
-            def convert_parameters(backend_params):
-                converted = {}
-                for key, value in backend_params.items():
-                    if isinstance(value, bool):
-                        converted[key] = 1.0 if value else 0.0
-                    elif isinstance(value, str):
-                        string_mappings = {
-                            'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
-                            'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
-                            'notch': 6.0
-                        }
-                        converted[key] = string_mappings.get(value, 0.0)
-                    else:
-                        converted[key] = float(value)
-                return converted
+            # Step 4: Generate presets using our improved system with parameter conversion
             
             # Generate presets for each plugin
             plugins = chain_result['chain']['plugins']
@@ -920,7 +836,7 @@ async def all_in_one_processing(
             
             for i, plugin in enumerate(plugins):
                 plugin_name = plugin['plugin']
-                converted_params = convert_parameters(plugin['params'])
+                converted_params = convert_parameters(plugin['params'], plugin_name)
                 
                 # Load parameter mapping if available
                 param_map = None

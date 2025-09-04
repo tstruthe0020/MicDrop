@@ -1,0 +1,6 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "ff4e6cf6db6a4bd2300992f85cebe11fd01d96f47e08ede87ec45d12dc196c83"
+build_start_time: [1756934665, 340944000]
+build_end_time: [1756934669, 975151000]
+inputs:
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParserToolInfo/ToolInfo.swift": [1756934658, 256281137]

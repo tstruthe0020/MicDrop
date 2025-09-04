@@ -11,6 +11,7 @@ import logging
 import platform
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -194,9 +195,11 @@ class AUPresetGenerator:
             else:
                 # Fall back to Python CLI
                 logger.info(f"Swift CLI not available, using Python fallback for {plugin_name}")
+                # Check if we're in chain generation mode (temp directory suggests batch processing)
+                skip_cleanup = "/tmp/tmp" in output_dir
                 return self._generate_with_python_fallback(
                     plugin_name, parameters, preset_name, output_dir, 
-                    seed_file, parameter_map, verbose
+                    seed_file, parameter_map, verbose, skip_cleanup
                 )
                 
         except Exception as e:
@@ -208,34 +211,55 @@ class AUPresetGenerator:
         output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
         verbose: bool
     ) -> Tuple[bool, str, str]:
-        """Generate preset using Swift CLI"""
+        """Generate preset using Swift CLI with new command structure"""
         
-        # Create temporary values file
-        values_data = {"params": parameters}
+        # Get plugin component identifiers from seed file
+        component_info = self._get_component_info_from_seed(seed_file)
+        if not component_info:
+            return False, "", "Could not extract component info from seed file"
+        
+        type_str, subtype_str, manufacturer_str = component_info
+        
+        # Create temporary values file in new format (direct parameter mapping)
+        temp_values = {}
+        if parameter_map:
+            # Use parameter mapping to convert names to IDs
+            for param_name, value in parameters.items():
+                if param_name in parameter_map:
+                    param_id = parameter_map[param_name]
+                    temp_values[param_id] = value
+                else:
+                    # Try direct mapping
+                    temp_values[param_name] = value
+        else:
+            temp_values = parameters
+            
+        values_data = temp_values
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump(values_data, f, indent=2)
             values_path = f.name
         
-        # Create temporary map file if provided
-        map_path = None
-        if parameter_map:
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-                json.dump(parameter_map, f, indent=2)
-                map_path = f.name
-        
         try:
-            # Build command
+            # Create ZIP path with Logic Pro mirroring structure
+            zip_filename = f"{plugin_name}_Presets.zip"
+            zip_path = Path(output_dir) / zip_filename
+            
+            # Use new CLI format with enhanced ZIP packaging
             cmd = [
                 self.aupresetgen_path,
-                "--seed", str(seed_file),
+                "save-preset",
+                "--type", type_str,
+                "--subtype", subtype_str, 
+                "--manufacturer", manufacturer_str,
                 "--values", values_path,
                 "--preset-name", preset_name,
-                "--out-dir", output_dir
+                "--out-dir", output_dir,
+                "--plugin-name", plugin_name,
+                "--make-zip",
+                "--zip-path", str(zip_path),
+                "--bundle-root", "Audio Music Apps"
             ]
-            
-            if map_path:
-                cmd.extend(["--map", map_path])
             
             if verbose:
                 cmd.append("--verbose")
@@ -251,82 +275,66 @@ class AUPresetGenerator:
             success = result.returncode == 0
             
             if success:
-                # Find the generated .aupreset file with more flexible search
-                generated_files = []
-                temp_output = Path(output_dir)
+                # Look for generated files (both individual preset and ZIP)
+                preset_file = Path(output_dir) / f"{preset_name}.aupreset"
                 
-                # Search for any .aupreset files in the output directory and subdirectories
-                for preset_file in temp_output.rglob("*.aupreset"):
-                    generated_files.append(preset_file)
-                
-                if generated_files:
-                    # Use the first found file, or find one matching the preset name
-                    source_file = generated_files[0]
-                    for file in generated_files:
-                        if preset_name in file.name:
-                            source_file = file
-                            break
-                    
-                    # Target file location
-                    target_file = Path(output_dir) / f"{preset_name}.aupreset"
-                    
-                    # Ensure target directory exists
-                    target_file.parent.mkdir(parents=True, exist_ok=True)
-                    
-                    # Move file to exact location if it's not already there
-                    if source_file != target_file:
-                        import shutil
-                        shutil.move(str(source_file), str(target_file))
-                    
-                    # Fix file permissions for macOS user
-                    if self.is_macos:
-                        try:
-                            subprocess.run(['chown', 'theostruthers:staff', str(target_file)], capture_output=True)
-                            subprocess.run(['chmod', '644', str(target_file)], capture_output=True)
-                        except Exception as perm_error:
-                            logger.warning(f"Permission fix warning: {perm_error}")
-                    
-                    # Clean up any empty nested directories created by Swift CLI (but preserve existing files)
-                    try:
-                        # Only remove nested structure if it's empty AND doesn't contain other preset files
-                        nested_presets_dir = temp_output / "Presets"
-                        if nested_presets_dir.exists():
-                            # Check if there are any .aupreset files in the nested structure
-                            nested_presets = list(nested_presets_dir.rglob("*.aupreset"))
-                            if not nested_presets:  # Only clean up if no presets remain
-                                for empty_dir in reversed(list(nested_presets_dir.rglob("*"))):
-                                    if empty_dir.is_dir() and not list(empty_dir.iterdir()):
-                                        empty_dir.rmdir()
-                                # Remove Presets dir if empty
-                                if nested_presets_dir.exists() and not list(nested_presets_dir.iterdir()):
-                                    nested_presets_dir.rmdir()
-                            else:
-                                logger.info(f"Skipping cleanup - found {len(nested_presets)} other preset files")
-                    except Exception as cleanup_error:
-                        logger.warning(f"Cleanup warning: {cleanup_error}")
-                    
+                # Check for ZIP with Logic Pro structure
+                if zip_path.exists():
                     if verbose:
-                        logger.info(f"✅ Swift CLI: Successfully generated preset for {plugin_name}")
-                    
-                    return True, f"✅ Generated preset: {target_file}", ""
+                        logger.info(f"✅ Swift CLI: Generated preset with Logic Pro ZIP structure for {plugin_name}")
+                    return True, f"✅ Generated preset with Logic Pro ZIP: {zip_path}", ""
+                elif preset_file.exists():
+                    if verbose:
+                        logger.info(f"✅ Swift CLI: Successfully generated individual preset for {plugin_name}")
+                    return True, f"✅ Generated preset: {preset_file}", ""
                 else:
-                    return False, result.stdout, "No .aupreset file was generated"
+                    return False, result.stdout, "No preset or ZIP file found after generation"
             else:
                 if verbose:
                     logger.error(f"❌ Swift CLI failed for {plugin_name}: {result.stderr}")
                 return False, result.stdout, result.stderr
-            
+                
         finally:
             # Cleanup temporary files
             if os.path.exists(values_path):
                 os.unlink(values_path)
-            if map_path and os.path.exists(map_path):
-                os.unlink(map_path)
     
+    def _get_component_info_from_seed(self, seed_file: Path) -> Optional[Tuple[str, str, str]]:
+        """Extract component identifiers from seed .aupreset file"""
+        try:
+            with open(seed_file, 'rb') as f:
+                plist_data = f.read()
+            
+            import plistlib
+            plist = plistlib.loads(plist_data)
+            
+            # Extract component info
+            manufacturer = plist.get('manufacturer', 0)
+            subtype = plist.get('subtype', 0) 
+            type_val = plist.get('type', 0)
+            
+            # Convert to 4-character strings
+            def int_to_fourcc(val):
+                return ''.join([
+                    chr((val >> 24) & 0xFF),
+                    chr((val >> 16) & 0xFF), 
+                    chr((val >> 8) & 0xFF),
+                    chr(val & 0xFF)
+                ])
+            
+            return (
+                int_to_fourcc(type_val),
+                int_to_fourcc(subtype),
+                int_to_fourcc(manufacturer)
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to extract component info from {seed_file}: {e}")
+            return None
     def _generate_with_python_fallback(
         self, plugin_name: str, parameters: Dict[str, Any], preset_name: str,
         output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
-        verbose: bool
+        verbose: bool, skip_cleanup: bool = False
     ) -> Tuple[bool, str, str]:
         """Generate preset using Python CLI fallback"""
         try:
@@ -390,7 +398,8 @@ class AUPresetGenerator:
                         
                         if source_file != target_file:
                             import shutil
-                            shutil.move(str(source_file), str(target_file))
+                            # Use copy2 instead of move to preserve original files for ZIP packaging
+                            shutil.copy2(str(source_file), str(target_file))
                         
                         # Fix file permissions for macOS user  
                         if self.is_macos:
@@ -401,18 +410,22 @@ class AUPresetGenerator:
                                 logger.warning(f"Permission fix warning: {perm_error}")
                         
                         # Clean up nested directories created by Python CLI (but preserve existing files)
-                        try:
-                            nested_presets_dir = PathLib(output_dir) / "Presets"
-                            if nested_presets_dir.exists():
-                                # Check if there are any .aupreset files in the nested structure
-                                nested_presets = list(nested_presets_dir.rglob("*.aupreset"))
-                                if not nested_presets:  # Only clean up if no presets remain
-                                    import shutil
-                                    shutil.rmtree(str(nested_presets_dir))
-                                else:
-                                    logger.info(f"Skipping Python cleanup - found {len(nested_presets)} other preset files")
-                        except Exception as cleanup_error:
-                            logger.warning(f"Cleanup warning: {cleanup_error}")
+                        # Skip cleanup during chain generation to avoid interfering with other presets
+                        if not skip_cleanup:
+                            try:
+                                nested_presets_dir = PathLib(output_dir) / "Presets"
+                                if nested_presets_dir.exists():
+                                    # Check if there are any .aupreset files in the nested structure
+                                    nested_presets = list(nested_presets_dir.rglob("*.aupreset"))
+                                    if not nested_presets:  # Only clean up if no presets remain
+                                        import shutil
+                                        shutil.rmtree(str(nested_presets_dir))
+                                    else:
+                                        logger.info(f"Skipping Python cleanup - found {len(nested_presets)} other preset files")
+                            except Exception as cleanup_error:
+                                logger.warning(f"Cleanup warning: {cleanup_error}")
+                        else:
+                            logger.info(f"Skipping cleanup for chain generation: {plugin_name}")
                         
                         if verbose:
                             logger.info(f"✅ Python fallback: Successfully generated preset for {plugin_name}")
@@ -660,6 +673,290 @@ class AUPresetGenerator:
         
         return [f.name for f in self.seeds_dir.iterdir() if f.suffix == '.aupreset']
     
+    def generate_chain_zip(
+        self, 
+        plugins_data: List[Dict[str, Any]], 
+        chain_name: str, 
+        output_dir: str,
+        verbose: bool = False
+    ) -> Tuple[bool, str, str]:
+        """
+        Generate multiple presets and package them into a single ZIP with Logic Pro folder structure
+        
+        Args:
+            plugins_data: List of plugin dictionaries with 'plugin', 'params', etc.
+            chain_name: Base name for the chain
+            output_dir: Directory to write the final ZIP
+            verbose: Enable verbose output
+            
+        Returns:
+            Tuple of (success, stdout, stderr)
+        """
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Create temporary directory for staging presets
+            with tempfile.TemporaryDirectory() as temp_dir:
+                generated_presets = []
+                errors = []
+                
+                for i, plugin_data in enumerate(plugins_data):
+                    plugin_name = plugin_data.get('plugin', f'Unknown_{i}')
+                    parameters = plugin_data.get('params', {})
+                    preset_name = f"{chain_name}_{i+1}_{plugin_name.replace(' ', '_')}"
+                    
+                    # Convert parameters using plugin-specific conversion
+                    def convert_parameters(backend_params, plugin_name=None):
+                        """Local copy of parameter conversion with plugin-specific handling"""
+                        converted = {}
+                        
+                        # TDR Nova uses special string format for boolean parameters
+                        if plugin_name == "TDR Nova":
+                            for key, value in backend_params.items():
+                                if isinstance(value, bool):
+                                    # TDR Nova uses "On"/"Off" for boolean parameters
+                                    converted[key] = "On" if value else "Off"
+                                elif isinstance(value, str):
+                                    # Pass string values through (they might already be "On"/"Off")
+                                    converted[key] = value
+                                else:
+                                    converted[key] = float(value)
+                            
+                            # CRITICAL: Auto-activate required TDR Nova settings for audible changes
+                            # If thresholds are set, activate dynamics processing
+                            for band in [1, 2, 3, 4]:
+                                threshold_key = f"band_{band}_threshold"
+                                if threshold_key in backend_params:
+                                    # Activate dynamics processing for this band
+                                    converted[f"bandDynActive_{band}"] = "On"
+                                    converted[f"bandActive_{band}"] = "On"
+                                    converted[f"bandSelected_{band}"] = "On"
+                                    # Add some EQ gain to make it audible
+                                    if f"band_{band}_gain" not in backend_params:
+                                        converted[f"bandGain_{band}"] = -1.0  # Small cut to make it audible
+                            
+                            # Ensure bypass is off
+                            if "bypass" in backend_params or "bypass_master" in backend_params:
+                                converted["bypass_master"] = "Off"
+                                
+                        else:
+                            # Standard conversion for other plugins
+                            for key, value in backend_params.items():
+                                if isinstance(value, bool):
+                                    converted[key] = 1.0 if value else 0.0
+                                elif isinstance(value, str):
+                                    string_mappings = {
+                                        'bell': 0.0, 'low_shelf': 1.0, 'high_shelf': 2.0,
+                                        'low_pass': 3.0, 'high_pass': 4.0, 'band_pass': 5.0,
+                                        'notch': 6.0
+                                    }
+                                    converted[key] = string_mappings.get(value, 0.0)
+                                else:
+                                    converted[key] = float(value)
+                        return converted
+                    converted_params = convert_parameters(parameters, plugin_name)
+                    
+                    # Generate individual preset (disable cleanup during chain generation)
+                    success, stdout, stderr = self.generate_preset(
+                        plugin_name=plugin_name,
+                        parameters=converted_params,
+                        preset_name=preset_name,
+                        output_dir=temp_dir,
+                        verbose=verbose
+                    )
+                    
+                    if success:
+                        # Look for the generated preset file (search recursively)
+                        logger.info(f"🔍 Looking for preset: {preset_name}.aupreset in {temp_dir}")
+                        preset_files = list(Path(temp_dir).glob(f"**/{preset_name}.aupreset"))
+                        logger.info(f"🔍 Direct search found: {len(preset_files)} files: {[str(f) for f in preset_files]}")
+                        if not preset_files:
+                            # Also try looking for any .aupreset files that might have been generated
+                            all_presets = list(Path(temp_dir).glob(f"**/*.aupreset"))
+                            logger.info(f"🔍 All .aupreset files found: {len(all_presets)}: {[str(f) for f in all_presets]}")
+                            preset_files = [f for f in all_presets if preset_name in f.name]
+                            logger.info(f"🔍 Matching preset files: {len(preset_files)}: {[str(f) for f in preset_files]}")
+                        
+                        if preset_files:
+                            # Choose the file that actually exists and is accessible
+                            # Prefer files in the root temp directory over nested ones
+                            valid_file = None
+                            for file_path in preset_files:
+                                if file_path.exists() and file_path.is_file() and file_path.stat().st_size > 0:
+                                    # Prefer files in the root directory (shorter path depth)
+                                    path_depth = len(file_path.parts)
+                                    if valid_file is None or path_depth < len(valid_file.parts):
+                                        valid_file = file_path
+                                        logger.info(f"🎯 Found valid preset: {file_path} (depth: {path_depth})")
+                            
+                            if valid_file:
+                                # Verify file is actually readable
+                                try:
+                                    with open(valid_file, 'rb') as f:
+                                        content = f.read(100)  # Read first 100 bytes to verify
+                                    if len(content) > 0:
+                                        generated_presets.append({
+                                            'plugin': plugin_name,
+                                            'preset_name': preset_name,
+                                            'file_path': valid_file
+                                        })
+                                        logger.info(f"✅ Successfully added preset: {valid_file} ({valid_file.stat().st_size} bytes)")
+                                    else:
+                                        logger.error(f"❌ Preset file is empty: {valid_file}")
+                                        errors.append(f"Empty preset file for {plugin_name}")
+                                except Exception as read_error:
+                                    logger.error(f"❌ Cannot read preset file {valid_file}: {read_error}")
+                                    errors.append(f"Unreadable preset file for {plugin_name}")
+                            else:
+                                logger.error(f"❌ No valid preset files found for {plugin_name}")
+                                errors.append(f"No valid preset files found for {plugin_name}")
+                        else:
+                            # Enhanced debugging: list all files in temp_dir to understand the issue
+                            all_files = list(Path(temp_dir).rglob("*"))
+                            file_names = [f.name for f in all_files if f.is_file()]
+                            logger.error(f"❌ Preset file not found for {plugin_name}. Expected: {preset_name}.aupreset")
+                            logger.error(f"📁 Files in temp_dir ({temp_dir}): {file_names}")
+                            
+                            # Also check if there are any .aupreset files at all
+                            aupreset_files = [f for f in all_files if f.suffix == '.aupreset']
+                            if aupreset_files:
+                                logger.error(f"🎛️  Found .aupreset files: {[f.name for f in aupreset_files]}")
+                            else:
+                                logger.error(f"🚫 No .aupreset files found in temp directory")
+                            
+                            errors.append(f"Preset file not found for {plugin_name}")
+                    else:
+                        errors.append(f"Failed to generate {plugin_name}: {stderr}")
+                
+                if generated_presets:
+                    # Create final ZIP with Logic Pro structure using ditto (if on macOS) or zipfile
+                    zip_filename = f"{chain_name}_VocalChain.zip"
+                    final_zip_path = Path(output_dir) / zip_filename
+                    
+                    if self.is_macos and self.check_available():
+                        # Use Swift CLI with ditto for proper Logic Pro structure
+                        success = self._create_logic_pro_zip_with_swift(
+                            generated_presets, final_zip_path, verbose
+                        )
+                    else:
+                        # Fallback to Python zipfile with Logic Pro structure
+                        success = self._create_logic_pro_zip_with_python(
+                            generated_presets, final_zip_path, verbose
+                        )
+                    
+                    if success:
+                        return True, f"✅ Generated vocal chain ZIP: {final_zip_path}", ""
+                    else:
+                        return False, "", "Failed to create final ZIP package"
+                else:
+                    return False, "", f"No presets generated. Errors: {'; '.join(errors)}"
+                    
+        except Exception as e:
+            logger.error(f"Exception in chain ZIP generation: {e}")
+            return False, "", str(e)
+    
+    def _create_logic_pro_zip_with_swift(
+        self, 
+        presets: List[Dict[str, Any]], 
+        zip_path: Path, 
+        verbose: bool
+    ) -> bool:
+        """Create ZIP with Logic Pro structure using Swift CLI and ditto"""
+        try:
+            with tempfile.TemporaryDirectory() as staging_dir:
+                # Create Logic Pro folder structure
+                bundle_root = Path(staging_dir) / "Audio Music Apps" / "Plug-In Settings"
+                
+                for preset in presets:
+                    plugin_name = preset['plugin']
+                    preset_file = preset['file_path']
+                    
+                    # Create plugin-specific directory
+                    plugin_dir = bundle_root / plugin_name
+                    plugin_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Copy preset to plugin directory
+                    import shutil
+                    shutil.copy2(preset_file, plugin_dir / preset_file.name)
+                
+                # Use ditto command for macOS-native ZIP creation
+                cmd = ['ditto', '-c', '-k', '--keepParent', str(staging_dir), str(zip_path)]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                
+                if result.returncode == 0:
+                    if verbose:
+                        logger.info(f"✅ Created Logic Pro ZIP with ditto: {zip_path}")
+                    return True
+                else:
+                    logger.error(f"❌ ditto failed: {result.stderr}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Swift ZIP creation failed: {e}")
+            return False
+    
+    def _create_logic_pro_zip_with_python(
+        self, 
+        presets: List[Dict[str, Any]], 
+        zip_path: Path, 
+        verbose: bool
+    ) -> bool:
+        """Create ZIP with Logic Pro structure using Python zipfile"""
+        try:
+            import zipfile
+            
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                # Add README with installation instructions
+                readme_content = f"""Logic Pro Vocal Chain Presets
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+INSTALLATION INSTRUCTIONS:
+1. Extract this ZIP file
+2. Copy the entire "Audio Music Apps" folder to your ~/Music/ directory
+   (This will merge with existing Logic Pro preset folders)
+3. Restart Logic Pro
+4. The presets will appear in each plugin's preset menu
+
+PRESET FILES INCLUDED:
+"""
+                for preset in presets:
+                    readme_content += f"- {preset['preset_name']}.aupreset ({preset['plugin']})\n"
+                    
+                zipf.writestr("README.txt", readme_content)
+                
+                # Add presets with Logic Pro folder structure
+                for preset in presets:
+                    plugin_name = preset['plugin']
+                    preset_file = preset['file_path']
+                    
+                    # Ensure the preset file exists before adding to ZIP
+                    if not Path(preset_file).exists():
+                        logger.error(f"Preset file not found: {preset_file}")
+                        continue
+                    
+                    # Create Logic Pro path structure in ZIP
+                    zip_path_in_archive = f"Audio Music Apps/Plug-In Settings/{plugin_name}/{preset_file.name}"
+                    try:
+                        zipf.write(preset_file, zip_path_in_archive)
+                        if verbose:
+                            logger.info(f"Added to ZIP: {zip_path_in_archive}")
+                    except Exception as add_error:
+                        logger.error(f"Failed to add {preset_file} to ZIP: {add_error}")
+                        return False
+            
+            # Verify ZIP was created and has content
+            if zip_path.exists() and zip_path.stat().st_size > 0:
+                if verbose:
+                    logger.info(f"✅ Created Logic Pro ZIP with Python: {zip_path} ({zip_path.stat().st_size} bytes)")
+                return True
+            else:
+                logger.error(f"ZIP file was not created or is empty: {zip_path}")
+                return False
+            
+        except Exception as e:
+            logger.error(f"Python ZIP creation failed: {e}")
+            return False
+
     def check_available(self) -> bool:
         """Check if the aupresetgen CLI is available and working"""
         try:

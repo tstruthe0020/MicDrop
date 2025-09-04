@@ -1,0 +1,12 @@
+{
+  "": {
+    "dependencies": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo.build/ArgumentParserToolInfo.d",
+    "object": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo.build/ArgumentParserToolInfo.o",
+    "swift-dependencies": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo.build/master.swiftdeps"
+  },
+  "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/checkouts/swift-argument-parser/Sources/ArgumentParserToolInfo/ToolInfo.swift": {
+    "object": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo.build/ToolInfo.swift.o",
+    "swiftmodule": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo.build/ToolInfo~partial.swiftmodule",
+    "swift-dependencies": "/Users/theostruthers/swift_cli_juce_test/aupresetgen/.build/x86_64-apple-macosx/release/ArgumentParserToolInfo.build/ToolInfo.swiftdeps"
+  }
+}

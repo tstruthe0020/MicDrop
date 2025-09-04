@@ -1,0 +1,22 @@
+{
+  "": {
+    "dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/generate_docc_reference.d",
+    "object": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/generate_docc_reference.o",
+    "swift-dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/master.swiftdeps"
+  },
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Tools/generate-docc-reference/Extensions/ArgumentParser+Markdown.swift": {
+    "object": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/ArgumentParser+Markdown.swift.o",
+    "swiftmodule": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/ArgumentParser+Markdown~partial.swiftmodule",
+    "swift-dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/ArgumentParser+Markdown.swiftdeps"
+  },
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Tools/generate-docc-reference/Extensions/Process+SimpleAPI.swift": {
+    "object": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/Process+SimpleAPI.swift.o",
+    "swiftmodule": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/Process+SimpleAPI~partial.swiftmodule",
+    "swift-dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/Process+SimpleAPI.swiftdeps"
+  },
+  "/Users/theostruthers/MicDrop/aupresetgen/.build/checkouts/swift-argument-parser/Tools/generate-docc-reference/GenerateDoccReference.swift": {
+    "object": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/GenerateDoccReference.swift.o",
+    "swiftmodule": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/GenerateDoccReference~partial.swiftmodule",
+    "swift-dependencies": "/Users/theostruthers/MicDrop/aupresetgen/.build/x86_64-apple-macosx/release/generate_docc_reference.build/GenerateDoccReference.swiftdeps"
+  }
+}

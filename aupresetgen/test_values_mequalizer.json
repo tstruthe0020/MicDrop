@@ -1,0 +1,13 @@
+{
+  "params": {
+    "Bypass": 0.0,
+    "Band_1_Frequency": 80.0,
+    "Band_1_Gain": 0.0,
+    "Band_2_Frequency": 300.0,
+    "Band_2_Gain": -2.5,
+    "Band_4_Frequency": 3000.0,
+    "Band_4_Gain": 2.0,
+    "Output_Gain": 0.0,
+    "Mix": 1.0
+  }
+}

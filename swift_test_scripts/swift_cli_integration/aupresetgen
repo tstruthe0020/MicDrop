@@ -1,0 +1,7 @@
+#!/bin/bash
+# Placeholder for Swift CLI binary
+# This needs to be replaced with the actual binary from your Mac
+
+echo "Swift CLI binary not available in container environment"
+echo "This would normally be the compiled aupresetgen binary"
+exit 1

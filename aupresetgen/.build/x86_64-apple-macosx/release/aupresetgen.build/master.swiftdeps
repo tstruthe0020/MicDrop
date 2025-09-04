@@ -1,0 +1,6 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "4bb95cb4a9385610211b9f150601e472ebadb593f466f669a697c62f4d5450e5"
+build_start_time: [1756939849, 280533000]
+build_end_time: [1756939853, 444931000]
+inputs:
+  "/Users/theostruthers/MicDrop/aupresetgen/Sources/aupresetgen/main.swift": [1756939846, 665423634]

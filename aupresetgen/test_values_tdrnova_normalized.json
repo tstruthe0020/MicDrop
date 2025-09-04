@@ -1,0 +1,12 @@
+{
+  "params": {
+    "Bypass": 0.0,
+    "Band_1_Selected": 1.0,
+    "Band_1_Active": 1.0,
+    "Gain_1": 0.25,
+    "Q_Factor_1": 0.5,
+    "Frequency_1": 0.3,
+    "Frequency": 0.2,
+    "Mix": 0.0
+  }
+}
