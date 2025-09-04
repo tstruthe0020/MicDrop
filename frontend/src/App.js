@@ -1195,12 +1195,18 @@ function App() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <Badge variant="secondary" className="text-lg px-3 py-1">
                             {autoChainRecommendation.archetype.replace('-', ' ').toUpperCase()}
                           </Badge>
-                          <div className="text-sm text-green-700">
-                            Confidence: {(autoChainRecommendation.confidence * 100).toFixed(0)}%
+                          <div className="text-sm text-green-700 flex items-center gap-2">
+                            <span>Confidence: {(autoChainRecommendation.confidence * 100).toFixed(0)}%</span>
+                            {autoChainRecommendation.analysis_quality && (
+                              <span className="text-xs text-slate-500">
+                                (Spectral: {autoChainRecommendation.analysis_quality.spectral_analysis}, 
+                                 Vocal: {autoChainRecommendation.analysis_quality.vocal_analysis})
+                              </span>
+                            )}
                           </div>
                         </div>
                         
