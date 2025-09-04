@@ -331,7 +331,7 @@ class AUPresetGenerator:
                 # Look for generated preset file using Logic Pro structure
                 preset_paths = [
                     # Enhanced Swift CLI uses Logic Pro directory structure  
-                    Path(output_dir) / "Presets" / self._get_manufacturer_name(plugin_name) / plugin_name / f"{preset_name}.aupreset",
+                    Path(output_dir) / "Presets" / self._get_manufacturer_name(plugin_name) / self._get_plugin_subdirectory(plugin_name) / f"{preset_name}.aupreset",
                     # Fallback to direct output
                     Path(output_dir) / f"{preset_name}.aupreset"
                 ]
