@@ -460,8 +460,9 @@ def _calculate_recommendation_confidence(analysis: Analysis) -> float:
     confidence = 0.5  # Base confidence
     
     # Boost confidence based on analysis quality
-    audio = analysis.audio_features
-    vocal = analysis.vocal_features
+    # Analysis is a dictionary, not an object with attributes
+    audio = analysis  # The analysis dict contains all the audio features
+    vocal = analysis.get('vocal', {})  # Vocal features are nested under 'vocal' key
     
     if audio.get('key', {}).get('confidence', 0) > 0.7:
         confidence += 0.1
