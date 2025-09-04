@@ -1010,17 +1010,17 @@ function App() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* URL Input Section */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="text-lg font-medium text-blue-900 mb-2">🎵 Auto Vocal Chain</h3>
                   <p className="text-blue-700 mb-4">
-                    AI-powered vocal chain generation. Analyze audio from URL and generate professional presets automatically.
+                    AI-powered vocal chain generation. Upload an audio file OR enter a URL, then generate professional presets automatically.
                   </p>
                   
                   <div className="space-y-4">
+                    {/* Option 1: URL Input */}
                     <div>
                       <label htmlFor="autoChainUrl" className="block text-sm font-medium text-gray-700 mb-2">
-                        Audio URL <span className="text-red-500">*</span>
+                        Option 1: Audio URL
                       </label>
                       <input
                         id="autoChainUrl"
@@ -1035,7 +1035,36 @@ function App() {
                       </p>
                     </div>
 
-                    <div className="flex gap-3">
+                    {/* OR Divider */}
+                    <div className="flex items-center">
+                      <div className="flex-1 border-t border-gray-300"></div>
+                      <span className="px-3 text-sm text-gray-500 bg-blue-50">OR</span>
+                      <div className="flex-1 border-t border-gray-300"></div>
+                    </div>
+
+                    {/* Option 2: File Upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Option 2: Upload Audio File
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          ref={autoChainFileInputRef}
+                          type="file"
+                          accept="audio/*"
+                          onChange={handleAutoChainFileSelect}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                        {autoChainFile && (
+                          <p className="text-sm text-green-600">
+                            ✓ Selected: {autoChainFile.name} ({(autoChainFile.size / 1024 / 1024).toFixed(1)}MB)
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2">
                       <button
                         onClick={analyzeAudio}
                         disabled={(!autoChainFile && !autoChainUrl.trim()) || autoChainAnalyzing}
