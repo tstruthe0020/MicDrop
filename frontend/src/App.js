@@ -443,10 +443,10 @@ function App() {
   };
 
   const analyzeAudio = async () => {
-    if (!autoChainUrl && !autoChainFile) {
+    if (!autoChainFile) {
       toast({
-        title: "Missing Audio",
-        description: "Please provide an audio URL or upload a file",
+        title: "Missing Audio File",
+        description: "Please upload an audio file",
         variant: "destructive"
       });
       return;
@@ -457,47 +457,35 @@ function App() {
     setAutoChainRecommendation(null);
 
     try {
-      let requestBody;
+      // File upload handling
+      const formData = new FormData();
+      formData.append('audio_file', autoChainFile);
       
-      if (autoChainFile) {
-        // File upload - for now, we'll need to upload the file first
-        // Since the backend expects a URL or file path, we'll need to use a different approach
-        // For MVP, let's show an error and ask user to use URL for now
-        throw new Error('File upload not yet implemented. Please use the audio URL option for now.');
-      } else {
-        // URL-based analysis
-        requestBody = { 
-          input_source: autoChainUrl.trim()
-        };
-        
-        const analyzeUrl = `${BACKEND_URL}/api/auto-chain/analyze`;
-        console.log('🎯 DEBUG: About to call analyze endpoint');
-        console.log('🎯 DEBUG: URL:', analyzeUrl); 
-        console.log('🎯 DEBUG: Backend URL:', BACKEND_URL);
-        console.log('🎯 DEBUG: Request body:', requestBody);
-        
-        const response = await fetch(analyzeUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody)
+      const analyzeUrl = `${BACKEND_URL}/api/auto-chain-upload`;
+      console.log('🎯 DEBUG: About to call file upload endpoint');
+      console.log('🎯 DEBUG: URL:', analyzeUrl); 
+      console.log('🎯 DEBUG: File:', autoChainFile.name);
+      
+      const response = await fetch(analyzeUrl, {
+        method: 'POST',
+        body: formData
+      });
+      
+      console.log('🎯 DEBUG: Response status:', response.status);
+      
+      const result = await response.json();
+      console.log('🎯 DEBUG: Response body:', result);
+      
+      if (result.success) {
+        setAutoChainAnalysis(result.analysis);
+        generateRecommendation(result.analysis);
+        toast({
+          title: "✅ Analysis Complete!",
+          description: `Analyzed ${autoChainFile.name} successfully`,
+          className: "border-green-200 bg-green-50"
         });
-        
-        console.log('🎯 DEBUG: Response status:', response.status);
-        console.log('🎯 DEBUG: Response headers:', [...response.headers.entries()]);
-        
-        const result = await response.json();
-        console.log('🎯 DEBUG: Response body:', result);
-        if (result.success) {
-          setAutoChainAnalysis(result.analysis);
-          generateRecommendation(result.analysis);
-          toast({
-            title: "✅ Analysis Complete!",
-            description: "Audio analyzed successfully from URL",
-            className: "border-green-200 bg-green-50"
-          });
-        } else {
-          throw new Error(result.message || 'Analysis failed');
-        }
+      } else {
+        throw new Error(result.message || 'Analysis failed');
       }
     } catch (error) {
       console.error('Analysis error:', error);
