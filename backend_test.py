@@ -3913,8 +3913,10 @@ class VocalChainAPITester:
         
         # PRIORITY TESTS: AUTO CHAIN ENDPOINT REGISTRATION AND PROFESSIONAL PARAMETER MAPPING (Review Request)
         print("\n" + "🎯" * 60)
-        print("🎯 PRIORITY TESTS: AUTO CHAIN ENDPOINT REGISTRATION & PROFESSIONAL PARAMETER MAPPING")
+        print("🎯 PRIORITY TESTS: AUTO CHAIN PARAMETER MAPPING FIX (REVIEW REQUEST)")
         print("🎯" * 60)
+        print("Testing Auto Chain parameter mapping fix for 0 parameters issue...")
+        self.test_auto_chain_parameter_mapping_fix()
         print("Testing Auto Chain endpoint registration fix (no 404 errors)...")
         self.test_auto_chain_endpoint_registration_fix()
         print("Testing professional parameter flow pipeline...")
