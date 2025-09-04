@@ -318,6 +318,14 @@ test_plan:
     stuck_count: 0
     priority: "high"
     needs_retesting: false
+    
+  - task: "Enhanced Swift CLI Debugging for Failing Plugins"
+    implemented: true
+    working: false
+    file: "/app/backend/export/au_preset_generator.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
     status_history:
         - working: false
         - agent: "main"
