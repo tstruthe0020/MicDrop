@@ -1159,7 +1159,7 @@ function App() {
                   </Card>
                 )}
 
-                {!autoChainUrl && !autoChainFile && (
+                {!autoChainFile && (
                   <Alert>
                     <Upload className="h-4 w-4" />
                     <AlertDescription>
