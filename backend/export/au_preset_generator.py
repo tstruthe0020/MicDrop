@@ -610,17 +610,17 @@ class AUPresetGenerator:
         return mappings.get(param_name, param_name)
 
     def _get_manufacturer_name(self, plugin_name: str) -> str:
-        """Get Logic Pro manufacturer directory name for plugin"""
+        """Get Logic Pro manufacturer directory name for plugin - matches actual Swift CLI output"""
         mappings = {
             "TDR Nova": "Tokyo Dawn Labs",
             "MEqualizer": "MeldaProduction",
             "MCompressor": "MeldaProduction", 
             "MAutoPitch": "MeldaProduction",
             "MConvolutionEZ": "MeldaProduction",
-            "1176 Compressor": "Auburn Sounds",
-            "Graillon 3": "Auburn Sounds",
+            "1176 Compressor": "UADx",          # Updated: UADx (not Auburn Sounds)
+            "Graillon 3": "Aubn",              # Updated: Aubn (not Auburn Sounds)
             "Fresh Air": "Slate Digital",
-            "LA-LA": "Plugin Alliance"
+            "LA-LA": "Anob"                     # Updated: Anob (not Plugin Alliance)
         }
         
         return mappings.get(plugin_name, "Unknown")
