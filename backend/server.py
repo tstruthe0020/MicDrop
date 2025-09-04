@@ -321,7 +321,7 @@ def convert_parameters(backend_params, plugin_name=None):
         
         return converted
     
-    # Graillon 3 uses complex parameter mapping
+    # Graillon 3 uses numeric parameter indices from Graillon3.map.json
     elif plugin_name == "Graillon 3":
         # Use parameter numbers from Graillon3.map.json
         param_name_mapping = {
@@ -339,23 +339,23 @@ def convert_parameters(backend_params, plugin_name=None):
             if key == "bypass":
                 continue
                 
-            mapped_name = param_name_mapping.get(key, key.title())
-            
-            # Convert parameter values
-            if key == "pitch_shift":
-                # Pitch shift in semitones, normalize to 0.0-1.0 range
-                converted[mapped_name] = max(0.0, min(1.0, (float(value) + 12) / 24.0))
-            elif key == "formant_shift":
-                # Formant shift, normalize -12 to +12 semitones
-                converted[mapped_name] = max(0.0, min(1.0, (float(value) + 12) / 24.0))
-            elif key in ["octave_mix", "mix"]:
-                # Percentage values
-                converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
-            elif key == "bitcrusher":
-                # Enable/disable bitcrusher effect
-                converted["FX_Enabled"] = 1.0 if float(value) > 0 else 0.0
-            else:
-                converted[mapped_name] = float(value)
+            mapped_name = param_name_mapping.get(key, key)
+            if mapped_name in param_name_mapping.values():
+                # Convert parameter values
+                if key == "pitch_shift":
+                    # Pitch shift in semitones, normalize to 0.0-1.0 range
+                    converted[mapped_name] = max(0.0, min(1.0, (float(value) + 12) / 24.0))
+                elif key == "formant_shift":
+                    # Formant shift, normalize -12 to +12 semitones
+                    converted[mapped_name] = max(0.0, min(1.0, (float(value) + 12) / 24.0))
+                elif key in ["octave_mix", "mix"]:
+                    # Percentage values
+                    converted[mapped_name] = max(0.0, min(1.0, float(value) / 100.0))
+                elif key == "bitcrusher":
+                    # Enable/disable bitcrusher effect
+                    converted[mapped_name] = 1.0 if float(value) > 0 else 0.0
+                else:
+                    converted[mapped_name] = float(value)
         
         return converted
         
