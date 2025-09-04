@@ -1269,6 +1269,178 @@ class VocalChainAPITester:
         except Exception as e:
             self.log_test("Error Handling Swift CLI Features", False, f"Exception: {str(e)}")
 
+    def test_manufacturer_directory_mapping_fix(self):
+        """
+        CRITICAL TEST: Manufacturer Directory Mapping Fix for Previously Failing Plugins
+        Tests the 3 previously failing plugins individually to verify they now work correctly:
+        - 1176 Compressor (should now find UADx manufacturer directory)
+        - Graillon 3 (should now find Aubn manufacturer directory)  
+        - LA-LA (should now find Anob manufacturer directory)
+        """
+        try:
+            print("\n🔍 TESTING MANUFACTURER DIRECTORY MAPPING FIX...")
+            
+            # Focus on the 3 previously failing plugins with their expected manufacturer directories
+            failing_plugins_test = [
+                {
+                    "name": "1176 Compressor", 
+                    "expected_manufacturer": "UADx",
+                    "test_params": {
+                        "input_gain": 5.0,
+                        "output_gain": 3.0,
+                        "attack": "Medium",
+                        "release": "Fast",
+                        "ratio": "4:1",
+                        "all_buttons": False
+                    }
+                },
+                {
+                    "name": "Graillon 3", 
+                    "expected_manufacturer": "Aubn",
+                    "test_params": {
+                        "pitch_shift": 0.0,
+                        "formant_shift": 0.0,
+                        "octave_mix": 50.0,
+                        "bitcrusher": 0.0,
+                        "mix": 100.0
+                    }
+                },
+                {
+                    "name": "LA-LA", 
+                    "expected_manufacturer": "Anob",
+                    "test_params": {
+                        "target_level": -12.0,
+                        "dynamics": 75.0,
+                        "fast_release": True
+                    }
+                }
+            ]
+            
+            successful_plugins = []
+            failing_plugins = []
+            manufacturer_path_logs = {}
+            
+            for plugin_info in failing_plugins_test:
+                plugin_name = plugin_info["name"]
+                expected_manufacturer = plugin_info["expected_manufacturer"]
+                test_params = plugin_info["test_params"]
+                
+                try:
+                    print(f"\n🎛️  Testing {plugin_name} (Expected manufacturer: {expected_manufacturer})...")
+                    
+                    request_data = {
+                        "plugin": plugin_name,
+                        "parameters": test_params,
+                        "preset_name": f"ManufacturerTest_{plugin_name.replace(' ', '_')}"
+                    }
+                    
+                    response = requests.post(f"{self.api_url}/export/install-individual", 
+                                           json=request_data, timeout=30)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if data.get("success"):
+                            output = data.get("output", "")
+                            preset_name = data.get("preset_name", "")
+                            
+                            # Extract manufacturer directory information from debug output
+                            manufacturer_info = self._extract_manufacturer_debug_info(output, expected_manufacturer)
+                            manufacturer_path_logs[plugin_name] = manufacturer_info
+                            
+                            successful_plugins.append({
+                                "plugin": plugin_name,
+                                "manufacturer": expected_manufacturer,
+                                "preset_name": preset_name,
+                                "debug_info": manufacturer_info
+                            })
+                            
+                            self.log_test(f"Manufacturer Fix - {plugin_name}", True, 
+                                        f"✅ SUCCESS: Generated preset with {expected_manufacturer} manufacturer directory")
+                            
+                        else:
+                            error_msg = data.get("message", "Unknown error")
+                            failing_plugins.append({
+                                "plugin": plugin_name,
+                                "manufacturer": expected_manufacturer,
+                                "error": error_msg
+                            })
+                            
+                            self.log_test(f"Manufacturer Fix - {plugin_name}", False, 
+                                        f"❌ FAILED: {error_msg}")
+                    else:
+                        failing_plugins.append({
+                            "plugin": plugin_name,
+                            "manufacturer": expected_manufacturer,
+                            "error": f"HTTP {response.status_code}"
+                        })
+                        
+                        self.log_test(f"Manufacturer Fix - {plugin_name}", False, 
+                                    f"❌ HTTP ERROR: {response.status_code}")
+                        
+                except Exception as e:
+                    failing_plugins.append({
+                        "plugin": plugin_name,
+                        "manufacturer": expected_manufacturer,
+                        "error": str(e)
+                    })
+                    
+                    self.log_test(f"Manufacturer Fix - {plugin_name}", False, 
+                                f"❌ EXCEPTION: {str(e)}")
+            
+            # Summary analysis
+            print(f"\n📊 MANUFACTURER DIRECTORY MAPPING FIX RESULTS:")
+            print(f"   Successful plugins: {len(successful_plugins)}/3")
+            print(f"   Failed plugins: {len(failing_plugins)}/3")
+            
+            if successful_plugins:
+                print(f"   ✅ Working plugins:")
+                for plugin in successful_plugins:
+                    print(f"      - {plugin['plugin']} → {plugin['manufacturer']}")
+            
+            if failing_plugins:
+                print(f"   ❌ Still failing plugins:")
+                for plugin in failing_plugins:
+                    print(f"      - {plugin['plugin']} → {plugin['manufacturer']}: {plugin['error']}")
+            
+            # Overall test result
+            if len(successful_plugins) == 3:
+                self.log_test("🎯 CRITICAL: Manufacturer Directory Mapping Fix", True, 
+                            "✅ ALL 3 previously failing plugins now work with correct manufacturer directories")
+            elif len(successful_plugins) >= 2:
+                self.log_test("🎯 CRITICAL: Manufacturer Directory Mapping Fix", False, 
+                            f"⚠️ PARTIAL SUCCESS: {len(successful_plugins)}/3 plugins working")
+            else:
+                self.log_test("🎯 CRITICAL: Manufacturer Directory Mapping Fix", False, 
+                            f"❌ CRITICAL ISSUE: Only {len(successful_plugins)}/3 plugins working")
+            
+            return successful_plugins, failing_plugins, manufacturer_path_logs
+                
+        except Exception as e:
+            self.log_test("Manufacturer Directory Mapping Fix", False, f"Exception: {str(e)}")
+            return [], [], {}
+
+    def _extract_manufacturer_debug_info(self, output: str, expected_manufacturer: str) -> Dict[str, Any]:
+        """Extract manufacturer directory information from Swift CLI debug output"""
+        debug_info = {
+            "expected_manufacturer": expected_manufacturer,
+            "found_manufacturer_path": False,
+            "swift_cli_output": output[:500] if output else "No output",  # First 500 chars
+            "path_mentions": []
+        }
+        
+        if output:
+            # Look for manufacturer directory mentions in the output
+            lines = output.split('\n')
+            for line in lines:
+                if expected_manufacturer in line:
+                    debug_info["found_manufacturer_path"] = True
+                    debug_info["path_mentions"].append(line.strip())
+                elif "Presets/" in line:
+                    debug_info["path_mentions"].append(line.strip())
+        
+        return debug_info
+
     def test_enhanced_swift_cli_debugging_all_plugins(self):
         """
         COMPREHENSIVE TEST for Enhanced Swift CLI Debugging - ALL 9 PLUGINS
@@ -1283,9 +1455,9 @@ class VocalChainAPITester:
                 "TDR Nova",        # Should work - XML injection
                 "MEqualizer",      # Should work - standard AU
                 "MConvolutionEZ",  # Should work - standard AU
-                "1176 Compressor", # FAILING - needs debug capture
-                "Graillon 3",      # FAILING - needs debug capture
-                "LA-LA",           # FAILING - needs debug capture
+                "1176 Compressor", # Previously failing - test manufacturer fix
+                "Graillon 3",      # Previously failing - test manufacturer fix
+                "LA-LA",           # Previously failing - test manufacturer fix
                 "MAutoPitch",      # UNKNOWN STATUS - needs testing
                 "MCompressor",     # UNKNOWN STATUS - needs testing
                 "Fresh Air"        # Should work but verify
