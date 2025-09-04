@@ -231,7 +231,7 @@ class AUPresetGenerator:
         output_dir: str, seed_file: Path, parameter_map: Optional[Dict[str, str]], 
         verbose: bool
     ) -> Tuple[bool, str, str]:
-        """Generate preset using enhanced Swift CLI with hybrid XML injection approach"""
+        """Generate preset using enhanced Swift CLI with comprehensive debugging"""
         
         # Convert parameters for enhanced Swift CLI
         temp_values = self._convert_parameters_for_swift_cli(plugin_name, parameters, parameter_map)
@@ -244,6 +244,14 @@ class AUPresetGenerator:
             values_path = f.name
         
         try:
+            # Enhanced Debug Logging
+            logger.info(f"\n🔍 ENHANCED DEBUG for {plugin_name}:")
+            logger.info(f"  Seed file: {seed_file}")
+            logger.info(f"  Values path: {values_path}")
+            logger.info(f"  Output dir: {output_dir}")
+            logger.info(f"  Preset name: {preset_name}")
+            logger.info(f"  Parameters: {temp_values}")
+            
             # Use enhanced Swift CLI format (no subcommands)
             cmd = [
                 self.aupresetgen_path,
@@ -256,7 +264,10 @@ class AUPresetGenerator:
             if verbose:
                 cmd.append("--verbose")
             
-            # Run the enhanced Swift CLI
+            logger.info(f"  Command: {' '.join(cmd)}")
+            
+            # Run the enhanced Swift CLI with enhanced logging
+            logger.info(f"🚀 EXECUTING Swift CLI for {plugin_name}...")
             result = subprocess.run(
                 cmd, 
                 capture_output=True, 
@@ -264,7 +275,57 @@ class AUPresetGenerator:
                 timeout=30
             )
             
+            # COMPREHENSIVE OUTPUT LOGGING
+            logger.info(f"\n📊 SWIFT CLI RESULTS for {plugin_name}:")
+            logger.info(f"  Return code: {result.returncode}")
+            logger.info(f"  Success: {result.returncode == 0}")
+            
+            if result.stdout:
+                logger.info(f"  📤 STDOUT ({len(result.stdout)} chars):")
+                logger.info(f"     {result.stdout}")
+            else:
+                logger.info(f"  📤 STDOUT: (empty)")
+                
+            if result.stderr:
+                logger.error(f"  📥 STDERR ({len(result.stderr)} chars):")
+                logger.error(f"     {result.stderr}")
+            else:
+                logger.info(f"  📥 STDERR: (empty)")
+            
             success = result.returncode == 0
+            
+            # Enhanced file system debugging
+            logger.info(f"\n🔍 FILE SYSTEM DEBUG for {plugin_name}:")
+            logger.info(f"  Output directory: {output_dir}")
+            logger.info(f"  Directory exists: {os.path.exists(output_dir)}")
+            
+            if os.path.exists(output_dir):
+                # List all files in output directory
+                try:
+                    all_files = []
+                    for root, dirs, files in os.walk(output_dir):
+                        for file in files:
+                            full_path = os.path.join(root, file)
+                            file_size = os.path.getsize(full_path)
+                            rel_path = os.path.relpath(full_path, output_dir)
+                            all_files.append(f"{rel_path} ({file_size} bytes)")
+                    
+                    logger.info(f"  All files in output dir: {all_files}")
+                    
+                    # Specific search for aupreset files
+                    aupreset_files = []
+                    for root, dirs, files in os.walk(output_dir):
+                        for file in files:
+                            if file.endswith('.aupreset'):
+                                full_path = os.path.join(root, file)
+                                file_size = os.path.getsize(full_path)
+                                rel_path = os.path.relpath(full_path, output_dir)
+                                aupreset_files.append(f"{rel_path} ({file_size} bytes)")
+                    
+                    logger.info(f"  .aupreset files found: {aupreset_files}")
+                    
+                except Exception as fs_error:
+                    logger.error(f"  Error listing files: {fs_error}")
             
             if success:
                 # Look for generated preset file using Logic Pro structure
@@ -275,22 +336,30 @@ class AUPresetGenerator:
                     Path(output_dir) / f"{preset_name}.aupreset"
                 ]
                 
+                logger.info(f"  Searching for preset in paths:")
+                for i, preset_path in enumerate(preset_paths):
+                    logger.info(f"    Path {i+1}: {preset_path}")
+                    logger.info(f"    Exists: {preset_path.exists()}")
+                    if preset_path.exists():
+                        logger.info(f"    Size: {preset_path.stat().st_size} bytes")
+                
                 for preset_path in preset_paths:
                     if preset_path.exists():
                         if verbose:
                             logger.info(f"✅ Enhanced Swift CLI: Successfully generated preset for {plugin_name}")
-                        return True, f"✅ Generated preset: {preset_path}", ""
+                        return True, f"✅ Generated preset: {preset_path}\nSTDOUT: {result.stdout}", ""
                 
+                logger.error(f"❌ No preset file found after generation for {plugin_name}")
                 return False, result.stdout, "No preset file found after generation"
             else:
-                if verbose:
-                    logger.error(f"❌ Enhanced Swift CLI failed for {plugin_name}: {result.stderr}")
+                logger.error(f"❌ Enhanced Swift CLI failed for {plugin_name} with return code {result.returncode}")
                 return False, result.stdout, result.stderr
                 
         finally:
             # Cleanup temporary files
             if os.path.exists(values_path):
                 os.unlink(values_path)
+                logger.info(f"  Cleaned up values file: {values_path}")
 
     def _convert_parameters_for_swift_cli(
         self, plugin_name: str, parameters: Dict[str, Any], parameter_map: Optional[Dict[str, str]]
