@@ -352,8 +352,8 @@ def recommend_chain(analysis: Analysis) -> Targets:
         
         # Add enhanced analysis data
         'enhanced_analysis': {
-            'spectral_tilt': analysis.audio_features.get('spectral_tilt'),
-            'brightness_index': analysis.audio_features.get('brightness_index'),
+            'spectral_tilt': analysis.get('spectral_tilt'),
+            'brightness_index': analysis.get('brightness_index'),
             'vocal_f0': analysis.vocal_features.get('f0_median'),
             'sibilance_freq': analysis.vocal_features.get('sibilance_centroid'),
             'recommendation_confidence': _calculate_recommendation_confidence(analysis)
