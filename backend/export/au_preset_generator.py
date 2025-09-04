@@ -271,6 +271,117 @@ class AUPresetGenerator:
             # Cleanup temporary files
             if os.path.exists(values_path):
                 os.unlink(values_path)
+
+    def _convert_parameters_for_swift_cli(
+        self, plugin_name: str, parameters: Dict[str, Any], parameter_map: Optional[Dict[str, str]]
+    ) -> Dict[str, float]:
+        """Convert parameters for enhanced Swift CLI with hybrid approach support
+        
+        TDR Nova uses XML parameter names (bandGain_1, bandFreq_1, etc.)
+        Other plugins use numeric parameter IDs (0, 1, 2, etc.)
+        """
+        converted = {}
+        
+        # Check if this is TDR Nova (uses XML injection)
+        if plugin_name == "TDR Nova":
+            # TDR Nova uses real XML parameter names
+            for param_name, value in parameters.items():
+                # Use parameter mapping if provided, otherwise map to TDR Nova XML names
+                if parameter_map and param_name in parameter_map:
+                    xml_param_name = parameter_map[param_name]
+                else:
+                    xml_param_name = self._map_to_tdr_nova_xml_name(param_name)
+                
+                # Convert value to float 
+                converted[xml_param_name] = float(value)
+        else:
+            # Other plugins use numeric parameter IDs or standard names
+            if parameter_map:
+                # Use parameter mapping to convert names to IDs
+                for param_name, value in parameters.items():
+                    if param_name in parameter_map:
+                        param_id = parameter_map[param_name]
+                        converted[param_id] = float(value)
+                    else:
+                        # Try direct mapping
+                        converted[param_name] = float(value)
+            else:
+                # Direct parameter mapping
+                for param_name, value in parameters.items():
+                    converted[param_name] = float(value)
+        
+        return converted
+
+    def _map_to_tdr_nova_xml_name(self, param_name: str) -> str:
+        """Map common parameter names to TDR Nova XML format"""
+        mappings = {
+            "Bypass": "bypass_master",
+            "Band_1_Selected": "bandSelected_1",
+            "Band_1_Active": "bandActive_1", 
+            "Gain_1": "bandGain_1",
+            "Q_Factor_1": "bandQ_1",
+            "Frequency_1": "bandFreq_1",
+            "Band_1_DynActive": "bandDynActive_1",
+            "Threshold_1": "bandDynThreshold_1",
+            "Ratio_1": "bandDynRatio_1",
+            "Attack_1": "bandDynAttack_1",
+            "Release_1": "bandDynRelease_1",
+            
+            "Band_2_Selected": "bandSelected_2",
+            "Band_2_Active": "bandActive_2",
+            "Gain_2": "bandGain_2", 
+            "Q_Factor_2": "bandQ_2",
+            "Frequency_2": "bandFreq_2",
+            "Band_2_DynActive": "bandDynActive_2",
+            "Threshold_2": "bandDynThreshold_2",
+            "Ratio_2": "bandDynRatio_2",
+            "Attack_2": "bandDynAttack_2",
+            "Release_2": "bandDynRelease_2",
+            
+            "Band_3_Selected": "bandSelected_3",
+            "Band_3_Active": "bandActive_3",
+            "Gain_3": "bandGain_3",
+            "Q_Factor_3": "bandQ_3", 
+            "Frequency_3": "bandFreq_3",
+            "Band_3_DynActive": "bandDynActive_3",
+            "Threshold_3": "bandDynThreshold_3",
+            "Ratio_3": "bandDynRatio_3",
+            "Attack_3": "bandDynAttack_3",
+            "Release_3": "bandDynRelease_3",
+            
+            "Band_4_Selected": "bandSelected_4",
+            "Band_4_Active": "bandActive_4",
+            "Gain_4": "bandGain_4",
+            "Q_Factor_4": "bandQ_4",
+            "Frequency_4": "bandFreq_4",
+            "Band_4_DynActive": "bandDynActive_4", 
+            "Threshold_4": "bandDynThreshold_4",
+            "Ratio_4": "bandDynRatio_4",
+            "Attack_4": "bandDynAttack_4",
+            "Release_4": "bandDynRelease_4",
+            
+            "Mix": "dryMix_master",
+            "Gain": "gain_master"
+        }
+        
+        return mappings.get(param_name, param_name)
+
+    def _get_manufacturer_name(self, plugin_name: str) -> str:
+        """Get Logic Pro manufacturer directory name for plugin"""
+        mappings = {
+            "TDR Nova": "Tokyo Dawn Labs",
+            "MEqualizer": "MeldaProduction",
+            "MCompressor": "MeldaProduction", 
+            "MAutoPitch": "MeldaProduction",
+            "MConvolutionEZ": "MeldaProduction",
+            "1176 Compressor": "Auburn Sounds",
+            "Graillon 3": "Auburn Sounds",
+            "Fresh Air": "Slate Digital",
+            "LA-LA": "Plugin Alliance"
+        }
+        
+        return mappings.get(plugin_name, "Unknown")
+    
     
     def _get_component_info_from_seed(self, seed_file: Path) -> Optional[Tuple[str, str, str]]:
         """Extract component identifiers from seed .aupreset file"""
