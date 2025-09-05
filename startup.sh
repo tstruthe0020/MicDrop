@@ -129,7 +129,7 @@ install_system_dependencies() {
 setup_backend() {
     log_header "🐍 Setting up Backend (FastAPI)..."
     
-    cd /app/backend
+    cd "$APP_DIR/backend"
     
     # Check Python
     if ! command -v python3 &> /dev/null; then
