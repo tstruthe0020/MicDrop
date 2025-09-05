@@ -146,35 +146,56 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
         
     deess_threshold = -8 - target_gr  # More conservative threshold
     
-    # C. 1176 COMPRESSOR (FAST FET) PARAMETERS
+    # C. 1176 COMPRESSOR (FAST FET) PARAMETERS - Enhanced for musicality
     logger.info("🎯 Mapping 1176 Compressor parameters...")
     
-    # Use when vocal crest factor is high or transient density high
-    use_1176 = crest_db > 10 or vocal_intensity > 0.6
+    # Intelligent 1176 usage based on material characteristics
+    use_1176 = crest_db > 9 or vocal_intensity > 0.5 or chain_style == 'aggressive-rap'
     
+    # Professional ratio selection based on genre and dynamics
     if chain_style == 'aggressive-rap':
-        ratio_1176 = '8:1' if crest_db > 14 else '4:1'
+        if crest_db > 15:
+            ratio_1176 = '8:1'  # Heavy limiting for wild dynamics
+        elif crest_db > 12:
+            ratio_1176 = '4:1'  # Standard rap compression
+        else:
+            ratio_1176 = '4:1'  # Consistent punch
     elif chain_style == 'intimate-rnb':
-        ratio_1176 = '4:1'
-    else:  # Pop
-        ratio_1176 = '4:1'
+        ratio_1176 = '4:1'  # Musical compression
+    elif chain_style == 'pop-airy':
+        ratio_1176 = '4:1' if crest_db > 12 else '4:1'  # Consistent pop sound
+    else:  # clean, warm-analog
+        ratio_1176 = '4:1'  # Transparent compression
     
-    # Attack: 3-8 ms (don't go minimum unless plosives are wild)
-    attack_1176 = 'Fast' if plosive_index > 0.4 else 'Medium'
+    # Attack timing - critical for vocal character
+    if plosive_index > 0.4:
+        attack_1176 = 'Fast'  # Catch aggressive transients
+    elif chain_style == 'intimate-rnb':
+        attack_1176 = 'Medium'  # Preserve natural attack
+    else:
+        attack_1176 = 'Medium-Fast'  # Balanced response
     
-    # Release: faster for rap
+    # Release timing based on tempo and style
     if chain_style == 'aggressive-rap':
-        release_1176 = 'Fast'  # 40-60ms
+        release_1176 = 'Fast'  # Punchy, tight release
+    elif bpm > 120:
+        release_1176 = 'Medium'  # Musical for uptempo
     else:
-        release_1176 = 'Medium'  # 80-120ms
+        release_1176 = 'Medium-Slow'  # Smooth for ballads
     
-    # Target GR based on crest factor
-    if crest_db <= 10:
-        target_gr_1176 = 2.5
-    elif crest_db <= 14:
-        target_gr_1176 = 4.0
+    # Target gain reduction - musical and appropriate
+    if crest_db <= 9:
+        target_gr_1176 = 2.0  # Gentle leveling
+    elif crest_db <= 12:
+        target_gr_1176 = 3.5  # Standard pop compression
+    elif crest_db <= 15:
+        target_gr_1176 = 5.0  # More aggressive control
     else:
-        target_gr_1176 = 6.0
+        target_gr_1176 = 6.5  # Heavy limiting for wild dynamics
+        
+    # Input/output gain for proper level matching
+    input_gain_1176 = 3.0 if vocal_intensity < 0.4 else 0.0  # Boost quiet vocals
+    output_gain_1176 = target_gr_1176 * 0.8  # Compensate for GR
     
     # D. LA-LA (OPTO LEVELER) PARAMETERS
     logger.info("🎯 Mapping LA-LA parameters...")
