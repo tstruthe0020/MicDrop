@@ -1253,6 +1253,94 @@ function App() {
                   </Card>
                 )}
 
+                {/* Professional Parameter Recommendations */}
+                {autoChainParameters && (
+                  <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-purple-600" />
+                        📊 Professional Vocal Chain Setup
+                      </CardTitle>
+                      <CardDescription>
+                        Apply these exact settings to your Logic Pro plugins for professional results
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {autoChainParameters.map((plugin, idx) => (
+                          <div key={idx} className="bg-white/70 rounded-lg p-4 border border-purple-100">
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <h3 className="font-semibold text-lg text-purple-800">
+                                  🎛️ {plugin.name}
+                                  {plugin.instance !== 'Main' && (
+                                    <span className="text-sm text-purple-600 ml-2">({plugin.instance})</span>
+                                  )}
+                                </h3>
+                                <p className="text-sm text-slate-600 mt-1">{plugin.purpose}</p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const paramText = Object.entries(plugin.parameters)
+                                    .map(([key, value]) => `${key}: ${value}`)
+                                    .join('\n');
+                                  navigator.clipboard.writeText(`${plugin.name} Settings:\n${paramText}`);
+                                  toast({
+                                    title: "Copied to Clipboard!",
+                                    description: `${plugin.name} settings copied`,
+                                    className: "border-green-200 bg-green-50"
+                                  });
+                                }}
+                              >
+                                📋 Copy Settings
+                              </Button>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {Object.entries(plugin.parameters).map(([param, value]) => (
+                                <div key={param} className="bg-slate-50 rounded-md p-3">
+                                  <div className="text-sm font-medium text-slate-700">
+                                    {param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                  </div>
+                                  <div className="text-lg font-bold text-purple-700">
+                                    {typeof value === 'number' ? 
+                                      (value % 1 === 0 ? value : value.toFixed(2)) : 
+                                      value
+                                    }
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {plugin.summary && (
+                              <div className="mt-3 p-2 bg-purple-50 rounded text-sm text-purple-700">
+                                <strong>Summary:</strong> {plugin.summary}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        
+                        <div className="bg-white/70 rounded-lg p-4 border border-purple-100">
+                          <h3 className="font-semibold text-purple-800 mb-2">📝 Manual Setup Instructions</h3>
+                          <ol className="text-sm space-y-2 text-slate-700">
+                            <li><strong>1.</strong> Open Logic Pro and create a new vocal track</li>
+                            <li><strong>2.</strong> For each plugin above, insert it on your vocal track</li>
+                            <li><strong>3.</strong> Apply the exact parameter values shown</li>
+                            <li><strong>4.</strong> Use the "Copy Settings" buttons to copy parameter values</li>
+                            <li><strong>5.</strong> Save your own preset in Logic Pro for future use</li>
+                          </ol>
+                          <div className="mt-3 p-2 bg-yellow-50 rounded text-sm text-yellow-800">
+                            <strong>💡 Pro Tip:</strong> These settings were generated specifically for your audio analysis. 
+                            Feel free to fine-tune based on your preference!
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {!autoChainFile && (
                   <Alert>
                     <Upload className="h-4 w-4" />
