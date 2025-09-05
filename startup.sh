@@ -172,7 +172,7 @@ EOF
 setup_frontend() {
     log_header "⚛️ Setting up Frontend (React)..."
     
-    cd /app/frontend
+    cd "$APP_DIR/frontend"
     
     # Check Node.js and npm/yarn
     if ! command -v node &> /dev/null; then
