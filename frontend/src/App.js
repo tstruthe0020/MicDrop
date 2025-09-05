@@ -699,13 +699,30 @@ function App() {
 
         setAutoChainParameters(structuredParameters);
         
+        // Also trigger ZIP download if available
+        if (result.zip_url) {
+          const downloadUrl = `${BACKEND_URL}${result.zip_url}`;
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = `auto_vocal_chain_${result.uuid || 'presets'}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          console.log('🎯 DEBUG: ZIP download triggered:', downloadUrl);
+        }
+        
         const inputDescription = autoChainInputMethod === 'file' 
           ? `your uploaded file (${autoChainFile?.name})` 
           : 'the audio URL';
         
+        const downloadMessage = result.zip_url 
+          ? " ZIP file download started automatically!" 
+          : "";
+        
         toast({
           title: "✅ Professional Chain Generated!",
-          description: `Generated ${structuredParameters.length} plugin recommendations based on AI analysis of ${inputDescription} (${autoChainRecommendation.archetype} style)`,
+          description: `Generated ${structuredParameters.length} plugin recommendations based on AI analysis of ${inputDescription} (${autoChainRecommendation.archetype} style).${downloadMessage}`,
           className: "border-green-200 bg-green-50"
         });
       } else {
