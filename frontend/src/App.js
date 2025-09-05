@@ -641,25 +641,12 @@ function App() {
       };
 
       console.log('🎯 DEBUG: Making auto-chain request:', requestBody);
-      console.log('🎯 DEBUG: Backend URL:', BACKEND_URL);
-      console.log('🎯 DEBUG: Full URL:', `${BACKEND_URL}/api/auto-chain/generate`);
-
-      // Create an AbortController for timeout handling
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
 
       const response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
-        signal: controller.signal
       });
-
-      clearTimeout(timeoutId);
-
-      console.log('🎯 DEBUG: Response status:', response.status);
-      console.log('🎯 DEBUG: Response ok:', response.ok);
-      console.log('🎯 DEBUG: Response headers:', [...response.headers.entries()]);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -669,157 +656,39 @@ function App() {
       console.log('🎯 DEBUG: Response result:', result);
       
       if (result.success) {
-        // Trigger download of the ZIP file
-        const downloadUrl = `${BACKEND_URL}${result.zip_url}`;
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = `auto_vocal_chain_${result.uuid}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Extract parameter recommendations from the report
+        const report = result.report || {};
+        const pluginDecisions = report.plugin_decisions || [];
+        
+        // Structure parameters for display
+        const structuredParameters = pluginDecisions
+          .filter(plugin => plugin.enabled && plugin.parameters)
+          .map(plugin => ({
+            name: plugin.plugin.split(' - ')[0], // Remove instance info for display
+            instance: plugin.plugin.includes(' - ') ? plugin.plugin.split(' - ')[1] : 'Main',
+            parameters: plugin.parameters,
+            summary: plugin.parameters_summary,
+            purpose: plugin.reasoning || 'Professional vocal processing'
+          }));
+
+        setAutoChainParameters(structuredParameters);
         
         toast({
-          title: "✅ Auto Chain Generated!",
-          description: `Generated presets based on AI analysis (${autoChainRecommendation.archetype} style)${result.processing_time_s ? `. Processing time: ${result.processing_time_s.toFixed(1)}s` : ''}`,
+          title: "✅ Professional Chain Generated!",
+          description: `Generated ${structuredParameters.length} plugin recommendations based on AI analysis (${autoChainRecommendation.archetype} style)`,
           className: "border-green-200 bg-green-50"
         });
       } else {
-        throw new Error(result.message || 'Preset generation failed');
+        throw new Error(result.message || 'Parameter generation failed');
       }
     } catch (error) {
       console.error('🎯 DEBUG: Auto chain generation error:', error);
-      console.error('🎯 DEBUG: Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack
+      
+      toast({
+        title: "Generation Failed", 
+        description: `Could not generate parameters: ${error.message}`,
+        variant: "destructive"
       });
-      
-      // Check if this is a network timeout or fetch error
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        console.error('🎯 DEBUG: This appears to be a network/fetch error');
-      }
-      
-      if (error.name === 'AbortError') {
-        console.error('🎯 DEBUG: Request was aborted (likely timeout)');
-      }
-      
-      // Fallback to existing preset generation system WITH professional parameters
-      console.log('🎯 DEBUG: Using fallback system - but with professional parameters');
-      
-      // Use the analysis and recommendations we already have
-      if (autoChainAnalysis && autoChainRecommendation) {
-        try {
-          console.log('🎯 DEBUG: Calling legacy system with professional recommendations');
-          
-          // Call the legacy preset generation with our professional analysis
-          const legacyResponse = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              targets: {
-                // Use the analysis and recommendation data we have
-                bpm: autoChainAnalysis.bpm,
-                key: autoChainAnalysis.key?.tonic || 'C',
-                lufs: autoChainAnalysis.lufs_i,
-                vibe: autoChainRecommendation.archetype,
-                presetName: autoChainPresetName,
-                // Add professional parameter mapping flag
-                use_professional_params: true,
-                // Pass the full audio analysis for better parameter calculation
-                audio_features: autoChainAnalysis,
-                vocal_features: autoChainAnalysis.vocal_features || {}
-              }
-            })
-          });
-          
-          if (legacyResponse.ok) {
-            const legacyResult = await legacyResponse.json();
-            
-            // Trigger download
-            if (legacyResult.downloadUrl) {
-              const link = document.createElement('a');
-              link.href = `${BACKEND_URL}${legacyResult.downloadUrl}`;
-              link.download = `vocal_chain_${autoChainRecommendation.archetype}.zip`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }
-            
-            toast({
-              title: "✅ Professional Presets Generated!",
-              description: `Generated ${autoChainRecommendation.archetype} vocal chain using professional analysis (fallback system)`,
-              className: "border-green-200 bg-green-50"
-            });
-          } else {
-            throw new Error('Legacy system also failed');
-          }
-        } catch (fallbackError) {
-          console.error('🎯 DEBUG: Fallback system error:', fallbackError);
-          toast({
-            title: "Generation Failed",
-            description: `Both Auto Chain and fallback systems failed: ${error.name}: ${error.message}`,
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Analysis Required",
-          description: "Please analyze audio first before generating presets",
-          variant: "destructive"
-        });
-      }
-      
-      try {
-        // Use existing system as fallback
-        const vibeMapping = {
-          'clean': 'Clean',
-          'pop-airy': 'Bright', 
-          'warm-analog': 'Warm',
-          'aggressive-rap': 'Punchy',
-          'intimate-rnb': 'Balanced',
-          'balanced': 'Balanced'
-        };
-
-        const recommendedVibe = vibeMapping[autoChainRecommendation.archetype] || 'Balanced';
-        
-        const fallbackResponse = await fetch(`${BACKEND_URL}/api/export/download-presets`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            vibe: recommendedVibe,
-            genre: 'Pop',
-            audio_type: 'vocal',
-            preset_name: autoChainPresetName || 'AutoChain'
-          })
-        });
-
-        const fallbackResult = await fallbackResponse.json();
-        
-        if (fallbackResult.success) {
-          const downloadUrl = `${BACKEND_URL}${fallbackResult.download.url}`;
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = fallbackResult.download.filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          
-          toast({
-            title: "✅ Auto Chain Generated (Fallback)!",
-            description: `Generated ${fallbackResult.download.preset_count} presets using existing system (${recommendedVibe} style)`,
-            className: "border-green-200 bg-green-50"
-          });
-        } else {
-          throw new Error(fallbackResult.message || 'Fallback generation failed');
-        }
-      } catch (fallbackError) {
-        console.error('Fallback generation error:', fallbackError);
-        toast({
-          title: "Generation Error",
-          description: fallbackError.message || "Failed to generate presets with both systems",
-          variant: "destructive"
-        });
-      }
     } finally {
       setAutoChainLoading(false);
     }
