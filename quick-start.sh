@@ -6,7 +6,12 @@
 # Simple startup script for local development
 # =============================================================================
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$SCRIPT_DIR"
+
 echo "🎵 Starting Auto Vocal Chain..."
+echo "📁 App directory: $APP_DIR"
 
 # Kill any existing processes
 pkill -f "uvicorn.*server:app" 2>/dev/null || true
