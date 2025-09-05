@@ -681,12 +681,22 @@ function App() {
       }
 
       const result = await response.json();
-      console.log('🎯 DEBUG: Response result:', result);
+      console.log('🎯 DEBUG: Full response result:', result);
+      console.log('🎯 DEBUG: Response keys:', Object.keys(result));
       
       if (result.success) {
         // Extract parameter recommendations from the report
         const report = result.report || {};
+        console.log('🎯 DEBUG: Report object:', report);
+        console.log('🎯 DEBUG: Report keys:', Object.keys(report));
+        
         const pluginDecisions = report.plugin_decisions || [];
+        console.log('🎯 DEBUG: Plugin decisions array:', pluginDecisions);
+        console.log('🎯 DEBUG: Plugin decisions length:', pluginDecisions.length);
+        
+        if (pluginDecisions.length > 0) {
+          console.log('🎯 DEBUG: First plugin decision:', pluginDecisions[0]);
+        }
         
         // Structure parameters for display
         const structuredParameters = pluginDecisions
@@ -699,6 +709,9 @@ function App() {
             purpose: plugin.reasoning || 'Professional vocal processing'
           }));
 
+        console.log('🎯 DEBUG: Structured parameters:', structuredParameters);
+        console.log('🎯 DEBUG: Structured parameters length:', structuredParameters.length);
+        
         setAutoChainParameters(structuredParameters);
         
         // Store ZIP URL for manual download button
