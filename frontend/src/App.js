@@ -648,52 +648,14 @@ function App() {
         console.log('🎯 DEBUG: File:', autoChainFile.name);
         
         const formData = new FormData();
-        formData.append('audio_file', autoChainFile);
+        formData.append('file', autoChainFile);
         formData.append('chain_style', autoChainRecommendation.archetype);
         formData.append('headroom_db', '6.0');
         
-        response = await fetch(`${BACKEND_URL}/api/auto-chain/upload-generate`, {
+        response = await fetch(`${BACKEND_URL}/api/auto-chain/upload`, {
           method: 'POST',
           body: formData
         });
-        
-        // If the upload-generate endpoint doesn't exist, fall back to analyze + generate with temp data
-        if (response.status === 404) {
-          console.log('🎯 DEBUG: Upload-generate not available, using analysis data for generation');
-          
-          // Use analysis data to create generation request
-          const requestBody = {
-            analysis_data: autoChainAnalysis,
-            chain_style: autoChainRecommendation.archetype,
-            headroom_db: 6.0,
-            input_method: 'file',
-            filename: autoChainFile.name
-          };
-          
-          response = await fetch(`${BACKEND_URL}/api/auto-chain/generate-from-analysis`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-          });
-          
-          // If that doesn't exist either, use the original endpoint with mock data
-          if (response.status === 404) {
-            console.log('🎯 DEBUG: Using generate endpoint with existing analysis data');
-            
-            const mockRequestBody = {
-              input_source: `file:${autoChainFile.name}`,
-              chain_style: autoChainRecommendation.archetype,
-              headroom_db: 6.0,
-              existing_analysis: autoChainAnalysis
-            };
-            
-            response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(mockRequestBody)
-            });
-          }
-        }
       } else {
         // URL GENERATION - Use the URL
         console.log('🎯 DEBUG: Using URL for generation');
