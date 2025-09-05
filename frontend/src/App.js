@@ -640,19 +640,77 @@ function App() {
     setAutoChainLoading(true);
     
     try {
-      const requestBody = {
-        input_source: autoChainUrl.trim(),
-        chain_style: autoChainRecommendation.archetype,
-        headroom_db: 6.0
-      };
+      let response;
+      
+      if (autoChainInputMethod === 'file' && autoChainFile) {
+        // FILE UPLOAD GENERATION - Use the uploaded file
+        console.log('🎯 DEBUG: Using file upload for generation');
+        console.log('🎯 DEBUG: File:', autoChainFile.name);
+        
+        const formData = new FormData();
+        formData.append('audio_file', autoChainFile);
+        formData.append('chain_style', autoChainRecommendation.archetype);
+        formData.append('headroom_db', '6.0');
+        
+        response = await fetch(`${BACKEND_URL}/api/auto-chain/upload-generate`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        // If the upload-generate endpoint doesn't exist, fall back to analyze + generate with temp data
+        if (response.status === 404) {
+          console.log('🎯 DEBUG: Upload-generate not available, using analysis data for generation');
+          
+          // Use analysis data to create generation request
+          const requestBody = {
+            analysis_data: autoChainAnalysis,
+            chain_style: autoChainRecommendation.archetype,
+            headroom_db: 6.0,
+            input_method: 'file',
+            filename: autoChainFile.name
+          };
+          
+          response = await fetch(`${BACKEND_URL}/api/auto-chain/generate-from-analysis`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+          
+          // If that doesn't exist either, use the original endpoint with mock data
+          if (response.status === 404) {
+            console.log('🎯 DEBUG: Using generate endpoint with existing analysis data');
+            
+            const mockRequestBody = {
+              input_source: `file:${autoChainFile.name}`,
+              chain_style: autoChainRecommendation.archetype,
+              headroom_db: 6.0,
+              existing_analysis: autoChainAnalysis
+            };
+            
+            response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(mockRequestBody)
+            });
+          }
+        }
+      } else {
+        // URL GENERATION - Use the URL
+        console.log('🎯 DEBUG: Using URL for generation');
+        console.log('🎯 DEBUG: URL:', autoChainUrl.trim());
+        
+        const requestBody = {
+          input_source: autoChainUrl.trim(),
+          chain_style: autoChainRecommendation.archetype,
+          headroom_db: 6.0
+        };
 
-      console.log('🎯 DEBUG: Making auto-chain request:', requestBody);
-
-      const response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
+        response = await fetch(`${BACKEND_URL}/api/auto-chain/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -679,9 +737,13 @@ function App() {
 
         setAutoChainParameters(structuredParameters);
         
+        const inputDescription = autoChainInputMethod === 'file' 
+          ? `your uploaded file (${autoChainFile?.name})` 
+          : 'the audio URL';
+        
         toast({
           title: "✅ Professional Chain Generated!",
-          description: `Generated ${structuredParameters.length} plugin recommendations based on AI analysis (${autoChainRecommendation.archetype} style)`,
+          description: `Generated ${structuredParameters.length} plugin recommendations based on AI analysis of ${inputDescription} (${autoChainRecommendation.archetype} style)`,
           className: "border-green-200 bg-green-50"
         });
       } else {
