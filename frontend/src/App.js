@@ -44,6 +44,7 @@ function App() {
   const [autoChainAnalysis, setAutoChainAnalysis] = useState(null);
   const [autoChainRecommendation, setAutoChainRecommendation] = useState(null);
   const [autoChainParameters, setAutoChainParameters] = useState(null);
+  const [autoChainZipUrl, setAutoChainZipUrl] = useState(null);
   const [autoChainLoading, setAutoChainLoading] = useState(false);
   const [autoChainAnalyzing, setAutoChainAnalyzing] = useState(false);
   const [autoChainPresetName, setAutoChainPresetName] = useState('Auto_Vocal_Chain');
