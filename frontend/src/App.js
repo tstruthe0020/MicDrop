@@ -1022,7 +1022,7 @@ function App() {
                             : 'bg-green-600 hover:bg-green-700 text-white'
                         }`}
                       >
-                        {autoChainLoading ? 'Generating...' : '✨ Generate Auto Chain Presets'}
+                        {autoChainLoading ? 'Generating...' : '🎛️ Generate Parameter Recommendations'}
                       </button>
                     </div>
                   </div>
