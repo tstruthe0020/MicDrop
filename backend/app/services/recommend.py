@@ -356,7 +356,9 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
             'deess_threshold': deess_threshold,
             'deess_ratio': 3.0,
             'deess_q': deess_q,
-            'deess_enabled': True
+            'deess_enabled': True,
+            'summary': f"HPF: {hpf_freq:.0f}Hz, De-ess: {deess_center:.0f}Hz ({target_gr:.1f}dB GR), Mud: {mud_gain:.1f}dB",
+            'reasoning': f"Dynamic EQ for {gender_profile} vocal - surgical frequency control"
         },
         '1176 Compressor': {
             'ratio': ratio_1176,
@@ -365,7 +367,9 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
             'input_gain': input_gain_1176,
             'output_gain': output_gain_1176,
             'target_gr': target_gr_1176,
-            'enabled': use_1176
+            'enabled': use_1176,
+            'summary': f"Ratio: {ratio_1176}, Attack: {attack_1176}, Target GR: {target_gr_1176:.1f}dB",
+            'reasoning': f"Fast FET compression for transient control and character"
         },
         'LA-LA': {
             'peak_reduction': peak_reduction,
