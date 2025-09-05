@@ -1376,6 +1376,40 @@ function App() {
                           </div>
                         ))}
                         
+                        {/* Download Section */}
+                        {autoChainZipUrl && (
+                          <div className="bg-white/70 rounded-lg p-4 border border-purple-100">
+                            <h3 className="font-semibold text-purple-800 mb-2">💾 Download Generated Presets</h3>
+                            <p className="text-sm text-slate-600 mb-3">
+                              The system has generated actual .aupreset files with the parameters shown above. 
+                              Download them to try in Logic Pro!
+                            </p>
+                            <Button
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = autoChainZipUrl;
+                                link.download = `auto_vocal_chain_presets.zip`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                
+                                toast({
+                                  title: "Download Started!",
+                                  description: "ZIP file with .aupreset files is downloading",
+                                  className: "border-green-200 bg-green-50"
+                                });
+                              }}
+                              className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Download Preset Files (.zip)
+                            </Button>
+                            <div className="mt-2 text-xs text-slate-500">
+                              Extract to your Logic Pro preset folder and restart Logic Pro
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="bg-white/70 rounded-lg p-4 border border-purple-100">
                           <h3 className="font-semibold text-purple-800 mb-2">📝 Manual Setup Instructions</h3>
                           <ol className="text-sm space-y-2 text-slate-700">
