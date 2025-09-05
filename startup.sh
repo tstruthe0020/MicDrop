@@ -259,7 +259,7 @@ start_standalone() {
     
     # Start frontend
     log_info "Starting frontend server..."
-    cd /app/frontend
+    cd "$APP_DIR/frontend"
     if command -v yarn &> /dev/null; then
         nohup yarn start > /tmp/frontend.log 2>&1 &
     else
