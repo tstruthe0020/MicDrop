@@ -334,25 +334,34 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
             'key': graillon_key,
             'correction_amount': correction_amount,
             'correction_speed': correction_speed,
-            'scale_mask': scale_mask(estimated_key, 'major', key_confidence) if graillon_key != 'Chromatic' else None
+            'preserve_formants': preserve_formants,
+            'scale_mask': scale_mask(estimated_key, 'major', key_confidence) if graillon_key != 'Chromatic' else None,
+            'enabled': True
         },
         'TDR Nova': {
             'multiband_enabled': True,
             'hpf_freq': hpf_freq,
+            'hpf_enabled': True,
             'mud_center': mud_center,
             'mud_gain': mud_gain,
             'mud_q': mud_q,
-            'nasal_center': nasal_center if nasal_gain < 0 else None,
-            'nasal_gain': nasal_gain if nasal_gain < 0 else None,
+            'mud_enabled': abs(mud_gain) > 0.5,
+            'nasal_center': nasal_center if nasal_gain < -0.3 else None,
+            'nasal_gain': nasal_gain if nasal_gain < -0.3 else None,
+            'nasal_q': nasal_q,
+            'nasal_enabled': nasal_gain < -0.3,
             'deess_center': deess_center,
             'deess_threshold': deess_threshold,
-            'deess_ratio': 2.5,
-            'deess_q': deess_q
+            'deess_ratio': 3.0,
+            'deess_q': deess_q,
+            'deess_enabled': True
         },
         '1176 Compressor': {
             'ratio': ratio_1176,
             'attack': attack_1176,
             'release': release_1176,
+            'input_gain': input_gain_1176,
+            'output_gain': output_gain_1176,
             'target_gr': target_gr_1176,
             'enabled': use_1176
         },
