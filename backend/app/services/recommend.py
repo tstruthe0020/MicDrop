@@ -104,39 +104,47 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
     # B. TDR NOVA (SUBTRACTIVE EQ + DYNAMIC DE-ESS) PARAMETERS  
     logger.info("🎯 Mapping TDR Nova parameters...")
     
-    # HPF based on F0 and plosive index
+    # Enhanced HPF based on F0 and mix considerations
     if gender_profile == 'male':
-        hpf_base = 80
+        hpf_base = 75  # Conservative for male vocals
     elif gender_profile == 'female':
-        hpf_base = 100
+        hpf_base = 95  # Higher for female vocals
     else:
-        hpf_base = 90
+        hpf_base = 85  # Safe middle ground
     
-    # Adjust for plosives
+    # Adjust for plosives and low-end buildup
     if plosive_index > 0.25:
-        hpf_freq = hpf_base + (plosive_index * 40)  # +10-20 Hz for high plosives
+        hpf_freq = hpf_base + (plosive_index * 35)  # More aggressive HPF
     else:
         hpf_freq = hpf_base
     
-    # Mud dip (200-500 Hz)
-    mud_center = 250 + (mud_ratio * 200)  # Center based on mud characteristics
-    mud_excess_db = max(0, (mud_ratio - 0.25) * 20)  # How much mud is excessive
-    mud_gain = -np.clip(mud_excess_db * 0.5, 0, 4)  # Cut 0 to -4 dB
-    mud_q = 1.0 + (mud_excess_db * 0.1)  # Q 1.0-1.4
+    # Enhanced mud/low-mid management (200-500 Hz)
+    mud_center = 280 + (mud_ratio * 180)  # More precise centering
+    mud_excess_db = max(0, (mud_ratio - 0.3) * 15)  # Threshold raised
+    mud_gain = -np.clip(mud_excess_db * 0.6, 0, 3.5)  # More conservative cuts
+    mud_q = 0.8 + (mud_excess_db * 0.12)  # Wider Q for more natural sound
     
-    # Nasal dip (900-2000 Hz) 
-    nasal_center = 900 + (nasal_ratio * 1100)
-    nasal_excess = max(0, nasal_ratio - 0.4)
-    nasal_gain = -np.clip(nasal_excess * 6, 1, 3) if nasal_excess > 0 else 0  # Cut -1 to -3 dB
+    # Enhanced nasal management (800-1800 Hz) 
+    nasal_center = 1000 + (nasal_ratio * 800)  # More targeted
+    nasal_excess = max(0, nasal_ratio - 0.45)  # Higher threshold
+    nasal_gain = -np.clip(nasal_excess * 5, 0.5, 2.5) if nasal_excess > 0 else 0  # Gentler cuts
+    nasal_q = 1.2  # Slightly wider for musicality
     
-    # Dynamic de-esser
-    deess_center = sibilance_centroid
-    deess_q = 2.0
-    # Target 3-6 dB GR on esses, adjust if track is bright
-    target_gr = 4.0
-    if brightness_index < 0.6:
-        target_gr -= 1.5  # Less de-essing if track is dull
-    deess_threshold = -6 - target_gr  # Threshold to achieve target GR
+    # Professional dynamic de-esser with frequency-dependent settings
+    deess_center = max(5500, min(sibilance_centroid, 9000))  # Clamp to reasonable range
+    deess_q = 2.5 if sibilance_centroid > 7000 else 2.0  # Tighter for high sibilance
+    
+    # Adaptive de-essing based on vocal characteristics
+    if gender_profile == 'female':
+        target_gr = 3.5 + (brightness_index * 2)  # 3.5-5.5 dB GR
+    else:
+        target_gr = 2.8 + (brightness_index * 1.5)  # 2.8-4.3 dB GR
+        
+    # Less de-essing if track is naturally dull
+    if brightness_index < 0.5:
+        target_gr *= 0.7
+        
+    deess_threshold = -8 - target_gr  # More conservative threshold
     
     # C. 1176 COMPRESSOR (FAST FET) PARAMETERS
     logger.info("🎯 Mapping 1176 Compressor parameters...")
