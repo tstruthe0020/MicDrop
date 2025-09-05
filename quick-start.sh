@@ -19,13 +19,13 @@ pkill -f "react-scripts start" 2>/dev/null || true
 
 # Start backend
 echo "🐍 Starting backend (port 8001)..."
-cd /app/backend
+cd "$APP_DIR/backend"
 python3 -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload &
 BACKEND_PID=$!
 
 # Start frontend  
 echo "⚛️ Starting frontend (port 3000)..."
-cd /app/frontend
+cd "$APP_DIR/frontend"
 if command -v yarn &> /dev/null; then
     yarn start &
 else
