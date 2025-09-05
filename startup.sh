@@ -47,6 +47,7 @@ log_header() {
 # Main startup function
 main() {
     log_header "🎵 Starting Auto Vocal Chain Application..."
+    log_info "App directory: $APP_DIR"
     
     # Detect environment
     if [ -f "/.dockerenv" ] || [ -n "$KUBERNETES_SERVICE_HOST" ]; then
