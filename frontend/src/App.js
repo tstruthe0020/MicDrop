@@ -726,51 +726,35 @@ function App() {
             });
           }
           
-          // Method 2: Try to extract from any nested objects
-          const allKeys = Object.keys(result);
-          console.log('🎯 DEBUG: All result keys for extraction:', allKeys);
-          
-          // Create mock data for testing UI
-          const mockParameters = [
-            {
-              name: "MEqualizer",
-              instance: "Main",
-              parameters: {
-                "band_1_enabled": 1,
-                "band_1_frequency": 250,
-                "band_1_gain": -2.5,
-                "band_1_q": 0.7,
-                "output_gain": 0
-              },
-              summary: "High-pass filter and mid-frequency correction",
-              purpose: "Corrective EQ for vocal clarity"
-            },
-            {
-              name: "Fresh Air",
-              instance: "Main", 
-              parameters: {
-                "presence": 25,
-                "brilliance": 15,
-                "mix": 50
-              },
-              summary: "Presence: 25%, Brilliance: 15%",
-              purpose: "Add air and presence to vocals"
-            },
-            {
-              name: "TDR Nova",
-              instance: "Main",
-              parameters: {
-                "band_1_gain": -2.5,
-                "band_1_frequency": 250,
-                "band_1_q": 0.7
-              },
-              summary: "Dynamic EQ for sibilance control",
-              purpose: "Dynamic frequency control"
+          // Method 2: Check if professional_params exist in report
+          if (report.professional_params) {
+            console.log('🎯 DEBUG: Found professional_params in report');
+            const professionalParams = Object.entries(report.professional_params)
+              .filter(([_, config]) => config.enabled !== false)
+              .map(([name, config]) => ({
+                name: name,
+                instance: 'Main',
+                parameters: Object.fromEntries(
+                  Object.entries(config).filter(([key]) => 
+                    !['enabled', 'summary', 'reasoning'].includes(key)
+                  )
+                ),
+                summary: config.summary || 'Professional settings applied',
+                purpose: config.reasoning || 'Optimized vocal processing'
+              }));
+            
+            if (professionalParams.length > 0) {
+              console.log('🎯 DEBUG: Using professional_params:', professionalParams);
+              setAutoChainParameters(professionalParams);
+              return;
             }
-          ];
+          }
           
-          console.log('🎯 DEBUG: Using mock parameters for testing');
-          setAutoChainParameters(mockParameters);
+          // Method 3: Show debug info and empty state
+          console.log('🎯 DEBUG: All result keys for extraction:', Object.keys(result));
+          console.log('🎯 DEBUG: Full result object:', result);
+          
+          setAutoChainParameters([]);
         } else {
           setAutoChainParameters(structuredParameters);
         }
