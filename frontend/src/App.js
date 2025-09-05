@@ -40,6 +40,7 @@ function App() {
   // Auto Chain State
   const [autoChainUrl, setAutoChainUrl] = useState('https://customer-assets.emergentagent.com/job_swift-preset-gen/artifacts/lodo85xm_Lemonade%20Stand.wav');
   const [autoChainFile, setAutoChainFile] = useState(null);
+  const [autoChainInputMethod, setAutoChainInputMethod] = useState('url'); // 'url' or 'file'
   const [autoChainAnalysis, setAutoChainAnalysis] = useState(null);
   const [autoChainRecommendation, setAutoChainRecommendation] = useState(null);
   const [autoChainParameters, setAutoChainParameters] = useState(null);
