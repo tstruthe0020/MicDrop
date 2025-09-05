@@ -1242,8 +1242,8 @@ function App() {
                               </>
                             ) : (
                               <>
-                                <Download className="w-4 h-4 mr-2" />
-                                Generate Auto Chain Presets
+                                <Settings className="w-4 h-4 mr-2" />
+                                Generate Parameter Recommendations
                               </>
                             )}
                           </Button>
