@@ -700,6 +700,11 @@ function App() {
 
         setAutoChainParameters(structuredParameters);
         
+        // Store ZIP URL for manual download button
+        if (result.zip_url) {
+          setAutoChainZipUrl(`${BACKEND_URL}${result.zip_url}`);
+        }
+        
         // Also trigger ZIP download if available
         if (result.zip_url) {
           const downloadUrl = `${BACKEND_URL}${result.zip_url}`;
