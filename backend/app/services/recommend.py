@@ -328,7 +328,7 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
     
     logger.info("🎯 PARAMETER MAPPING COMPLETE - Generating plugin targets...")
     
-    # Generate plugin targets with mapped parameters
+    # Generate plugin targets with mapped parameters and summaries
     targets = {
         'Graillon 3': {
             'key': graillon_key,
@@ -336,7 +336,9 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
             'correction_speed': correction_speed,
             'preserve_formants': preserve_formants,
             'scale_mask': scale_mask(estimated_key, 'major', key_confidence) if graillon_key != 'Chromatic' else None,
-            'enabled': True
+            'enabled': True,
+            'summary': f"Correction: {correction_amount*100:.0f}%, Speed: {correction_speed:.0f}ms, Key: {graillon_key}",
+            'reasoning': f"Pitch correction optimized for {gender_profile} vocal in {estimated_key}"
         },
         'TDR Nova': {
             'multiband_enabled': True,
