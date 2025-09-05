@@ -212,10 +212,22 @@ def _get_chain_description(chain_style: str) -> str:
     return descriptions.get(chain_style, 'Custom vocal processing chain')
 
 def _generate_plugin_decisions(targets: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Generate human-readable explanations for plugin decisions"""
+    """Generate comprehensive plugin decisions with parameters for frontend display"""
     decisions = []
     
-    plugin_names = {
+    # Map both old and new plugin names to handle compatibility
+    plugin_mapping = {
+        # New professional parameter names (preferred)
+        'Graillon 3': 'Graillon 3 - Pitch Correction',
+        'TDR Nova': 'TDR Nova - Dynamic EQ', 
+        '1176 Compressor': '1176 Compressor - Character Compression',
+        'LA-LA': 'LA-LA - Gentle Leveling',
+        'Fresh Air': 'Fresh Air - Presence & Air',
+        'MEqualizer': 'MEqualizer - Surgical EQ',
+        'MCompressor': 'MCompressor - Glue Compression',
+        'MConvolutionEZ': 'MConvolutionEZ - Reverb & Space',
+        
+        # Legacy names for compatibility
         'MEqualizer': 'MEqualizer - Surgical EQ',
         'TDRNova': 'TDR Nova - Dynamic EQ',
         '1176Compressor': '1176 Compressor - Character Compression',
@@ -226,19 +238,46 @@ def _generate_plugin_decisions(targets: Dict[str, Any]) -> List[Dict[str, Any]]:
         'MConvolutionEZ': 'MConvolutionEZ - Reverb & Space'
     }
     
-    for plugin_key, config in targets.items():
-        if plugin_key in plugin_names and isinstance(config, dict):
-            enabled = config.get('enabled', True)
-            reason = config.get('reason', 'Standard processing for chain style')
-            
-            decision = {
-                'plugin': plugin_names[plugin_key],
-                'enabled': enabled,
-                'rationale': reason,
-                'parameters_summary': _summarize_plugin_params(plugin_key, config)
-            }
-            decisions.append(decision)
+    # Check professional_params first (new enhanced system)
+    professional_params = targets.get('professional_params', {})
+    if professional_params:
+        logger.info("Using professional parameter format for plugin decisions")
+        for plugin_key, config in professional_params.items():
+            if isinstance(config, dict):
+                enabled = config.get('enabled', True)
+                if enabled:  # Only include enabled plugins
+                    # Extract the actual parameters (exclude meta fields)
+                    parameters = {k: v for k, v in config.items() 
+                                if k not in ['enabled', 'summary', 'reasoning']}
+                    
+                    decision = {
+                        'plugin': plugin_key,  # Use clean plugin name
+                        'enabled': enabled,
+                        'parameters': parameters,  # Include actual parameter values
+                        'parameters_summary': config.get('summary', 'Professional settings applied'),
+                        'reasoning': config.get('reasoning', 'Optimized for vocal processing')
+                    }
+                    decisions.append(decision)
+                    logger.info(f"Added plugin decision for {plugin_key} with {len(parameters)} parameters")
     
+    # Fallback to legacy format if no professional params
+    if not decisions:
+        logger.info("Falling back to legacy parameter format for plugin decisions")
+        for plugin_key, config in targets.items():
+            if plugin_key in plugin_mapping and isinstance(config, dict):
+                enabled = config.get('enabled', True)
+                reason = config.get('reason', 'Standard processing for chain style')
+                
+                decision = {
+                    'plugin': plugin_mapping[plugin_key],
+                    'enabled': enabled,
+                    'parameters': {k: v for k, v in config.items() if k not in ['enabled', 'reason']},
+                    'parameters_summary': _summarize_plugin_params(plugin_key, config),
+                    'reasoning': reason
+                }
+                decisions.append(decision)
+    
+    logger.info(f"Generated {len(decisions)} plugin decisions")
     return decisions
 
 def _summarize_plugin_params(plugin_key: str, config: Dict[str, Any]) -> str:
