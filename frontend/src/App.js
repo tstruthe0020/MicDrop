@@ -467,6 +467,7 @@ function App() {
     setAutoChainAnalysis(null);
     setAutoChainRecommendation(null);
     setAutoChainParameters(null);
+    setAutoChainZipUrl(null);
 
     try {
       let response;
