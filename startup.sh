@@ -249,7 +249,7 @@ start_standalone() {
     
     # Start backend
     log_info "Starting backend server..."
-    cd /app/backend
+    cd "$APP_DIR/backend"
     nohup python3 -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload > /tmp/backend.log 2>&1 &
     BACKEND_PID=$!
     echo $BACKEND_PID > /tmp/backend.pid
