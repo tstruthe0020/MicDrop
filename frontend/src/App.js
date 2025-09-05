@@ -465,6 +465,7 @@ function App() {
     setAutoChainAnalyzing(true);
     setAutoChainAnalysis(null);
     setAutoChainRecommendation(null);
+    setAutoChainParameters(null);
 
     try {
       let response;
@@ -473,6 +474,8 @@ function App() {
         // FILE UPLOAD PATH
         console.log('🎯 DEBUG: Using file upload analysis');
         console.log('🎯 DEBUG: File:', autoChainFile.name);
+        
+        setAutoChainInputMethod('file'); // Track that we're using file input
         
         const formData = new FormData();
         formData.append('audio_file', autoChainFile);
@@ -485,6 +488,8 @@ function App() {
         // URL PATH  
         console.log('🎯 DEBUG: Using URL analysis');
         console.log('🎯 DEBUG: URL:', autoChainUrl.trim());
+        
+        setAutoChainInputMethod('url'); // Track that we're using URL input
         
         const requestBody = {
           input_source: autoChainUrl.trim()
