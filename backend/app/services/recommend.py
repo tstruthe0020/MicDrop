@@ -81,19 +81,25 @@ def professional_parameter_mapping(analysis: Analysis, chain_style: str = 'balan
     # Key/Scale mapping
     graillon_key = estimated_key if key_confidence > 0.6 else 'Chromatic'
     
-    # Correction amount based on vocal type and pitch variance
+    # Enhanced correction amount based on vocal type and analysis
     if chain_style in ['aggressive-rap'] or vocal_intensity > 0.8:
-        # Rap/spoken style - minimal correction
-        correction_amount = np.clip(0.05 + (plosive_index * 0.1), 0.05, 0.15)
+        # Rap/spoken style - minimal correction to preserve character
+        correction_amount = np.clip(0.02 + (plosive_index * 0.08), 0.02, 0.12)
     else:
-        # Pop/R&B sung style - moderate correction  
-        base_correction = 0.35 if gender_profile == 'female' else 0.45
-        # Increase if pitch variance high (estimated from F0 variance)
-        correction_amount = np.clip(base_correction + (crest_db - 10) * 0.02, 0.35, 0.55)
+        # Pop/R&B sung style - moderate correction based on pitch stability
+        base_correction = 0.30 if gender_profile == 'female' else 0.40
+        # Increase if crest factor high (indicates pitch instability)
+        pitch_instability_factor = max(0, (crest_db - 10) * 0.015)
+        correction_amount = np.clip(base_correction + pitch_instability_factor, 0.25, 0.50)
     
-    # Speed based on note length
+    # Correction speed based on musical timing
     note_16th_ms = (60 / bpm) * 1000 / 4  # 1/16 note in ms
-    correction_speed = np.clip(note_16th_ms * 0.8, 5, 60)  # Slightly faster for pop
+    # Slightly faster for pop (more responsive), slower for ballads (more natural)
+    speed_multiplier = 0.7 if bpm > 120 else 0.9
+    correction_speed = np.clip(note_16th_ms * speed_multiplier, 8, 50)
+    
+    # Formant preservation - important for natural sound
+    preserve_formants = True if chain_style in ['intimate-rnb', 'clean'] else False
     
     # B. TDR NOVA (SUBTRACTIVE EQ + DYNAMIC DE-ESS) PARAMETERS  
     logger.info("🎯 Mapping TDR Nova parameters...")
